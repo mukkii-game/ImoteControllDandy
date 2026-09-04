@@ -1,0 +1,22 @@
+* { box-sizing: border-box; }
+html, body, #root { margin: 0; height: 100%; overflow: hidden; background: #000; font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif; }
+.app { position: fixed; inset: 0; touch-action: none; user-select: none; -webkit-user-select: none; }
+canvas { display: block; }
+
+.hud { position: absolute; inset: 0; pointer-events: none; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
+.hud-top { display: flex; justify-content: space-between; padding: 10px 14px; font-weight: 700; }
+.hud-top .step { font-weight: 400; opacity: .7; font-size: .8em; margin-left: 8px; }
+.hud-top .mode { background: rgba(0,0,0,.4); padding: 2px 10px; border-radius: 6px; }
+.hint { position: absolute; left: 50%; bottom: 22%; transform: translateX(-50%); background: rgba(0,0,0,.5); padding: 8px 16px; border-radius: 8px; font-size: 15px; white-space: nowrap; }
+.hint-ready { background: rgba(255,200,40,.85); color: #222; text-shadow: none; font-weight: 700; }
+
+.stick { position: absolute; left: 24px; bottom: 24px; width: 130px; height: 130px; border-radius: 50%; background: rgba(255,255,255,.12); border: 2px solid rgba(255,255,255,.35); pointer-events: auto; display: flex; align-items: center; justify-content: center; }
+.knob { width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,.7); }
+.buttons { position: absolute; right: 24px; bottom: 24px; display: flex; gap: 14px; align-items: flex-end; pointer-events: auto; }
+.btn { width: 70px; height: 70px; border-radius: 50%; border: 2px solid rgba(255,255,255,.5); color: #fff; font-weight: 800; font-size: 22px; touch-action: none; }
+.btn-a { background: rgba(230,70,70,.75); width: 84px; height: 84px; }
+.btn-b { background: rgba(60,120,230,.75); }
+
+@media (hover: hover) and (pointer: fine) {
+  .stick, .buttons { opacity: .45; }
+}

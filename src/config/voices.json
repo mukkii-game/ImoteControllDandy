@@ -1,0 +1,5 @@
+{
+  "_comment": "イベント名→音声ファイル。ステップ7で VOICEVOX 音声を public/audio/voice に置く",
+  "imouto.ittekimasu": "audio/voice/imouto_ittekimasu.mp3",
+  "bro.tou": "audio/voice/bro_tou.mp3"
+}
