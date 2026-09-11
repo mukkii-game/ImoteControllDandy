@@ -2,32 +2,45 @@ import { create } from 'zustand'
 import { KEYS, type Action } from '../config/controls'
 
 type Pressed = Record<Action, boolean>
-const empty = (): Pressed => ({ up: false, down: false, left: false, right: false, a: false, b: false })
+const empty = (): Pressed => ({ up: false, down: false, left: false, right: false, a: false, b: false, debugCam: false })
 
 interface InputState {
   keys: Pressed
+  /** デバッグ俯瞰カメラ ON/OFF */
+  overview: boolean
   /** 仮想スティック (-1..1) */
   stick: { x: number; y: number }
   set: (a: Action, v: boolean) => void
   setStick: (x: number, y: number) => void
-  /** ボタンB の「押した瞬間」を1回だけ消費する */
+  /** ボタンの「押した瞬間」を1回だけ消費する */
   consumeB: () => boolean
+  consumeA: () => boolean
   _bEdge: boolean
+  _aEdge: boolean
 }
 
 export const useInput = create<InputState>((set, get) => ({
   keys: empty(),
+  overview: false,
   stick: { x: 0, y: 0 },
   _bEdge: false,
+  _aEdge: false,
   set: (a, v) =>
     set((s) => {
-      const edge = a === 'b' && v && !s.keys.b ? true : s._bEdge
-      return { keys: { ...s.keys, [a]: v }, _bEdge: edge }
+      const bEdge = a === 'b' && v && !s.keys.b ? true : s._bEdge
+      const aEdge = a === 'a' && v && !s.keys.a ? true : s._aEdge
+      const overview = a === 'debugCam' && v && !s.keys.debugCam ? !s.overview : s.overview
+      return { keys: { ...s.keys, [a]: v }, _bEdge: bEdge, _aEdge: aEdge, overview }
     }),
   setStick: (x, y) => set({ stick: { x, y } }),
   consumeB: () => {
     const e = get()._bEdge
     if (e) set({ _bEdge: false })
+    return e
+  },
+  consumeA: () => {
+    const e = get()._aEdge
+    if (e) set({ _aEdge: false })
     return e
   },
 }))

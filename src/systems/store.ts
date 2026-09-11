@@ -6,18 +6,17 @@ interface GameState {
   mode: RideMode
   /** 乗降アニメの進捗 0..1 */
   transition: number
-  /** 兄が妹の足元にいて乗れる状態か */
-  canMount: boolean
+  loaded: { imouto: boolean; bro: boolean }
   setMode: (m: RideMode) => void
   setTransition: (t: number) => void
-  setCanMount: (v: boolean) => void
+  setLoaded: (k: 'imouto' | 'bro') => void
 }
 
 export const useGame = create<GameState>((set) => ({
   mode: 'ground',
   transition: 0,
-  canMount: false,
+  loaded: { imouto: false, bro: false },
   setMode: (mode) => set({ mode }),
   setTransition: (transition) => set({ transition }),
-  setCanMount: (canMount) => set({ canMount }),
+  setLoaded: (k) => set((s) => ({ loaded: { ...s.loaded, [k]: true } })),
 }))

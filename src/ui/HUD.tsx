@@ -3,19 +3,21 @@ import { VirtualPad } from './VirtualPad'
 
 export function HUD() {
   const mode = useGame((s) => s.mode)
-  const canMount = useGame((s) => s.canMount)
+  const loaded = useGame((s) => s.loaded)
+  const ready = loaded.imouto && loaded.bro
 
   let hint = ''
-  if (mode === 'ground') hint = canMount ? 'B（Shift）で妹に乗る' : 'WASD で移動。妹の足元へ行こう'
-  if (mode === 'shoulder') hint = 'B（Shift）で降りる'
+  if (mode === 'ground') hint = 'WASD 走る / Space ジャンプ / Shift 妹の肩へ飛び乗る'
+  if (mode === 'shoulder') hint = 'W 前進 / A D 旋回 / Shift 飛び降りる'
 
   return (
     <div className="hud">
       <div className="hud-top">
-        <div className="title">いもーとコントロールダンディ <span className="step">step1: スケール検証</span></div>
+        <div className="title">いもーとコントロールダンディ <span className="step">prototype</span></div>
         <div className="mode">{mode === 'shoulder' ? '肩上' : mode === 'ground' ? '地上' : '…'}</div>
       </div>
-      {hint && <div className={`hint ${canMount ? 'hint-ready' : ''}`}>{hint}</div>}
+      {!ready && <div className="loading">モデル読み込み中…</div>}
+      {hint && ready && <div className="hint">{hint}</div>}
       <VirtualPad />
     </div>
   )

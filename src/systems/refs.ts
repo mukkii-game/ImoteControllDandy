@@ -4,10 +4,13 @@ import * as THREE from 'three'
 export const refs = {
   bro: null as THREE.Group | null,
   imouto: null as THREE.Group | null,
-  /** 妹の肩（ワールド座標に変換して使う）。妹 group の子 */
+  /** 妹の肩アンカー（ボーンの子）。getWorldPosition で使う */
   shoulder: null as THREE.Object3D | null,
-  /** 兄の向いている方向（yaw, rad） */
+  /** 兄の向き（yaw, rad） */
   broYaw: 0,
+  /** 兄の乗降アニメ用の始点（ワールド） */
+  mountStart: new THREE.Vector3(),
+  mountDuration: 1,
 }
 
 const tmp = new THREE.Vector3()
@@ -15,3 +18,6 @@ export function shoulderWorld(out = tmp): THREE.Vector3 {
   if (!refs.shoulder) return out.set(0, 0, 0)
   return refs.shoulder.getWorldPosition(out)
 }
+
+// デバッグ用：コンソールから位置を確認できる
+;(window as unknown as { __refs: typeof refs }).__refs = refs

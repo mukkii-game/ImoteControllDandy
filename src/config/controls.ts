@@ -8,6 +8,8 @@ export const KEYS = {
   a: ['Space'],
   /** ボタンB：乗る / 降りる */
   b: ['ShiftLeft', 'ShiftRight', 'KeyE'],
+  /** デバッグ：俯瞰カメラ切替 */
+  debugCam: ['KeyP'],
 } as const
 
 export type Action = keyof typeof KEYS
