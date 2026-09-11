@@ -65,6 +65,7 @@ for (const [action, codes] of Object.entries(KEYS)) {
 
 export function bindKeyboard(): () => void {
   const down = (e: KeyboardEvent) => {
+    if ((e.target as HTMLElement)?.tagName === 'INPUT') return
     const a = codeToAction.get(e.code)
     if (a) {
       e.preventDefault()

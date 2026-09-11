@@ -1,5 +1,6 @@
 import { useGame } from '../systems/store'
 import { VirtualPad } from './VirtualPad'
+import { TunePanel } from './TunePanel'
 
 export function HUD() {
   const mode = useGame((s) => s.mode)
@@ -14,6 +15,7 @@ export function HUD() {
       </div>
       {!ready && <div className="loading">モデル読み込み中…</div>}
       <VirtualPad />
+      <TunePanel />
     </div>
   )
 }

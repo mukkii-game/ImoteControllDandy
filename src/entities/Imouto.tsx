@@ -30,7 +30,10 @@ export function Imouto() {
   const clock = useRef(0)
   const anchorRef = useRef<THREE.Object3D | null>(null)
   const boneRef = useRef<THREE.Object3D | null>(null)
+  const probeTargets = useRef<THREE.Object3D[]>([])
+  const warmedUp = useRef(false)
   const setLoaded = useGame((s) => s.setLoaded)
+  const tuneVersion = useGame((s) => s.tuneVersion)
 
   const modelHeight = useMemo(() => {
     if (!vrm) return 1
@@ -38,6 +41,7 @@ export function Imouto() {
     return box.max.y - box.min.y
   }, [vrm])
   const scale = SCALE.imoutoHeight / modelHeight
+  void tuneVersion
 
   useEffect(() => {
     refs.imouto = group.current
@@ -60,6 +64,26 @@ export function Imouto() {
     anchorRef.current = anchor
     boneRef.current = bone ?? null
     refs.head = vrm.humanoid.getNormalizedBoneNode('head')
+    // 肩レイキャストは髪を除いた体だけ（髪は高ポリで重い）
+    const targets: THREE.Object3D[] = []
+    vrm.scene.traverse((o) => {
+      const m = o as THREE.Mesh
+      if (!m.isMesh) return
+      const mats = Array.isArray(m.material) ? m.material : [m.material]
+      if (mats.some((mm) => /hair/i.test(mm.name ?? ''))) return
+      targets.push(m)
+    })
+    probeTargets.current = targets
+    // スプリングボーン（髪）の力は世界座標で効くので、巨大化した分だけ強くしないと動きが鈍い
+    const sb = vrm.springBoneManager
+    if (sb) {
+      for (const j of sb.joints) {
+        j.settings.stiffness *= scale * IMOUTO.hairStiffnessScale
+        j.settings.gravityPower *= scale * IMOUTO.hairGravityScale
+        j.settings.dragForce = IMOUTO.hairDrag
+      }
+    }
+    warmedUp.current = false
     setLoaded('imouto')
     return () => {
       anchor.removeFromParent()
@@ -69,6 +93,13 @@ export function Imouto() {
   useFrame((_, dt) => {
     if (!vrm) return
     const g = group.current
+    if (!warmedUp.current) {
+      // 初回：髪が T ポーズ位置から落ちきるまで待たされないよう、先に何秒分か回しておく
+      warmedUp.current = true
+      g.updateMatrixWorld(true)
+      vrm.springBoneManager?.reset()
+      for (let i = 0; i < IMOUTO.hairWarmupSteps; i++) vrm.update(1 / 30)
+    }
     const mode = useGame.getState().mode
     const m = mode === 'shoulder' ? readMove() : { x: 0, y: 0 }
 
@@ -108,7 +139,7 @@ export function Imouto() {
       probeOrigin.y += pr.up * H
       raycaster.set(probeOrigin, DOWN)
       raycaster.far = pr.far * H
-      const hits = raycaster.intersectObject(vrm.scene, true)
+      const hits = raycaster.intersectObjects(probeTargets.current, false)
       const target = hits.length > 0 ? hits[0].point.clone() : probeOrigin.clone().setY(boneWorld.y + IMOUTO.shoulderFallbackUp * H)
       bone.worldToLocal(target)
       anchorRef.current.position.copy(target)

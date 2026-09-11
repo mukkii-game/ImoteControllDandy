@@ -29,6 +29,7 @@ export function Bro() {
   const poseBlend = useRef(0)
   const vrm = useVRM(MODELS.bro)
   const setLoaded = useGame((s) => s.setLoaded)
+  const tuneVersion = useGame((s) => s.tuneVersion)
 
   const modelHeight = useMemo(() => {
     if (!vrm) return 1
@@ -36,6 +37,7 @@ export function Bro() {
     return box.max.y - box.min.y
   }, [vrm])
   const scale = SCALE.broHeight / modelHeight
+  void tuneVersion
 
   useEffect(() => {
     refs.bro = group.current

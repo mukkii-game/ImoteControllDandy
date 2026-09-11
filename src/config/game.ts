@@ -1,10 +1,11 @@
 // ゲーム全体の数値。バランス・スケール調整はここだけ触る（docs/SPEC.md が正）。
+// ゲーム中は Esc の調整パネルからも書き換えられる（src/config/tuning.ts）。
 
 export const SCALE = {
   /** 1ユニット = 1m */
   imoutoHeight: 60,
   broHeight: 3.6, // 見た目優先で2倍（仕様は1.8）
-} as const
+}
 
 export const MODELS = {
   imouto: 'models/VRM1_Twist_Sample.vrm',
@@ -37,7 +38,7 @@ export const BRO = {
   tintMaterials: ['huku', 'arm_mat', 'arm_plastic', 'armgear', 'wear_metal'],
   /** 非表示にするマテリアル名（部分一致） */
   hideMaterials: ['backpack', 'anim_logo'],
-} as const
+}
 
 export const IMOUTO = {
   spawn: { x: 0, y: 0, z: 0 },
@@ -53,17 +54,22 @@ export const IMOUTO = {
   /** 子どもの横断歩道歩き：腕をピンと伸ばして大きく前後、大股 */
   walk: { legSwing: 0.85, kneeBend: 0.35, armSwing: 1.5, armDown: 1.35, bodyBob: 0.02, lean: 0.04, straightArms: true },
   /** 表情：口を大きく開けた笑顔（happy＋aa）。歩行中は少し強める */
-  face: { happy: 1.0, mouthOpen: 0.55, mouthOpenWalk: 0.8, blinkPeriod: 3.5 },
+  face: { happy: 0.55, mouthOpen: 0.55, mouthOpenWalk: 0.8, blinkPeriod: 3.5 },
   /** 肩アンカー：左上腕ボーン（肩関節）からのオフセット（モデルローカル、m） */
   shoulderOffset: { x: -0.005, y: 0.05, z: 0.0 },
   /** 肩の表面をレイキャストで探す（身長比）。肩関節から頭方向へ inward、真上 up の点から下向きに撃つ */
   shoulderProbe: { inward: 0.012, up: 0.08, far: 0.2 },
   /** レイが当たらない時の高さ（肩関節から、身長比） */
   shoulderFallbackUp: 0.025,
-  shoulderProbeInterval: 0.25,
+  shoulderProbeInterval: 0.5,
   /** 着地の揺れの強さ */
   stepShake: 1.0,
-} as const
+  /** 髪（スプリングボーン）：スケール補正に掛ける倍率と抵抗。ロード時のウォームアップ歩数 */
+  hairStiffnessScale: 1.0,
+  hairGravityScale: 1.0,
+  hairDrag: 0.45,
+  hairWarmupSteps: 120,
+}
 
 export const CAMERA = {
   near: 0.3,
@@ -95,7 +101,7 @@ export const CAMERA = {
   /** シェイク減衰 */
   shakeDecay: 4.5,
   shakeAmp: 0.6,
-} as const
+}
 
 export const STAGE = {
   /** 格子状の街。ブロック数（片側）。偶数にすると原点が交差点になる */
@@ -110,8 +116,8 @@ export const STAGE = {
   buildingMax: 38,
   towerChance: 0.05,
   towerMax: 95,
-} as const
+}
 
 export const DEBUG = {
   showStats: false,
-} as const
+}
