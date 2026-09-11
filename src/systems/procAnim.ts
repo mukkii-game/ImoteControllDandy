@@ -9,6 +9,8 @@ export interface WalkParams {
   armDown: number
   bodyBob: number
   lean: number
+  /** 肘を曲げずにピンと伸ばす（子どもの行進風） */
+  straightArms: boolean
 }
 
 /**
@@ -31,8 +33,9 @@ export function applyWalk(vrm: VRM, phase: number, ratio: number, p: WalkParams,
   const arm = s * p.armSwing * ratio
   set('leftUpperArm', -arm, 0, -p.armDown)
   set('rightUpperArm', arm, 0, p.armDown)
-  set('leftLowerArm', 0, 0, -0.25 - ratio * 0.6)
-  set('rightLowerArm', 0, 0, 0.25 + ratio * 0.6)
+  const elbow = p.straightArms ? 0.05 : 0.25 + ratio * 0.6
+  set('leftLowerArm', 0, 0, -elbow)
+  set('rightLowerArm', 0, 0, elbow)
   const hips = h.getNormalizedBoneNode('hips')
   if (hips) {
     const base = (hips.userData.baseY ??= hips.position.y) as number
@@ -82,4 +85,16 @@ export function applyShoulderPose(vrm: VRM, steer: number | null, dt: number) {
   // 左腕は腰に
   lerpTo(b('leftUpperArm'), -0.3, 0, -1.2, k)
   lerpTo(b('leftLowerArm'), 0, -1.6, -0.2, k)
+}
+
+/** 子どもっぽい笑顔＋まばたき。walkRatio が高いほど口が開く */
+export function applyFace(vrm: VRM, t: number, walkRatio: number, f: { happy: number; mouthOpen: number; mouthOpenWalk: number; blinkPeriod: number }) {
+  const em = vrm.expressionManager
+  if (!em) return
+  em.setValue('happy', f.happy)
+  const open = f.mouthOpen + (f.mouthOpenWalk - f.mouthOpen) * walkRatio
+  // 歩調に合わせて口をわずかにパクつかせる
+  em.setValue('aa', Math.max(0, open + Math.sin(t * 6) * 0.08 * walkRatio))
+  const b = (t % f.blinkPeriod) / f.blinkPeriod
+  em.setValue('blink', b > 0.95 ? Math.sin((b - 0.95) / 0.05 * Math.PI) : 0)
 }

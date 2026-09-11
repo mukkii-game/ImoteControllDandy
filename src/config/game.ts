@@ -28,7 +28,7 @@ export const BRO = {
   dismountSec: 1.1,
   /** 走りアニメの1歩の周期（秒） */
   stepPeriod: 0.42,
-  walk: { legSwing: 0.9, kneeBend: 1.2, armSwing: 0.8, armDown: 1.2, bodyBob: 0.03, lean: 0.25 },
+  walk: { legSwing: 0.9, kneeBend: 1.2, armSwing: 0.8, armDown: 1.2, bodyBob: 0.03, lean: 0.25, straightArms: false },
   /** マフラーの色 */
   scarfColor: '#e0312b',
   /** 学生服風に寄せる色（テクスチャに乗算） */
@@ -50,7 +50,10 @@ export const IMOUTO = {
   /** 加減速のなめらかさ */
   accel: 1.4,
   /** 手続きアニメ（ズシーン歩き） */
-  walk: { legSwing: 0.55, kneeBend: 0.5, armSwing: 0.35, armDown: 1.25, bodyBob: 0.012, lean: 0.06 },
+  /** 子どもの横断歩道歩き：腕をピンと伸ばして大きく前後、大股 */
+  walk: { legSwing: 0.85, kneeBend: 0.35, armSwing: 1.5, armDown: 1.35, bodyBob: 0.02, lean: 0.04, straightArms: true },
+  /** 表情：口を大きく開けた笑顔（happy＋aa）。歩行中は少し強める */
+  face: { happy: 1.0, mouthOpen: 0.55, mouthOpenWalk: 0.8, blinkPeriod: 3.5 },
   /** 肩アンカー：左上腕ボーン（肩関節）からのオフセット（モデルローカル、m） */
   shoulderOffset: { x: -0.005, y: 0.05, z: 0.0 },
   /** 肩の表面をレイキャストで探す（身長比）。肩関節から頭方向へ inward、真上 up の点から下向きに撃つ */

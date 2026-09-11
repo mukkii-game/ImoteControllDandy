@@ -7,7 +7,7 @@ import { refs } from '../systems/refs'
 import { useGame } from '../systems/store'
 import { readMove } from '../systems/input'
 import { emit } from '../systems/events'
-import { applyWalk } from '../systems/procAnim'
+import { applyWalk, applyFace } from '../systems/procAnim'
 
 const raycaster = new THREE.Raycaster()
 const DOWN = new THREE.Vector3(0, -1, 0)
@@ -27,6 +27,7 @@ export function Imouto() {
   const phase = useRef(0)
   const lastStepSide = useRef(0)
   const probeTimer = useRef(0)
+  const clock = useRef(0)
   const anchorRef = useRef<THREE.Object3D | null>(null)
   const boneRef = useRef<THREE.Object3D | null>(null)
   const setLoaded = useGame((s) => s.setLoaded)
@@ -80,6 +81,8 @@ export function Imouto() {
     const walkRatio = speed.current / IMOUTO.walkSpeed
     if (walkRatio > 0.02) phase.current += (dt / IMOUTO.stepPeriod) * Math.PI * 2 * Math.max(0.4, walkRatio)
     applyWalk(vrm, phase.current, walkRatio, IMOUTO.walk, modelHeight)
+    clock.current += dt
+    applyFace(vrm, clock.current, walkRatio, IMOUTO.face)
 
     const side = Math.sign(Math.sin(phase.current))
     if (side !== 0 && side !== lastStepSide.current) {
