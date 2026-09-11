@@ -52,16 +52,16 @@ export const IMOUTO = {
   accel: 1.4,
   /** 手続きアニメ（ズシーン歩き） */
   /** 子どもの横断歩道歩き：腕をピンと伸ばして大きく前後、大股 */
-  walk: { legSwing: 0.85, kneeBend: 0.35, armSwing: 1.5, armDown: 1.35, bodyBob: 0.02, lean: 0.04, straightArms: true },
+  walk: { legSwing: 0.85, kneeBend: 0.35, armSwing: 1.0, armDown: 1.35, bodyBob: 0.02, lean: 0.04, straightArms: true },
   /** 表情：口を大きく開けた笑顔（happy＋aa）。歩行中は少し強める */
-  face: { happy: 0.55, mouthOpen: 0.55, mouthOpenWalk: 0.8, blinkPeriod: 3.5 },
-  /** 肩アンカー：左上腕ボーン（肩関節）からのオフセット（モデルローカル、m） */
-  shoulderOffset: { x: -0.005, y: 0.05, z: 0.0 },
+  face: { happy: 0.4, mouthOpen: 0.55, mouthOpenWalk: 0.8, blinkPeriod: 3.5 },
   /** 肩の表面をレイキャストで探す（身長比）。肩関節から頭方向へ inward、真上 up の点から下向きに撃つ */
   shoulderProbe: { inward: 0.012, up: 0.08, far: 0.2 },
   /** レイが当たらない時の高さ（肩関節から、身長比） */
   shoulderFallbackUp: 0.025,
-  shoulderProbeInterval: 0.5,
+  shoulderProbeInterval: 0.2,
+  /** アンカーがレイ結果へ寄る速さ */
+  shoulderFollowLerp: 6,
   /** 着地の揺れの強さ */
   stepShake: 1.0,
   /** 髪（スプリングボーン）：スケール補正に掛ける倍率と抵抗。ロード時のウォームアップ歩数 */

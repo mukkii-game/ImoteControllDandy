@@ -30,6 +30,8 @@ export function Imouto() {
   const clock = useRef(0)
   const anchorRef = useRef<THREE.Object3D | null>(null)
   const boneRef = useRef<THREE.Object3D | null>(null)
+  const chestRef = useRef<THREE.Object3D | null>(null)
+  const anchorTarget = useRef<THREE.Vector3 | null>(null)
   const probeTargets = useRef<THREE.Object3D[]>([])
   const warmedUp = useRef(false)
   const setLoaded = useGame((s) => s.setLoaded)
@@ -55,14 +57,21 @@ export function Imouto() {
   useEffect(() => {
     if (!vrm) return
     // VRM は +X が左。カメラを置く側（+X）に合わせて左肩に乗せる。upperArm が肩関節の位置
+    // アンカーは腕の振りに影響されない「胸」ボーンの子にする。上腕ボーンはレイの基準位置にだけ使う
     const bone = vrm.humanoid.getNormalizedBoneNode('leftUpperArm')
+    const chest = vrm.humanoid.getNormalizedBoneNode('upperChest') ?? vrm.humanoid.getNormalizedBoneNode('chest') ?? vrm.humanoid.getNormalizedBoneNode('spine')
     const anchor = new THREE.Object3D()
-    const o = IMOUTO.shoulderOffset
-    anchor.position.set(o.x, o.y, o.z)
-    bone?.add(anchor)
+    chest?.add(anchor)
+    if (bone && chest) {
+      // 初期値：肩関節の位置
+      bone.getWorldPosition(anchor.position)
+      chest.worldToLocal(anchor.position)
+    }
     refs.shoulder = anchor
     anchorRef.current = anchor
     boneRef.current = bone ?? null
+    chestRef.current = chest ?? null
+    anchorTarget.current = null
     refs.head = vrm.humanoid.getNormalizedBoneNode('head')
     // 肩レイキャストは髪を除いた体だけ（髪は高ポリで重い）
     const targets: THREE.Object3D[] = []
@@ -141,8 +150,12 @@ export function Imouto() {
       raycaster.far = pr.far * H
       const hits = raycaster.intersectObjects(probeTargets.current, false)
       const target = hits.length > 0 ? hits[0].point.clone() : probeOrigin.clone().setY(boneWorld.y + IMOUTO.shoulderFallbackUp * H)
-      bone.worldToLocal(target)
-      anchorRef.current.position.copy(target)
+      chestRef.current?.worldToLocal(target)
+      anchorTarget.current = target
+    }
+    // レイの結果へはスナップせず、なめらかに寄せる
+    if (anchorTarget.current && anchorRef.current) {
+      anchorRef.current.position.lerp(anchorTarget.current, Math.min(1, IMOUTO.shoulderFollowLerp * dt))
     }
   })
 
