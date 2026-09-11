@@ -11,7 +11,8 @@ npm run build    # dist/ に出力（itch.io 用）
 ## 操作
 | 入力 | 地上（兄） | 肩上 |
 |---|---|---|
-| WASD / 矢印 / 左スティック | 走る | W 前進・A D 旋回 |
+| WASD / 矢印 / 左スティック | カメラ基準で走る | W 妹を前進・A D 旋回（リモコン） |
+| マウス（クリックでロック）/ 画面右ドラッグ | カメラ回転 | 妹の頭を中心に回転（顔が見える） |
 | Space / A ボタン | ジャンプ | （未実装：妹の攻撃） |
 | Shift / E / B ボタン | どこからでも妹の肩へ飛び乗る | 飛び降りる |
 | P | デバッグ俯瞰カメラ | 同左 |
@@ -19,7 +20,7 @@ npm run build    # dist/ に出力（itch.io 用）
 `?viewer` を URL に付けるとモデル比較ビューアになる。
 
 ## モデル
-`public/models/` 参照（ライセンスは `public/models/LICENSES.md`）。妹は pixiv の VRM サンプル、兄は Mixamo Xbot にトゥーン塗り。差し替えは `src/config/game.ts` の `MODELS` を書き換える。
+`public/models/` 参照（ライセンスは `public/models/LICENSES.md`）。妹は pixiv の VRM サンプル、兄は VirtualCast の Seed-san を学生服風に色替え。差し替えは `src/config/game.ts` の `MODELS` を書き換える。
 
 ## 進捗
 - [x] ステップ1：スケール検証（箱の妹60m＋カプセルの兄、乗降カメラ演出）→ `docs/screenshots/step1/`

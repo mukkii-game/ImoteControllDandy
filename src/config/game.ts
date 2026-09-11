@@ -8,7 +8,7 @@ export const SCALE = {
 
 export const MODELS = {
   imouto: 'models/VRM1_Twist_Sample.vrm',
-  bro: 'models/Xbot.glb',
+  bro: 'models/Seed-san.vrm',
 } as const
 
 export const BRO = {
@@ -26,10 +26,17 @@ export const BRO = {
   dismountAhead: 22,
   dismountSide: 8,
   dismountSec: 1.1,
+  /** 走りアニメの1歩の周期（秒） */
+  stepPeriod: 0.42,
+  walk: { legSwing: 0.9, kneeBend: 1.2, armSwing: 0.8, armDown: 1.2, bodyBob: 0.03, lean: 0.25 },
   /** マフラーの色 */
   scarfColor: '#e0312b',
-  suitColor: '#1f7a5c',
-  jointColor: '#111418',
+  /** 学生服風に寄せる色（テクスチャに乗算） */
+  uniformColor: '#1c2140',
+  /** 色替えするマテリアル名（部分一致） */
+  tintMaterials: ['huku', 'arm_mat', 'arm_plastic', 'armgear', 'wear_metal'],
+  /** 非表示にするマテリアル名（部分一致） */
+  hideMaterials: ['backpack', 'anim_logo'],
 } as const
 
 export const IMOUTO = {
@@ -42,13 +49,10 @@ export const IMOUTO = {
   turnSpeed: 0.55,
   /** 加減速のなめらかさ */
   accel: 1.4,
-  /** 手続きアニメの振り幅（rad） */
-  legSwing: 0.55,
-  kneeBend: 0.5,
-  armSwing: 0.35,
-  bodyBob: 0.012, // 身長比
-  /** 肩アンカー：右肩ボーンからのオフセット（モデルローカル、m） */
-  shoulderOffset: { x: 0.12, y: 0.14, z: 0.04 },
+  /** 手続きアニメ（ズシーン歩き） */
+  walk: { legSwing: 0.55, kneeBend: 0.5, armSwing: 0.35, armDown: 1.25, bodyBob: 0.012, lean: 0.06 },
+  /** 肩アンカー：左上腕ボーン（肩関節）からのオフセット（モデルローカル、m） */
+  shoulderOffset: { x: -0.005, y: 0.05, z: 0.0 },
   /** 着地の揺れの強さ */
   stepShake: 1.0,
 } as const
@@ -56,22 +60,26 @@ export const IMOUTO = {
 export const CAMERA = {
   near: 0.3,
   far: 1500,
-  /** 地上：兄の背後、やや低め。妹が画面に収まらない */
+  /** マウス感度（rad / px） */
+  mouseSensitivity: 0.0025,
+  touchSensitivity: 0.006,
+  pitchMin: -0.35,
+  pitchMax: 1.1,
+  /** 地上：兄を中心にマウスで回すオービット。やや低めで妹が収まらない */
   ground: {
     fov: 78,
-    back: 4.2,
-    height: 1.4,
-    lookAhead: 5,
-    lookHeight: 1.6,
+    distance: 4.5,
+    /** 注視点の高さ（兄の腰〜胸） */
+    targetHeight: 1.3,
+    defaultPitch: 0.12,
   },
-  /** 肩上：妹の肩後方から街を見下ろす */
+  /** 肩上：肩アンカーを中心にオービット。少し望遠 */
   shoulder: {
     fov: 55,
-    back: 20,
-    height: 9,
-    side: 20,
-    lookDownDistance: 80,
-    lookDownDrop: 32,
+    distance: 34,
+    /** 頭ボーンからの注視点オフセット（m） */
+    targetHeight: 0,
+    defaultPitch: 0.3,
   },
   /** 乗降中にカメラが体を突き抜けないよう外側に膨らませる距離(m) */
   transitionSideBulge: 30,

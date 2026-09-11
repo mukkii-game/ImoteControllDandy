@@ -7,8 +7,8 @@ export function HUD() {
   const ready = loaded.imouto && loaded.bro
 
   let hint = ''
-  if (mode === 'ground') hint = 'WASD 走る / Space ジャンプ / Shift 妹の肩へ飛び乗る'
-  if (mode === 'shoulder') hint = 'W 前進 / A D 旋回 / Shift 飛び降りる'
+  if (mode === 'ground') hint = 'WASD 移動 / マウス カメラ / Space ジャンプ / Shift 妹の肩へ'
+  if (mode === 'shoulder') hint = 'W 妹を前進 / A D 旋回 / マウス カメラ / Shift 飛び降りる'
 
   return (
     <div className="hud">

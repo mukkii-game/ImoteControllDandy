@@ -13,33 +13,36 @@ const groundPos = new THREE.Vector3()
 const groundLook = new THREE.Vector3()
 const shoulderPos = new THREE.Vector3()
 const shoulderLook = new THREE.Vector3()
-const sw = new THREE.Vector3()
+const tmp = new THREE.Vector3()
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2)
+
+/** 注視点を中心に、camYaw/camPitch のオービット位置を求める */
+function orbit(center: THREE.Vector3, distance: number, pos: THREE.Vector3) {
+  const yaw = refs.camYaw
+  const pitch = refs.camPitch
+  const cp = Math.cos(pitch)
+  // camYaw は「カメラが向く方向」。カメラはその逆側に置く
+  pos.set(center.x - Math.sin(yaw) * cp * distance, center.y + Math.sin(pitch) * distance, center.z - Math.cos(yaw) * cp * distance)
+}
 
 function computeGround(pos: THREE.Vector3, look: THREE.Vector3) {
   const b = refs.bro
   if (!b) return
-  const c = CAMERA.ground
-  const yaw = refs.broYaw
-  pos.set(b.position.x - Math.sin(yaw) * c.back, b.position.y + c.height, b.position.z - Math.cos(yaw) * c.back)
-  look.set(b.position.x + Math.sin(yaw) * c.lookAhead, b.position.y + c.lookHeight, b.position.z + Math.cos(yaw) * c.lookAhead)
+  look.set(b.position.x, b.position.y + CAMERA.ground.targetHeight, b.position.z)
+  orbit(look, CAMERA.ground.distance, pos)
+  // 地面にめり込まない
+  if (pos.y < 0.6) pos.y = 0.6
 }
 
 function computeShoulder(pos: THREE.Vector3, look: THREE.Vector3) {
-  const im = refs.imouto
-  if (!im) return
-  const c = CAMERA.shoulder
-  const yaw = im.rotation.y
-  shoulderWorld(sw)
-  const fx = Math.sin(yaw)
-  const fz = Math.cos(yaw)
-  const rx = Math.cos(yaw)
-  const rz = -Math.sin(yaw)
-  pos.set(sw.x - fx * c.back + rx * c.side, sw.y + c.height, sw.z - fz * c.back + rz * c.side)
-  look.set(sw.x + fx * c.lookDownDistance, sw.y - c.lookDownDrop, sw.z + fz * c.lookDownDistance)
+  // 頭を中心に回す（パンツァードラグーン式）。横や後ろに回すと妹の顔が画面に入る
+  if (refs.head) refs.head.getWorldPosition(tmp)
+  else shoulderWorld(tmp)
+  look.set(tmp.x, tmp.y + CAMERA.shoulder.targetHeight, tmp.z)
+  orbit(look, CAMERA.shoulder.distance, pos)
 }
 
-/** 妹の右側（肩側）へ外側に膨らませる。t: 0..1 */
+/** 乗降中に妹の体を突き抜けないよう、左肩側（+X）へ外側に膨らませる */
 function bulge(pos: THREE.Vector3, t: number) {
   const yaw = refs.imouto?.rotation.y ?? 0
   const k = Math.sin(t * Math.PI) * CAMERA.transitionSideBulge
@@ -48,7 +51,7 @@ function bulge(pos: THREE.Vector3, t: number) {
 }
 
 /**
- * カメラシステム。地上／肩上の2モードと、その間の演出。妹の一歩でシェイク。
+ * カメラシステム。地上／肩上ともマウスオービット。乗降時は両者を補間。妹の一歩でシェイク。
  */
 export function CameraRig() {
   const { camera } = useThree()
@@ -56,11 +59,11 @@ export function CameraRig() {
   const smoothedLook = useRef(new THREE.Vector3())
   const shake = useRef(0)
   const shakeT = useRef(0)
+  const lastMode = useRef(useGame.getState().mode)
 
   useEffect(
     () =>
       on('imouto.step', ({ strength, x, z }) => {
-        // 地上では距離で減衰。肩上では常に少し揺れる
         const mode = useGame.getState().mode
         let s = strength
         if (mode === 'ground' && refs.bro) {
@@ -77,6 +80,18 @@ export function CameraRig() {
   useFrame((_, dt) => {
     const st = useGame.getState()
     const cam = camera as THREE.PerspectiveCamera
+
+    // モードが変わった瞬間にピッチをそのモードの既定値へ、yaw は妹の向きに合わせる
+    if (st.mode !== lastMode.current) {
+      if (st.mode === 'mounting') {
+        refs.camPitch = CAMERA.shoulder.defaultPitch
+        refs.camYaw = refs.imouto?.rotation.y ?? refs.camYaw
+      } else if (st.mode === 'dismounting') {
+        refs.camPitch = CAMERA.ground.defaultPitch
+      }
+      lastMode.current = st.mode
+    }
+
     computeGround(groundPos, groundLook)
     computeShoulder(shoulderPos, shoulderLook)
 
@@ -113,7 +128,6 @@ export function CameraRig() {
     }
 
     if (useInput.getState().overview && refs.imouto) {
-      // デバッグ俯瞰：妹の斜め上から全体を見る
       const im = st.mode === 'ground' && refs.bro ? refs.bro.position : refs.imouto.position
       const dist = st.mode === 'ground' ? 0.35 : 1
       camera.position.set(im.x + 160 * dist, 220 * dist, im.z - 260 * dist)
@@ -130,11 +144,11 @@ export function CameraRig() {
       smoothedLook.current.copy(desiredLook)
       init.current = true
     }
+    // オービットはマウス直結なので位置は即応、注視点だけ軽くなめらかに
     const k = snap ? 1 : Math.min(1, CAMERA.followLerp * dt)
-    camera.position.lerp(desiredPos, k)
-    smoothedLook.current.lerp(desiredLook, k)
+    camera.position.copy(desiredPos)
+    smoothedLook.current.lerp(desiredLook, snap ? 1 : Math.min(1, k * 3))
 
-    // シェイク
     shake.current = Math.max(0, shake.current - CAMERA.shakeDecay * dt * shake.current - dt * 0.2)
     shakeT.current += dt * 40
     const amp = shake.current * CAMERA.shakeAmp * (st.mode === 'shoulder' ? 6 : 1)
