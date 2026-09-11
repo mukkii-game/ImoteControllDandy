@@ -1,5 +1,6 @@
 import { CAMERA } from '../config/game'
 import { refs } from './refs'
+import { useGame } from './store'
 import * as THREE from 'three'
 
 /**
@@ -22,7 +23,8 @@ export function bindMouse(el: HTMLElement): () => void {
     else if (dragging) apply(e.movementX, e.movementY, CAMERA.mouseSensitivity)
   }
   const onMouseDown = (e: MouseEvent) => {
-    if ((e.target as HTMLElement).closest('.stick, .buttons')) return
+    if ((e.target as HTMLElement).closest('.stick, .buttons, .tune')) return
+    if (useGame.getState().tuneOpen) return
     dragging = true
     if (document.pointerLockElement !== el) el.requestPointerLock?.()
   }
@@ -32,7 +34,7 @@ export function bindMouse(el: HTMLElement): () => void {
   const onTouchStart = (e: TouchEvent) => {
     for (const t of Array.from(e.changedTouches)) {
       const target = document.elementFromPoint(t.clientX, t.clientY)
-      if (target?.closest('.stick, .buttons')) continue
+      if (target?.closest('.stick, .buttons, .tune')) continue
       if (touchId === null) {
         touchId = t.identifier
         lastX = t.clientX

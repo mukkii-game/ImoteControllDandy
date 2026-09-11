@@ -150,6 +150,12 @@ export function Imouto() {
       raycaster.far = pr.far * H
       const hits = raycaster.intersectObjects(probeTargets.current, false)
       const target = hits.length > 0 ? hits[0].point.clone() : probeOrigin.clone().setY(boneWorld.y + IMOUTO.shoulderFallbackUp * H)
+      // 手動オフセット（妹の向き基準）
+      const seat = IMOUTO.broSeat
+      const yaw = g.rotation.y
+      target.x += Math.sin(yaw) * seat.forward - inward.x * seat.outward
+      target.z += Math.cos(yaw) * seat.forward - inward.z * seat.outward
+      target.y += seat.up
       chestRef.current?.worldToLocal(target)
       anchorTarget.current = target
     }

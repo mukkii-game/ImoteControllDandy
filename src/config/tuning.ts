@@ -52,6 +52,9 @@ export const TUNE_GROUPS: { title: string; items: TuneItem[] }[] = [
     items: [
       { path: 'IMOUTO.shoulderProbe.inward', label: '首寄り', min: -0.03, max: 0.05, step: 0.001 },
       { path: 'IMOUTO.shoulderProbe.up', label: '探索の高さ', min: 0.02, max: 0.2, step: 0.005 },
+      { path: 'IMOUTO.broSeat.forward', label: '兄 前後 m', min: -6, max: 6, step: 0.1 },
+      { path: 'IMOUTO.broSeat.outward', label: '兄 内外 m', min: -6, max: 6, step: 0.1 },
+      { path: 'IMOUTO.broSeat.up', label: '兄 上下 m', min: -4, max: 4, step: 0.1 },
     ],
   },
   {

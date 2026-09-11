@@ -62,6 +62,8 @@ export const IMOUTO = {
   shoulderProbeInterval: 0.2,
   /** アンカーがレイ結果へ寄る速さ */
   shoulderFollowLerp: 6,
+  /** 兄の立ち位置の微調整（m、妹の向き基準）：forward=前、outward=肩先側、up=上 */
+  broSeat: { forward: 0, outward: 0, up: 0 },
   /** 着地の揺れの強さ */
   stepShake: 1.0,
   /** 髪（スプリングボーン）：スケール補正に掛ける倍率と抵抗。ロード時のウォームアップ歩数 */
