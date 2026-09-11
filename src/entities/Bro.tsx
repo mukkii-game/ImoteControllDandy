@@ -7,7 +7,7 @@ import { refs, shoulderWorld } from '../systems/refs'
 import { useGame } from '../systems/store'
 import { useVRM } from '../systems/loaders'
 import { emit } from '../systems/events'
-import { applyWalk } from '../systems/procAnim'
+import { applyWalk, applyShoulderPose } from '../systems/procAnim'
 
 const v = new THREE.Vector3()
 const target = new THREE.Vector3()
@@ -24,6 +24,9 @@ export function Bro() {
   const vy = useRef(0)
   const phase = useRef(0)
   const runRatio = useRef(0)
+  /** 肩上の指示：null=腕組み, 0=前, -1=左, 1=右 */
+  const steer = useRef<number | null>(null)
+  const poseBlend = useRef(0)
   const vrm = useVRM(MODELS.bro)
   const setLoaded = useGame((s) => s.setLoaded)
 
@@ -136,6 +139,8 @@ export function Bro() {
         g.position.copy(v)
         yawRef.current = refs.imouto?.rotation.y ?? 0
         g.rotation.y = yawRef.current
+        const m = readMove()
+        steer.current = m.y > 0.2 ? (m.x > 0.3 ? 1 : m.x < -0.3 ? -1 : 0) : m.x > 0.3 ? 1 : m.x < -0.3 ? -1 : m.y > 0.2 ? 0 : null
         if (pressedB) {
           refs.mountStart.copy(g.position)
           st.setTransition(0)
@@ -172,22 +177,22 @@ export function Bro() {
     refs.broYaw = yawRef.current
 
     if (vrm) {
-      runRatio.current += (moving - runRatio.current) * Math.min(1, 10 * dt)
-      if (runRatio.current > 0.02) phase.current += (dt / BRO.stepPeriod) * Math.PI * 2 * Math.max(0.5, runRatio.current)
-      applyWalk(vrm, phase.current, runRatio.current, BRO.walk, modelHeight)
+      const onShoulder = st.mode === 'shoulder'
+      poseBlend.current += ((onShoulder ? 1 : 0) - poseBlend.current) * Math.min(1, 8 * dt)
+      if (poseBlend.current > 0.5) {
+        applyShoulderPose(vrm, steer.current, dt)
+      } else {
+        runRatio.current += (moving - runRatio.current) * Math.min(1, 10 * dt)
+        if (runRatio.current > 0.02) phase.current += (dt / BRO.stepPeriod) * Math.PI * 2 * Math.max(0.5, runRatio.current)
+        applyWalk(vrm, phase.current, runRatio.current, BRO.walk, modelHeight)
+      }
       vrm.update(dt)
     }
   })
 
-  const h = SCALE.broHeight
   return (
     <group ref={group} position={[0, 0, 60]}>
       {vrm && <primitive object={vrm.scene} scale={scale} />}
-      {/* マフラー（ライダー感）。後ろにたなびく */}
-      <mesh position={[0, h * 0.84, -0.2]} rotation={[0.35, 0, 0]} castShadow>
-        <boxGeometry args={[0.3, 0.08, 0.6]} />
-        <meshToonMaterial color={BRO.scarfColor} />
-      </mesh>
     </group>
   )
 }

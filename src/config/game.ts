@@ -3,7 +3,7 @@
 export const SCALE = {
   /** 1ユニット = 1m */
   imoutoHeight: 60,
-  broHeight: 1.8,
+  broHeight: 3.6, // 見た目優先で2倍（仕様は1.8）
 } as const
 
 export const MODELS = {
@@ -53,6 +53,9 @@ export const IMOUTO = {
   walk: { legSwing: 0.55, kneeBend: 0.5, armSwing: 0.35, armDown: 1.25, bodyBob: 0.012, lean: 0.06 },
   /** 肩アンカー：左上腕ボーン（肩関節）からのオフセット（モデルローカル、m） */
   shoulderOffset: { x: -0.005, y: 0.05, z: 0.0 },
+  /** 肩の表面をレイキャストで探す：上腕ボーンからこの位置（モデルローカル m）の上方から下向きに撃つ */
+  shoulderProbe: { x: -0.02, up: 0.3, z: 0.0 },
+  shoulderProbeInterval: 0.25,
   /** 着地の揺れの強さ */
   stepShake: 1.0,
 } as const

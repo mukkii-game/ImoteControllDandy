@@ -9,6 +9,10 @@ import { readMove } from '../systems/input'
 import { emit } from '../systems/events'
 import { applyWalk } from '../systems/procAnim'
 
+const raycaster = new THREE.Raycaster()
+const DOWN = new THREE.Vector3(0, -1, 0)
+const probeOrigin = new THREE.Vector3()
+
 /**
  * 妹。VRM を身長 60m にスケール。歩行は手続きアニメ。
  * 肩上モードのとき WASD でリモコン操作（前進／旋回）。地上モードでは立ち止まる。
@@ -19,6 +23,9 @@ export function Imouto() {
   const speed = useRef(0)
   const phase = useRef(0)
   const lastStepSide = useRef(0)
+  const probeTimer = useRef(0)
+  const anchorRef = useRef<THREE.Object3D | null>(null)
+  const boneRef = useRef<THREE.Object3D | null>(null)
   const setLoaded = useGame((s) => s.setLoaded)
 
   const modelHeight = useMemo(() => {
@@ -46,6 +53,8 @@ export function Imouto() {
     anchor.position.set(o.x, o.y, o.z)
     bone?.add(anchor)
     refs.shoulder = anchor
+    anchorRef.current = anchor
+    boneRef.current = bone ?? null
     refs.head = vrm.humanoid.getNormalizedBoneNode('head')
     setLoaded('imouto')
     return () => {
@@ -75,6 +84,24 @@ export function Imouto() {
       lastStepSide.current = side
     }
     vrm.update(dt)
+
+    // 肩の表面をレイキャストで探し、アンカーをそこへ（兄がめり込まず・浮かず乗る）
+    probeTimer.current -= dt
+    if (probeTimer.current <= 0 && boneRef.current && anchorRef.current) {
+      probeTimer.current = IMOUTO.shoulderProbeInterval
+      const bone = boneRef.current
+      const pr = IMOUTO.shoulderProbe
+      probeOrigin.set(pr.x, pr.up, pr.z)
+      bone.localToWorld(probeOrigin)
+      raycaster.set(probeOrigin, DOWN)
+      raycaster.far = SCALE.imoutoHeight * 0.5
+      const hits = raycaster.intersectObject(vrm.scene, true)
+      if (hits.length > 0) {
+        const p = hits[0].point.clone()
+        bone.worldToLocal(p)
+        anchorRef.current.position.copy(p)
+      }
+    }
   })
 
   return (

@@ -40,3 +40,46 @@ export function applyWalk(vrm: VRM, phase: number, ratio: number, p: WalkParams,
   }
   set('spine', p.lean * ratio)
 }
+
+const lerpTo = (n: { rotation: { x: number; y: number; z: number } } | null, x: number, y: number, z: number, k: number) => {
+  if (!n) return
+  n.rotation.x += (x - n.rotation.x) * k
+  n.rotation.y += (y - n.rotation.y) * k
+  n.rotation.z += (z - n.rotation.z) * k
+}
+
+/**
+ * 肩上ポーズ。steer=null で腕組み、0 で前を指す、-1/1 で左右を指す。
+ * VRM の腕は Tポーズ基準。左腕は +X 方向に伸びる。
+ */
+export function applyShoulderPose(vrm: VRM, steer: number | null, dt: number) {
+  const h = vrm.humanoid
+  const k = Math.min(1, 12 * dt)
+  const b = (n: VRMHumanBoneName) => h.getNormalizedBoneNode(n)
+  // 脚は直立、体は少し反らす
+  lerpTo(b('leftUpperLeg'), 0, 0, 0, k)
+  lerpTo(b('rightUpperLeg'), 0, 0, 0, k)
+  lerpTo(b('leftLowerLeg'), 0, 0, 0, k)
+  lerpTo(b('rightLowerLeg'), 0, 0, 0, k)
+  lerpTo(b('spine'), -0.12, 0, 0, k)
+  const hips = b('hips')
+  if (hips) {
+    const base = (hips.userData.baseY ??= hips.position.y) as number
+    hips.position.y = base
+  }
+  if (steer === null) {
+    // 腕組み：上腕を下ろして前へ、前腕を胸の前で交差
+    lerpTo(b('leftUpperArm'), -0.9, 0, -1.15, k)
+    lerpTo(b('rightUpperArm'), -0.9, 0, 1.15, k)
+    lerpTo(b('leftLowerArm'), 0, -2.3, -0.3, k)
+    lerpTo(b('rightLowerArm'), 0, 2.3, 0.3, k)
+    return
+  }
+  // 右腕で指差し。前=0、左右は yaw で振る
+  const yaw = steer * 1.1
+  lerpTo(b('rightUpperArm'), -1.5, yaw, 0.1, k)
+  lerpTo(b('rightLowerArm'), 0, 0, 0, k)
+  // 左腕は腰に
+  lerpTo(b('leftUpperArm'), -0.3, 0, -1.2, k)
+  lerpTo(b('leftLowerArm'), 0, -1.6, -0.2, k)
+}
