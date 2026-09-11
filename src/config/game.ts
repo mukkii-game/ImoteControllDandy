@@ -53,8 +53,10 @@ export const IMOUTO = {
   walk: { legSwing: 0.55, kneeBend: 0.5, armSwing: 0.35, armDown: 1.25, bodyBob: 0.012, lean: 0.06 },
   /** 肩アンカー：左上腕ボーン（肩関節）からのオフセット（モデルローカル、m） */
   shoulderOffset: { x: -0.005, y: 0.05, z: 0.0 },
-  /** 肩の表面をレイキャストで探す：上腕ボーンからこの位置（モデルローカル m）の上方から下向きに撃つ */
-  shoulderProbe: { x: -0.02, up: 0.3, z: 0.0 },
+  /** 肩の表面をレイキャストで探す（身長比）。肩関節から頭方向へ inward、真上 up の点から下向きに撃つ */
+  shoulderProbe: { inward: 0.012, up: 0.08, far: 0.2 },
+  /** レイが当たらない時の高さ（肩関節から、身長比） */
+  shoulderFallbackUp: 0.025,
   shoulderProbeInterval: 0.25,
   /** 着地の揺れの強さ */
   stepShake: 1.0,

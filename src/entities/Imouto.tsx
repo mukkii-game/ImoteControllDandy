@@ -12,6 +12,9 @@ import { applyWalk } from '../systems/procAnim'
 const raycaster = new THREE.Raycaster()
 const DOWN = new THREE.Vector3(0, -1, 0)
 const probeOrigin = new THREE.Vector3()
+const boneWorld = new THREE.Vector3()
+const headWorld = new THREE.Vector3()
+const inward = new THREE.Vector3()
 
 /**
  * 妹。VRM を身長 60m にスケール。歩行は手続きアニメ。
@@ -87,20 +90,25 @@ export function Imouto() {
 
     // 肩の表面をレイキャストで探し、アンカーをそこへ（兄がめり込まず・浮かず乗る）
     probeTimer.current -= dt
-    if (probeTimer.current <= 0 && boneRef.current && anchorRef.current) {
+    if (probeTimer.current <= 0 && boneRef.current && anchorRef.current && refs.head) {
       probeTimer.current = IMOUTO.shoulderProbeInterval
       const bone = boneRef.current
+      const H = SCALE.imoutoHeight
       const pr = IMOUTO.shoulderProbe
-      probeOrigin.set(pr.x, pr.up, pr.z)
-      bone.localToWorld(probeOrigin)
+      bone.getWorldPosition(boneWorld)
+      refs.head.getWorldPosition(headWorld)
+      // 肩関節から頭へ向かう水平方向
+      inward.subVectors(headWorld, boneWorld)
+      inward.y = 0
+      inward.normalize()
+      probeOrigin.copy(boneWorld).addScaledVector(inward, pr.inward * H)
+      probeOrigin.y += pr.up * H
       raycaster.set(probeOrigin, DOWN)
-      raycaster.far = SCALE.imoutoHeight * 0.5
+      raycaster.far = pr.far * H
       const hits = raycaster.intersectObject(vrm.scene, true)
-      if (hits.length > 0) {
-        const p = hits[0].point.clone()
-        bone.worldToLocal(p)
-        anchorRef.current.position.copy(p)
-      }
+      const target = hits.length > 0 ? hits[0].point.clone() : probeOrigin.clone().setY(boneWorld.y + IMOUTO.shoulderFallbackUp * H)
+      bone.worldToLocal(target)
+      anchorRef.current.position.copy(target)
     }
   })
 
