@@ -7,14 +7,57 @@ export const SCALE = {
   broHeight: 3.6, // 見た目優先で2倍（仕様は1.8）
 }
 
+export interface ModelChoice {
+  id: string
+  label: string
+  url: string
+  /** クレジット表記（タイトル/README 用） */
+  credit: string
+  /** 非表示にするマテリアル名（部分一致） */
+  hideMaterials?: readonly string[]
+  /** 色替え（Seed-san 用） */
+  tintMaterials?: readonly string[]
+  tintColor?: string
+}
+
 /**
- * モデル候補。先頭から順に存在するものを使う。
- * 差し替えは public/models/custom/imouto.vrm・bro.vrm を置くだけ（コード変更不要）。
+ * モデル候補。Esc の調整パネルから切り替え。ファイルが無ければ次の候補へ。
+ * 追加するときは public/models/ に置いて、ここに1行足す。
  */
-export const MODELS = {
-  imouto: ['models/custom/imouto.vrm', 'models/VRM1_Twist_Sample.vrm'],
-  bro: ['models/custom/bro.vrm', 'models/Seed-san.vrm'],
-} as const
+export const MODEL_CHOICES: { imouto: ModelChoice[]; bro: ModelChoice[] } = {
+  imouto: [
+    {
+      id: 'vroid-default',
+      label: 'VRoid デフォルト（ショート）',
+      url: 'models/custom/imouto.vrm',
+      credit: 'VRoid Hub モデル（作者名：要記入）',
+    },
+    {
+      id: 'pixiv-sample',
+      label: 'pixiv サンプル（ロング）',
+      url: 'models/VRM1_Twist_Sample.vrm',
+      credit: 'VRM1_Constraint_Twist_Sample (c) pixiv Inc.',
+      hideMaterials: ['HairBack'],
+    },
+  ],
+  bro: [
+    {
+      id: 'custom',
+      label: 'カスタム（models/custom/bro.vrm）',
+      url: 'models/custom/bro.vrm',
+      credit: '',
+    },
+    {
+      id: 'seed-san',
+      label: 'Seed-san（学生服風に色替え）',
+      url: 'models/Seed-san.vrm',
+      credit: 'Seed-san by VirtualCast, Inc.',
+      hideMaterials: ['backpack', 'anim_logo'],
+      tintMaterials: ['huku', 'arm_mat', 'arm_plastic', 'armgear', 'wear_metal'],
+      tintColor: '#1c2140',
+    },
+  ],
+}
 
 export const BRO = {
   walkSpeed: 4,
@@ -36,12 +79,6 @@ export const BRO = {
   walk: { legSwing: 0.9, kneeBend: 1.2, armSwing: 0.8, armDown: 1.2, bodyBob: 0.03, lean: 0.25, straightArms: false },
   /** マフラーの色 */
   scarfColor: '#e0312b',
-  /** 学生服風に寄せる色（テクスチャに乗算） */
-  uniformColor: '#1c2140',
-  /** 色替えするマテリアル名（部分一致） */
-  tintMaterials: ['huku', 'arm_mat', 'arm_plastic', 'armgear', 'wear_metal'],
-  /** 非表示にするマテリアル名（部分一致） */
-  hideMaterials: ['backpack', 'anim_logo'],
 }
 
 export const IMOUTO = {
@@ -75,8 +112,6 @@ export const IMOUTO = {
   hairGravityScale: 1.0,
   hairDrag: 0.7,
   hairWarmupSteps: 120,
-  /** 非表示にするマテリアル名（部分一致）。後ろ髪を消してショートにし、肩の兄が隠れないようにする */
-  hideMaterials: ['HairBack'],
 }
 
 export const CAMERA = {

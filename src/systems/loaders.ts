@@ -33,32 +33,40 @@ export async function loadVRM(url: string): Promise<VRM> {
   return vrm
 }
 
-/** 候補 URL のうち最初に存在するものを返す */
-async function firstAvailable(urls: readonly string[]): Promise<string> {
-  for (const u of urls) {
+/** 候補のうち最初にファイルが存在するものを返す */
+async function firstAvailable<T extends { url: string }>(items: readonly T[]): Promise<T> {
+  for (const it of items) {
     try {
-      const r = await fetch(u, { method: 'HEAD' })
-      if (r.ok) return u
+      const r = await fetch(it.url, { method: 'HEAD' })
+      // SPA サーバーは無いパスにも index.html を 200 で返すので content-type で弾く
+      if (r.ok && !(r.headers.get('content-type') ?? '').includes('text/html')) return it
     } catch {
       /* try next */
     }
   }
-  return urls[urls.length - 1]
+  return items[items.length - 1]
 }
 
-export function useVRM(urls: readonly string[]): VRM | null {
-  const [vrm, setVrm] = useState<VRM | null>(null)
-  const key = urls.join('|')
+/** 候補（選択中→フォールバック順）から読み込む。返る choice は実際に使えたもの */
+export function useVRM<T extends { url: string }>(items: readonly T[]): { vrm: VRM | null; choice: T | null } {
+  const [state, setState] = useState<{ vrm: VRM | null; choice: T | null }>({ vrm: null, choice: null })
+  const key = items.map((i) => i.url).join('|')
   useEffect(() => {
     let alive = true
-    const urls = key.split('|')
-    firstAvailable(urls).then(loadVRM).then((v) => {
-      if (alive) setVrm(v)
-      else VRMUtils.deepDispose(v.scene)
+    let loaded: VRM | null = null
+    setState({ vrm: null, choice: null })
+    firstAvailable(items).then(async (choice) => {
+      const v = await loadVRM(choice.url)
+      if (alive) {
+        loaded = v
+        setState({ vrm: v, choice })
+      } else VRMUtils.deepDispose(v.scene)
     })
     return () => {
       alive = false
+      if (loaded) VRMUtils.deepDispose(loaded.scene)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key])
-  return vrm
+  return state
 }

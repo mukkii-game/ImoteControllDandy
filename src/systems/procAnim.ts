@@ -1,5 +1,6 @@
 import type { VRM } from '@pixiv/three-vrm'
 import type { VRMHumanBoneName } from '@pixiv/three-vrm'
+import * as THREE from 'three'
 
 export interface WalkParams {
   legSwing: number
@@ -11,6 +12,28 @@ export interface WalkParams {
   lean: number
   /** 肘を曲げずにピンと伸ばす（子どもの行進風） */
   straightArms: boolean
+}
+
+const _a = new THREE.Vector3()
+const _b = new THREE.Vector3()
+/**
+ * 左腕がモデルローカルでどちらを向いているか（+1 = +X、-1 = -X）。
+ * VRM 0.x と 1.0 で逆になるので、腕の回転符号をこれで合わせる。初回に実測してキャッシュ。
+ */
+export function armSign(vrm: VRM): number {
+  const cached = vrm.scene.userData.armSign as number | undefined
+  if (cached !== undefined) return cached
+  const up = vrm.humanoid.getNormalizedBoneNode('leftUpperArm')
+  const lo = vrm.humanoid.getNormalizedBoneNode('leftLowerArm')
+  if (!up || !lo) return 1
+  vrm.scene.updateMatrixWorld(true)
+  up.getWorldPosition(_a)
+  lo.getWorldPosition(_b)
+  vrm.scene.worldToLocal(_a)
+  vrm.scene.worldToLocal(_b)
+  const sgn = _b.x - _a.x >= 0 ? 1 : -1
+  vrm.scene.userData.armSign = sgn
+  return sgn
 }
 
 /**
@@ -29,13 +52,14 @@ export function applyWalk(vrm: VRM, phase: number, ratio: number, p: WalkParams,
   set('rightUpperLeg', -swing)
   set('leftLowerLeg', Math.max(0, -s) * p.kneeBend * ratio)
   set('rightLowerLeg', Math.max(0, s) * p.kneeBend * ratio)
-  // VRM は +X が左。腕は Z 回転で下ろす（左は負、右は正）
+  // 腕は Z 回転で下ろす。左右の向きは armSign で吸収（VRM0/1 の差）
+  const g = armSign(vrm)
   const arm = s * p.armSwing * ratio
-  set('leftUpperArm', -arm, 0, -p.armDown)
-  set('rightUpperArm', arm, 0, p.armDown)
+  set('leftUpperArm', -arm * g, 0, -p.armDown * g)
+  set('rightUpperArm', arm * g, 0, p.armDown * g)
   const elbow = p.straightArms ? 0.05 : 0.25 + ratio * 0.6
-  set('leftLowerArm', 0, 0, -elbow)
-  set('rightLowerArm', 0, 0, elbow)
+  set('leftLowerArm', 0, 0, -elbow * g)
+  set('rightLowerArm', 0, 0, elbow * g)
   const hips = h.getNormalizedBoneNode('hips')
   if (hips) {
     const base = (hips.userData.baseY ??= hips.position.y) as number
@@ -70,21 +94,22 @@ export function applyShoulderPose(vrm: VRM, steer: number | null, dt: number) {
     const base = (hips.userData.baseY ??= hips.position.y) as number
     hips.position.y = base
   }
+  const g = armSign(vrm)
   if (steer === null) {
     // 腕組み：上腕を下ろして前へ、前腕を胸の前で交差
-    lerpTo(b('leftUpperArm'), -0.9, 0, -1.15, k)
-    lerpTo(b('rightUpperArm'), -0.9, 0, 1.15, k)
-    lerpTo(b('leftLowerArm'), 0, -2.3, -0.3, k)
-    lerpTo(b('rightLowerArm'), 0, 2.3, 0.3, k)
+    lerpTo(b('leftUpperArm'), -0.9 * g, 0, -1.15 * g, k)
+    lerpTo(b('rightUpperArm'), -0.9 * g, 0, 1.15 * g, k)
+    lerpTo(b('leftLowerArm'), 0, -2.3 * g, -0.3 * g, k)
+    lerpTo(b('rightLowerArm'), 0, 2.3 * g, 0.3 * g, k)
     return
   }
   // 右腕で指差し。前=0、左右は yaw で振る
   const yaw = steer * 1.1
-  lerpTo(b('rightUpperArm'), -1.5, yaw, 0.1, k)
+  lerpTo(b('rightUpperArm'), -1.5 * g, yaw, 0.1 * g, k)
   lerpTo(b('rightLowerArm'), 0, 0, 0, k)
   // 左腕は腰に
-  lerpTo(b('leftUpperArm'), -0.3, 0, -1.2, k)
-  lerpTo(b('leftLowerArm'), 0, -1.6, -0.2, k)
+  lerpTo(b('leftUpperArm'), -0.3 * g, 0, -1.2 * g, k)
+  lerpTo(b('leftLowerArm'), 0, -1.6 * g, -0.2 * g, k)
 }
 
 /** 子どもっぽい笑顔＋まばたき。walkRatio が高いほど口が開く */

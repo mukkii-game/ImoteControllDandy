@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { IMOUTO, MODELS, SCALE } from '../config/game'
+import { IMOUTO, SCALE } from '../config/game'
+import { useModels, candidates } from '../systems/models'
 import { useVRM } from '../systems/loaders'
 import { refs } from '../systems/refs'
 import { useGame } from '../systems/store'
@@ -22,7 +23,9 @@ const inward = new THREE.Vector3()
  */
 export function Imouto() {
   const group = useRef<THREE.Group>(null!)
-  const vrm = useVRM(MODELS.imouto)
+  const selected = useModels((s) => s.imouto)
+  const setResolved = useModels((s) => s.setResolved)
+  const { vrm, choice } = useVRM(candidates('imouto', selected))
   const speed = useRef(0)
   const phase = useRef(0)
   const lastStepSide = useRef(0)
@@ -79,7 +82,7 @@ export function Imouto() {
       const m = o as THREE.Mesh
       if (!m.isMesh) return
       const mats = Array.isArray(m.material) ? m.material : [m.material]
-      if (mats.some((mm) => IMOUTO.hideMaterials.some((k) => (mm.name ?? '').includes(k)))) m.visible = false
+      if (mats.some((mm) => (choice?.hideMaterials ?? []).some((k) => (mm.name ?? '').includes(k)))) m.visible = false
       if (mats.some((mm) => /hair/i.test(mm.name ?? ''))) return
       targets.push(m)
     })
@@ -95,10 +98,11 @@ export function Imouto() {
     }
     warmedUp.current = false
     setLoaded('imouto')
+    if (choice) setResolved('imouto', choice)
     return () => {
       anchor.removeFromParent()
     }
-  }, [vrm, setLoaded])
+  }, [vrm, choice, setLoaded, setResolved, scale])
 
   useFrame((_, dt) => {
     if (!vrm) return

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { BRO, MODELS, SCALE } from '../config/game'
+import { BRO, SCALE } from '../config/game'
+import { useModels, candidates } from '../systems/models'
 import { readMove, useInput } from '../systems/input'
 import { refs, shoulderWorld } from '../systems/refs'
 import { useGame } from '../systems/store'
@@ -27,7 +28,9 @@ export function Bro() {
   /** 肩上の指示：null=腕組み, 0=前, -1=左, 1=右 */
   const steer = useRef<number | null>(null)
   const poseBlend = useRef(0)
-  const vrm = useVRM(MODELS.bro)
+  const selected = useModels((s) => s.bro)
+  const setResolved = useModels((s) => s.setResolved)
+  const { vrm, choice } = useVRM(candidates('bro', selected))
   const setLoaded = useGame((s) => s.setLoaded)
   const tuneVersion = useGame((s) => s.tuneVersion)
 
@@ -48,16 +51,18 @@ export function Bro() {
 
   useEffect(() => {
     if (!vrm) return
-    // 服・ロボ腕・バックパックを学生服色に寄せる（テクスチャに色を乗算）
-    const tint = new THREE.Color(BRO.uniformColor)
+    // モデルごとの非表示・色替え（Seed-san の学生服風など）
+    const tint = new THREE.Color(choice?.tintColor ?? '#ffffff')
+    const hide = choice?.hideMaterials ?? []
+    const tints = choice?.tintMaterials ?? []
     vrm.scene.traverse((o) => {
       const mesh = o as THREE.Mesh
       if (!mesh.isMesh) return
       const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
       for (const m of mats) {
         const name = m.name ?? ''
-        if (BRO.hideMaterials.some((k) => name.includes(k))) mesh.visible = false
-        if (BRO.tintMaterials.some((k) => name.includes(k))) {
+        if (hide.some((k) => name.includes(k))) mesh.visible = false
+        if (tints.some((k) => name.includes(k))) {
           const mm = m as THREE.Material & { color?: THREE.Color; shadeColorFactor?: THREE.Color }
           mm.color?.copy(tint)
           mm.shadeColorFactor?.copy(tint).multiplyScalar(0.55)
@@ -65,7 +70,8 @@ export function Bro() {
       }
     })
     setLoaded('bro')
-  }, [vrm, setLoaded])
+    if (choice) setResolved('bro', choice)
+  }, [vrm, choice, setLoaded, setResolved])
 
   useFrame((_, dt) => {
     const g = group.current

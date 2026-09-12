@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { TUNE_GROUPS, getTune, setTune, resetTune, diffTune, saveTune, loadTune } from '../config/tuning'
 import { useGame } from '../systems/store'
+import { useModels } from '../systems/models'
+import { MODEL_CHOICES } from '../config/game'
 
 /** Esc で開閉。スライダーで config の数値をその場で書き換える。変更分は JSON でコピーできる */
 export function TunePanel() {
@@ -9,6 +11,7 @@ export function TunePanel() {
   const bump = useGame((s) => s.bumpTune)
   const [, force] = useState(0)
   const [copied, setCopied] = useState(false)
+  const models = useModels()
 
   useEffect(() => {
     loadTune()
@@ -71,6 +74,22 @@ export function TunePanel() {
         </button>
       </div>
       <div className="tune-body">
+        <div className="tune-group">
+          <div className="tune-title">モデル</div>
+          {(['imouto', 'bro'] as const).map((who) => (
+            <label key={who} className="tune-row tune-row-select">
+              <span>{who === 'imouto' ? '妹' : '兄'}</span>
+              <select value={models[who]} onChange={(e) => models.select(who, e.target.value)}>
+                {MODEL_CHOICES[who].map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ))}
+          <div className="tune-note">ファイルが無い候補は次の候補に自動で切り替わります</div>
+        </div>
         {TUNE_GROUPS.map((g) => (
           <div key={g.title} className="tune-group">
             <div className="tune-title">{g.title}</div>
