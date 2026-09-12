@@ -33,17 +33,32 @@ export async function loadVRM(url: string): Promise<VRM> {
   return vrm
 }
 
-export function useVRM(url: string): VRM | null {
+/** 候補 URL のうち最初に存在するものを返す */
+async function firstAvailable(urls: readonly string[]): Promise<string> {
+  for (const u of urls) {
+    try {
+      const r = await fetch(u, { method: 'HEAD' })
+      if (r.ok) return u
+    } catch {
+      /* try next */
+    }
+  }
+  return urls[urls.length - 1]
+}
+
+export function useVRM(urls: readonly string[]): VRM | null {
   const [vrm, setVrm] = useState<VRM | null>(null)
+  const key = urls.join('|')
   useEffect(() => {
     let alive = true
-    loadVRM(url).then((v) => {
+    const urls = key.split('|')
+    firstAvailable(urls).then(loadVRM).then((v) => {
       if (alive) setVrm(v)
       else VRMUtils.deepDispose(v.scene)
     })
     return () => {
       alive = false
     }
-  }, [url])
+  }, [key])
   return vrm
 }

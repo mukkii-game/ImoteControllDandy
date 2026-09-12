@@ -7,9 +7,13 @@ export const SCALE = {
   broHeight: 3.6, // 見た目優先で2倍（仕様は1.8）
 }
 
+/**
+ * モデル候補。先頭から順に存在するものを使う。
+ * 差し替えは public/models/custom/imouto.vrm・bro.vrm を置くだけ（コード変更不要）。
+ */
 export const MODELS = {
-  imouto: 'models/VRM1_Twist_Sample.vrm',
-  bro: 'models/Seed-san.vrm',
+  imouto: ['models/custom/imouto.vrm', 'models/VRM1_Twist_Sample.vrm'],
+  bro: ['models/custom/bro.vrm', 'models/Seed-san.vrm'],
 } as const
 
 export const BRO = {
@@ -69,8 +73,10 @@ export const IMOUTO = {
   /** 髪（スプリングボーン）：スケール補正に掛ける倍率と抵抗。ロード時のウォームアップ歩数 */
   hairStiffnessScale: 1.0,
   hairGravityScale: 1.0,
-  hairDrag: 0.45,
+  hairDrag: 0.7,
   hairWarmupSteps: 120,
+  /** 非表示にするマテリアル名（部分一致）。後ろ髪を消してショートにし、肩の兄が隠れないようにする */
+  hideMaterials: ['HairBack'],
 }
 
 export const CAMERA = {

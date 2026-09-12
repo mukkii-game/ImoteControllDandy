@@ -79,6 +79,7 @@ export function Imouto() {
       const m = o as THREE.Mesh
       if (!m.isMesh) return
       const mats = Array.isArray(m.material) ? m.material : [m.material]
+      if (mats.some((mm) => IMOUTO.hideMaterials.some((k) => (mm.name ?? '').includes(k)))) m.visible = false
       if (mats.some((mm) => /hair/i.test(mm.name ?? ''))) return
       targets.push(m)
     })
