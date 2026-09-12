@@ -97,7 +97,7 @@ export const IMOUTO = {
   /** 表情：口を大きく開けた笑顔（happy＋aa）。歩行中は少し強める */
   face: { happy: 0.4, mouthOpen: 0.55, mouthOpenWalk: 0.8, blinkPeriod: 3.5 },
   /** 肩の表面をレイキャストで探す（身長比）。肩関節から頭方向へ inward、真上 up の点から下向きに撃つ */
-  shoulderProbe: { inward: 0.012, up: 0.08, far: 0.2 },
+  shoulderProbe: { inward: 0.012, up: 0.08, far: 0.2, belowHead: 0.01, maxAbove: 0.05 },
   /** レイが当たらない時の高さ（肩関節から、身長比） */
   shoulderFallbackUp: 0.025,
   shoulderProbeInterval: 0.2,

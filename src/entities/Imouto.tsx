@@ -84,7 +84,9 @@ export function Imouto() {
       if (!m.isMesh) return
       const mats = Array.isArray(m.material) ? m.material : [m.material]
       if (mats.some((mm) => (choice?.hideMaterials ?? []).some((k) => (mm.name ?? '').includes(k)))) m.visible = false
-      if (mats.some((mm) => /hair/i.test(mm.name ?? ''))) return
+      // 髪・顔は対象外（子ども体型だと頬に当たって耳の位置に乗ってしまう）
+      if (mats.some((mm) => /hair|face|eye|brow|mouth/i.test(mm.name ?? ''))) return
+      if (/face|hair/i.test(m.name)) return
       targets.push(m)
     })
     probeTargets.current = targets
@@ -161,7 +163,10 @@ export function Imouto() {
       probeOrigin.y += pr.up * H
       raycaster.set(probeOrigin, DOWN)
       raycaster.far = pr.far * H
-      const hits = raycaster.intersectObjects(probeTargets.current, false)
+      // 肩関節より少し上〜頭ボーンより下の範囲の当たりだけ採用
+      const hits = raycaster
+        .intersectObjects(probeTargets.current, false)
+        .filter((h) => h.point.y < headWorld.y - IMOUTO.shoulderProbe.belowHead * H && h.point.y < boneWorld.y + IMOUTO.shoulderProbe.maxAbove * H)
       const target = hits.length > 0 ? hits[0].point.clone() : probeOrigin.clone().setY(boneWorld.y + IMOUTO.shoulderFallbackUp * H)
       // 手動オフセット（妹の向き基準）
       const seat = IMOUTO.broSeat
