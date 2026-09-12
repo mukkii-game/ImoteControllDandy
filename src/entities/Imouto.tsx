@@ -4,6 +4,7 @@ import * as THREE from 'three'
 import { IMOUTO, SCALE } from '../config/game'
 import { useModels, candidates } from '../systems/models'
 import { useVRM } from '../systems/loaders'
+import { VRMSpringBoneCollider, VRMSpringBoneColliderShapeSphere } from '@pixiv/three-vrm'
 import { refs } from '../systems/refs'
 import { useGame } from '../systems/store'
 import { readMove } from '../systems/input'
@@ -90,10 +91,17 @@ export function Imouto() {
     // スプリングボーン（髪）の力は世界座標で効くので、巨大化した分だけ強くしないと動きが鈍い
     const sb = vrm.springBoneManager
     if (sb) {
+      // 兄の立ち位置に球コライダーを置き、髪の房が兄を避けて垂れるようにする（アンカーの子＝肩表面に追従）
+      const r = IMOUTO.broHairColliderRadius / scale
+      const collider = new VRMSpringBoneCollider(new VRMSpringBoneColliderShapeSphere({ radius: r, offset: new THREE.Vector3(0, IMOUTO.broHairColliderUp / scale, 0) }))
+      anchor.add(collider)
+      const group = { name: 'bro', colliders: [collider] }
       for (const j of sb.joints) {
         j.settings.stiffness *= scale * IMOUTO.hairStiffnessScale
         j.settings.gravityPower *= scale * IMOUTO.hairGravityScale
         j.settings.dragForce = IMOUTO.hairDrag
+        if (r > 0) j.colliderGroups.push(group)
+        sb.addJoint(j) // 依存関係（コライダー）の並び替えを促す
       }
     }
     warmedUp.current = false

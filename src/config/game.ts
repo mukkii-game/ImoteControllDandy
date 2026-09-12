@@ -112,6 +112,9 @@ export const IMOUTO = {
   hairGravityScale: 1.0,
   hairDrag: 0.7,
   hairWarmupSteps: 120,
+  /** 兄の周りに髪を避けさせる球コライダー（m）。0 で無効 */
+  broHairColliderRadius: 6,
+  broHairColliderUp: 2.5,
 }
 
 export const CAMERA = {

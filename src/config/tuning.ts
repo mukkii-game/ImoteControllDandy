@@ -37,6 +37,7 @@ export const TUNE_GROUPS: { title: string; items: TuneItem[] }[] = [
       { path: 'IMOUTO.hairStiffnessScale', label: '硬さ', min: 0.1, max: 5, step: 0.1 },
       { path: 'IMOUTO.hairGravityScale', label: '重力', min: 0, max: 5, step: 0.1 },
       { path: 'IMOUTO.hairDrag', label: '抵抗', min: 0, max: 1, step: 0.05 },
+      { path: 'IMOUTO.broHairColliderRadius', label: '兄の髪よけ半径 m', min: 0, max: 8, step: 0.1 },
     ],
   },
   {
