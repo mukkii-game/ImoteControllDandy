@@ -6,7 +6,7 @@ import { loadGLTF, useVRM } from '../systems/loaders'
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js'
 
 function VRMView({ url, x }: { url: string; x: number }) {
-  const vrm = useVRM(url)
+  const vrm = useVRM([url])
   useFrame((_, dt) => vrm?.update(dt))
   if (!vrm) return null
   return <primitive object={vrm.scene} position={[x, 0, 0]} />
