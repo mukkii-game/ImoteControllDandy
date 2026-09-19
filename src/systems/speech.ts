@@ -27,6 +27,8 @@ export function bindSpeech(): () => void {
     on('imouto.skill', ({ id }) => {
       if (id === 'skip') sayImouto(SPEECH.imouto.skip, 'skip')
       if (id === 'shoe') sayImouto(SPEECH.imouto.shoe, 'shoe')
+      // 泣け：吹き出しだけ（声は audio 側の imouto.skill.cry）
+      if (id === 'cry') sayImouto(SPEECH.imouto.cry)
     }),
     on('bro.goto', () => say(SPEECH.lines.goto, 'goto')),
   ]

@@ -7,9 +7,10 @@ import { useInput } from './input'
 import { refs } from './refs'
 import { playVoice, seLock } from './audio'
 import { emit } from './events'
+import { projectiles } from './projectiles'
 
 // デバッグ用（Playwright から狙いを付ける）
-;(window as unknown as { __dbg: unknown }).__dbg = { refs, lock, enemies, input: useInput, emit }
+;(window as unknown as { __dbg: unknown }).__dbg = { refs, lock, enemies, input: useInput, emit, projectiles }
 
 const proj = new THREE.Vector3()
 const tmpV = new THREE.Vector3()
@@ -125,6 +126,25 @@ export function LockonSystem() {
     }
     refs.groundTarget = groundAim ? gtId : -1
     refs.aimTarget = groundAim ? aimId : -1
+    // 敵の弾（爆弾・ミサイル）もバルカンの自動照準の対象。敵より弾の方がサイトに近ければ弾
+    let pjIdx = -1
+    if (groundAim) {
+      let best = aimBest
+      for (let i = 0; i < projectiles.length; i++) {
+        const p = projectiles[i]
+        if (p.dead) continue
+        proj.copy(p.pos).project(camera)
+        if (!(proj.z < 1 && proj.z > -1)) continue
+        const sx = (proj.x * 0.5 + 0.5) * size.width
+        const sy = (-proj.y * 0.5 + 0.5) * size.height
+        const d = Math.hypot((sx - cx) / size.height, (sy - cy) / size.height)
+        if (d < BRO.vulcan.aimRadius && d < best) {
+          best = d
+          pjIdx = i
+        }
+      }
+    }
+    refs.aimProjectile = pjIdx
     // ロック中の敵が死んだら外す
     for (let i = lock.ids.length - 1; i >= 0; i--) {
       const e = enemies.find((x) => x.id === lock.ids[i])

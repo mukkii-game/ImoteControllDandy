@@ -3,6 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { BRO, DUMMY_ENEMIES } from '../config/game'
 import { enemies, killEnemy } from '../systems/enemies'
+import { projectiles } from '../systems/projectiles'
 import { refs } from '../systems/refs'
 import { emit } from '../systems/events'
 import { useGame } from '../systems/store'
@@ -60,7 +61,10 @@ export function Vulcan() {
     const firing = !!bro && st.mode === 'ground' && st.phase === 'play' && !refs.broDash
     timer.current -= dt
     if (firing && bro) {
-      const target = refs.aimTarget >= 0 ? enemies.find((e) => e.id === refs.aimTarget && e.alive) : undefined
+      const targetEnemy = refs.aimTarget >= 0 ? enemies.find((e) => e.id === refs.aimTarget && e.alive) : undefined
+      const targetProj = refs.aimProjectile >= 0 ? projectiles[refs.aimProjectile] : undefined
+      // 敵の弾がサイトに入っていればそちらを優先（撃ち落とす）
+      const target = targetProj && !targetProj.dead ? targetProj : targetEnemy
       const canFire = vc.fireAlways || !!target
       while (canFire && timer.current <= 0) {
         // 3 発ずつのリズム：burst 発撃ったら burstGap だけ間を空ける
@@ -112,7 +116,24 @@ export function Vulcan() {
       {
         seg.subVectors(b.pos, b.prev)
         const segLen2 = seg.lengthSq()
+        // 敵の弾（爆弾・ミサイル・砲弾）：当たれば撃ち落とす
+        for (const p of projectiles) {
+          if (p.dead) continue
+          toE.subVectors(p.pos, b.prev)
+          const u = segLen2 > 0 ? THREE.MathUtils.clamp(toE.dot(seg) / segLen2, 0, 1) : 0
+          const dx = b.prev.x + seg.x * u - p.pos.x
+          const dy = b.prev.y + seg.y * u - p.pos.y
+          const dz = b.prev.z + seg.z * u - p.pos.z
+          const r = vc.hitRadius + p.radius
+          if (dx * dx + dy * dy + dz * dz > r * r) continue
+          dead = true
+          p.dead = true
+          emit('bomb.burst', { x: p.pos.x, y: p.pos.y, z: p.pos.z })
+          st.addScore(vc.projectileScore)
+          break
+        }
         for (const e of enemies) {
+          if (dead) break
           if (!e.alive) continue
           toE.subVectors(e.pos, b.prev)
           const u = segLen2 > 0 ? THREE.MathUtils.clamp(toE.dot(seg) / segLen2, 0, 1) : 0

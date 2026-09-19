@@ -10,6 +10,7 @@ import { toonGradient } from '../systems/toon'
 import { useGame } from '../systems/store'
 import { useKitModel } from '../systems/kit'
 import { XrayRoot } from '../systems/xray'
+import { addProjectile, removeProjectile, type Projectile } from '../systems/projectiles'
 
 const m4 = new THREE.Matrix4()
 const tmpV = new THREE.Vector3()
@@ -35,7 +36,7 @@ export function GroundEnemies() {
   const lightMesh = useRef<THREE.InstancedMesh>(null!)
   const tankMesh = useRef<THREE.InstancedMesh>(null!)
   const shellMesh = useRef<THREE.InstancedMesh>(null!)
-  const shells = useRef<{ pos: THREE.Vector3; vel: THREE.Vector3; t: number }[]>([])
+  const shells = useRef<{ pos: THREE.Vector3; vel: THREE.Vector3; t: number; proj?: Projectile }[]>([])
   const shellTimer = useRef(TANKS.shellInterval)
   const lastSpawnDist = useRef(0)
   /** 戦車グループの出る側（+1 右 / -1 左）と、そのグループで出した数 */
@@ -137,7 +138,8 @@ export function GroundEnemies() {
         const s = near[Math.floor(Math.random() * near.length)]
         const target = tmpV.set(im.position.x + (Math.random() - 0.5) * 10, 8 + Math.random() * 40, im.position.z + (Math.random() - 0.5) * 8)
         const vel = target.clone().sub(s.pos).normalize().multiplyScalar(POLICE.shotSpeed)
-        shells.current.push({ pos: s.pos.clone().setY(3), vel, t: 0 })
+        const sp = s.pos.clone().setY(3)
+        shells.current.push({ pos: sp, vel, t: 0, proj: addProjectile(sp, 5) })
       }
     }
     // 後ろに置き去りになった敵は消す
@@ -154,7 +156,8 @@ export function GroundEnemies() {
       const t = aliveTanks[Math.floor(Math.random() * aliveTanks.length)]
       const target = tmpV.set(im.position.x + (Math.random() - 0.5) * 10, 4 + Math.random() * 40, im.position.z + (Math.random() - 0.5) * 8)
       const vel = target.clone().sub(t.pos).normalize().multiplyScalar(TANKS.shellSpeed)
-      shells.current.push({ pos: t.pos.clone().setY(8), vel, t: 0 })
+      const sp = t.pos.clone().setY(8)
+      shells.current.push({ pos: sp, vel, t: 0, proj: addProjectile(sp, 6) })
     }
     for (let i = shells.current.length - 1; i >= 0; i--) {
       const s = shells.current[i]
@@ -162,7 +165,10 @@ export function GroundEnemies() {
       s.pos.addScaledVector(s.vel, dt)
       const hit = Math.hypot(s.pos.x - im.position.x, s.pos.z - im.position.z) < HIT.radius * 0.5 && s.pos.y > 0 && s.pos.y < 60
       if (hit) emit('imouto.hit', { x: s.pos.x, y: s.pos.y, z: s.pos.z })
-      if (hit || s.t > 8 || s.pos.y < 0) shells.current.splice(i, 1)
+      if (hit || s.t > 8 || s.pos.y < 0 || s.proj?.dead) {
+        removeProjectile(s.proj)
+        shells.current.splice(i, 1)
+      }
     }
     // 描画
     const write = (mesh: THREE.InstancedMesh, list: Enemy[], y: number, yawOf?: (e: Enemy) => number) => {

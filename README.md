@@ -71,7 +71,9 @@ npm run build    # dist/ に出力（itch.io 用）
 - 吹っ飛び：地上の敵は上へ 160m/s、空中の敵は上へ 75m/s で勢いよく散ってから半分の重力で落ちる（DEBRIS.knockback / DEBRIS.air）
 - 空の敵：戦闘機は 2 編隊（FIGHTERS.squadrons、各 7 機）が同時に別方向から。ヘリは 2 編隊 × 4 機（HELIS.groups / perGroup / formation）でまとまって妹の周りを回る。全体的に前より遠め（loiter.kinds の center、HELIS.keepDist 260）。戦闘機の速度は 220 m/s
 - スタートは z=-1000（ビル街 z=-500 の手前）。エネミービルは右に満洲・左に山田うどん（BOSSES）。体を左右に揺らし上半分がしなりながらにじり寄る（BOSS.sway）
-- 被弾：SPEC 通り 0.5 秒減速（HIT.slowSec / slowFactor）＋驚き顔。ダメージは無い
+- 被弾：SPEC 通り 0.5 秒減速（HIT.slowSec / slowFactor）＋驚き顔＋「いたっ」の声（line_imouto_hit、SOUND.hitVoiceMinGapSec で連呼を抑える）。ダメージは無い
+- 敵の弾（爆弾・ミサイル・砲弾）は systems/projectiles.ts に登録され、地上のバルカンで撃ち落とせる（サイトに入れば自動照準の対象、敵より優先。撃ち落とすと爆発＋BRO.vulcan.projectileScore）
+- 「泣け」（TEARS、entities/Tears.tsx）：「うえーんうえーん」の声と吹き出し、目から水色の涙の玉 70 個が四方へ一度に飛び散り、当たった敵は一撃（従来の全敵スタンもそのまま）
 - 学校は超巨大（GAME.school：幅 900・高さ 220・時計塔 180）でフォグを受けない（fog={false}）。カメラ far 3400
 - 軽量化その 3：260m より遠い区画は箱（STAGE.lodDist）、720m より遠い区画は描かない（drawDist）、フォグは 240〜720m（fogNear/fogFar）で drawDist と揃えて区画の出入りを隠す
 - タイトルロゴは M PLUS Rounded 1c（Google Fonts、index.html で読み込み。オフラインなら OS の丸ゴシック）。副題「進め！ジャイアントロロ」

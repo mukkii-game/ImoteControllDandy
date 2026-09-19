@@ -64,7 +64,7 @@ export function Reticle() {
       }
       if (ring.current) ring.current.style.height = ring.current.style.width = `${LOCKON.reticleRadius * 2 * window.innerHeight}px`
       // 地上：倒せる敵にサイトが重なっていると赤く太く光る
-      el.classList.toggle('target', refs.groundTarget >= 0 || refs.aimTarget >= 0)
+      el.classList.toggle('target', refs.groundTarget >= 0 || refs.aimTarget >= 0 || refs.aimProjectile >= 0)
       // サイトの位置（溜め中はマウスで動く）
       if (sight.current) sight.current.style.transform = `translate(${refs.reticleX}px, ${refs.reticleY}px)`
     }

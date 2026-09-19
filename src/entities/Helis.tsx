@@ -8,6 +8,7 @@ import { emit } from '../systems/events'
 import { toonGradient } from '../systems/toon'
 import { useKitModel } from '../systems/kit'
 import { XrayRoot } from '../systems/xray'
+import { addProjectile, removeProjectile, type Projectile } from '../systems/projectiles'
 import { useGame } from '../systems/store'
 
 const m4 = new THREE.Matrix4()
@@ -64,6 +65,8 @@ interface Missile {
   pos: THREE.Vector3
   vel: THREE.Vector3
   t: number
+  /** バルカンで撃ち落とせる登録（systems/projectiles） */
+  proj?: Projectile
 }
 
 const TOTAL = HELIS.groups * HELIS.perGroup
@@ -169,7 +172,8 @@ export function Helis() {
       const shooter = alive[Math.floor(Math.random() * alive.length)]
       const target = new THREE.Vector3(im.position.x + (Math.random() - 0.5) * 10, im.position.y + 10 + Math.random() * 45, im.position.z + (Math.random() - 0.5) * 8)
       const v = target.sub(shooter.pos).normalize().multiplyScalar(HELIS.shotSpeed)
-      missiles.current.push({ pos: shooter.pos.clone(), vel: v, t: 0 })
+      const mp = shooter.pos.clone()
+      missiles.current.push({ pos: mp, vel: v, t: 0, proj: addProjectile(mp, 6) })
     }
     for (let i = missiles.current.length - 1; i >= 0; i--) {
       const ms = missiles.current[i]
@@ -177,7 +181,10 @@ export function Helis() {
       ms.pos.addScaledVector(ms.vel, dt)
       const hit = Math.hypot(ms.pos.x - im.position.x, ms.pos.z - im.position.z) < HIT.radius * 0.5 && ms.pos.y > 0 && ms.pos.y < 60
       if (hit) emit('imouto.hit', { x: ms.pos.x, y: ms.pos.y, z: ms.pos.z })
-      if (hit || ms.t > 6 || ms.pos.y < 0) missiles.current.splice(i, 1)
+      if (hit || ms.t > 6 || ms.pos.y < 0 || ms.proj?.dead) {
+        removeProjectile(ms.proj)
+        missiles.current.splice(i, 1)
+      }
     }
     missileMesh.current.count = missiles.current.length
     missiles.current.forEach((ms, i) => {

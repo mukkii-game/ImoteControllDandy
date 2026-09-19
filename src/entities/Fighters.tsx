@@ -9,6 +9,7 @@ import { SmokeRibbon } from '../systems/smoke'
 import { toonGradient } from '../systems/toon'
 import { useKitModel } from '../systems/kit'
 import { XrayRoot } from '../systems/xray'
+import { addProjectile, removeProjectile, type Projectile } from '../systems/projectiles'
 
 const up = new THREE.Vector3(0, 1, 0)
 const tangent = new THREE.Vector3()
@@ -88,6 +89,8 @@ interface Missile {
   pos: THREE.Vector3
   vel: THREE.Vector3
   t: number
+  /** バルカンで撃ち落とせる登録（systems/projectiles） */
+  proj?: Projectile
 }
 interface Pilot {
   pos: THREE.Vector3
@@ -266,11 +269,17 @@ export function Fighters({ squad = 0 }: { squad?: number }) {
       // 妹の胴体へ向けてゆっくり飛ぶ
       const start = b.pos.clone().setY(b.pos.y - 3)
       const aim = new THREE.Vector3(im.position.x, im.position.y + 35, im.position.z).sub(start).normalize().multiplyScalar(bc.speed)
-      bombs.current.push({ pos: start, vel: aim, t: 0 })
+      bombs.current.push({ pos: start, vel: aim, t: 0, proj: addProjectile(start, bc.haloSize) })
     }
     for (let i = bombs.current.length - 1; i >= 0; i--) {
       const bm = bombs.current[i]
       bm.t += dt
+      if (bm.proj?.dead) {
+        // バルカンで撃ち落とされた
+        removeProjectile(bm.proj)
+        bombs.current.splice(i, 1)
+        continue
+      }
       if (im) {
         // 妹の方へゆるく曲がる（ホーミング）
         bombAim.set(im.position.x, im.position.y + 35, im.position.z).sub(bm.pos).normalize().multiplyScalar(bc.speed)
@@ -282,7 +291,10 @@ export function Fighters({ squad = 0 }: { squad?: number }) {
       const hitBody = near && bm.pos.y < 62 && bm.pos.y > 8
       if (hitBody) emit('imouto.hit', { x: bm.pos.x, y: bm.pos.y, z: bm.pos.z })
       else if (bm.pos.y <= 1) emit('bomb.burst', { x: bm.pos.x, y: 2, z: bm.pos.z })
-      if (hitBody || bm.pos.y <= 1 || bm.t > 20) bombs.current.splice(i, 1)
+      if (hitBody || bm.pos.y <= 1 || bm.t > 20) {
+        removeProjectile(bm.proj)
+        bombs.current.splice(i, 1)
+      }
     }
     bombMesh.current.count = bombs.current.length
     bombHalo.current.count = bombs.current.length
@@ -304,7 +316,8 @@ export function Fighters({ squad = 0 }: { squad?: number }) {
       const shooter = alive[Math.floor(Math.random() * alive.length)]
       const target = new THREE.Vector3(im.position.x + (Math.random() - 0.5) * 10, im.position.y + 6 + Math.random() * 48, im.position.z + (Math.random() - 0.5) * 8)
       const vel = target.sub(shooter.pos).normalize().multiplyScalar(FIGHTERS.missileSpeed)
-      missiles.current.push({ pos: shooter.pos.clone(), vel, t: 0 })
+      const mp = shooter.pos.clone()
+      missiles.current.push({ pos: mp, vel, t: 0, proj: addProjectile(mp, 6) })
     }
     for (let i = missiles.current.length - 1; i >= 0; i--) {
       const ms = missiles.current[i]
@@ -312,7 +325,10 @@ export function Fighters({ squad = 0 }: { squad?: number }) {
       ms.pos.addScaledVector(ms.vel, dt)
       const hit = im && Math.hypot(ms.pos.x - im.position.x, ms.pos.z - im.position.z) < HIT.radius * 0.5 && ms.pos.y > 0 && ms.pos.y < 60
       if (hit) emit('imouto.hit', { x: ms.pos.x, y: ms.pos.y, z: ms.pos.z })
-      if (hit || ms.t > 6 || ms.pos.y < 0) missiles.current.splice(i, 1)
+      if (hit || ms.t > 6 || ms.pos.y < 0 || ms.proj?.dead) {
+        removeProjectile(ms.proj)
+        missiles.current.splice(i, 1)
+      }
     }
     missileMesh.current.count = missiles.current.length
     missiles.current.forEach((ms, i) => {

@@ -30,6 +30,8 @@ export const refs = {
   groundTarget: -1,
   /** 地上：サイトが重なっている敵の id（高さ・距離を問わない。バルカンの自動照準用。無ければ -1） */
   aimTarget: -1,
+  /** 地上：サイトが重なっている敵の弾（systems/projectiles の index。無ければ -1）。敵より近ければこちらを撃つ */
+  aimProjectile: -1,
   /** 兄の頭の画面座標 [x, y, 画面内か]（吹き出し用。lockon が毎フレーム更新） */
   broScreen: [0, 0, false] as [number, number, boolean],
   /** 妹の頭の画面座標（吹き出し用） */

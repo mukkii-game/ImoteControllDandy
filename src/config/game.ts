@@ -108,9 +108,10 @@ export const BRO = {
     tracerLen: 60,
     tracerWidth: 48,
     color: '#ffd166',
-    /** 1 発当てた時と倒した時のスコア */
+    /** 1 発当てた時と倒した時のスコア。敵の弾を撃ち落とした時のスコア */
     hitScore: 10,
     killScore: 100,
+    projectileScore: 30,
     /** 着弾の火花の大きさ（m）と秒数 */
     sparkSize: 5,
     sparkSec: 0.18,
@@ -234,7 +235,7 @@ export const LOCKON = {
      * 兄の乗る位置：手のひらの点（palmRatio）からのずらし（m、妹の向き基準）。forward=妹の前、right=妹の右、up=上。
      * Esc の調整パネル「掴み」からも動かせる（「変更をコピー」で JSON が出る）
      */
-    broSeat: { forward: 0, right: 0, up: 1.4 },
+    broSeat: { forward: 0.4, right: -1.1, up: -0.7 },
     hold: { upper: [-0.15, 0.1, 1.15], lower: [0, -1.45, 0.15] },
     windBack: { upper: [1.0, 0.25, 0.85], lower: [0, -2.1, 0.1] },
     release: { upper: [-2.4, 0, 0.45], lower: [0, -0.25, 0] },
@@ -494,6 +495,8 @@ export const SPEECH = {
     throw: 'そおれっ',
     skip: 'ロロップロロップー',
     shoe: 'えいやっ！',
+    cry: 'うえーんうえーん',
+    hit: 'いたっ',
   },
 }
 
@@ -584,4 +587,29 @@ export const SOUND = {
   lockVolume: 0.8,
   /** バルカン 1 発の音量（連射なので小さめ） */
   vulcanVolume: 0.25,
+  /** 被弾の「いたっ」：連続で鳴らすときの最短間隔（秒） */
+  hitVoiceMinGapSec: 0.8,
+}
+
+/** 「泣け」：水色の涙の玉が目から四方へ一度に大量に飛び散る。当たった敵は一撃 */
+export const TEARS = {
+  count: 70,
+  /** 飛ぶ速さ（m/s）とばらつき（0..1）、落下の加速度、寿命（秒） */
+  speed: 95,
+  speedVar: 0.5,
+  gravity: 28,
+  lifeSec: 4,
+  /** 上下方向の広がり：方向ベクトルの y をこの範囲で取る（-1 が真下、1 が真上） */
+  yMin: -0.25,
+  yMax: 0.85,
+  /** 玉の大きさ（半径 m。兄より少し大きい）と縦長の比率、色 */
+  size: 5.5,
+  stretch: 1.5,
+  color: '#9fe8ff',
+  /** 当たり判定の半径（m）と、倒した時のスコア */
+  hitRadius: 14,
+  score: 100,
+  /** 目の位置：頭ボーンから前へ・上へ（m） */
+  eyeForward: 3,
+  eyeUp: 0.5,
 }
