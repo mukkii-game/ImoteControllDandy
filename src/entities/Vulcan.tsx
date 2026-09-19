@@ -2,8 +2,8 @@ import { useEffect, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { BRO, DUMMY_ENEMIES } from '../config/game'
-import { enemies, killEnemy } from '../systems/enemies'
-import { projectiles } from '../systems/projectiles'
+import { enemies, killEnemy, type Enemy } from '../systems/enemies'
+import { projectiles, type Projectile } from '../systems/projectiles'
 import { refs } from '../systems/refs'
 import { emit } from '../systems/events'
 import { useGame } from '../systems/store'
@@ -15,6 +15,8 @@ interface Bullet {
   t: number
   /** 回転の位相（弾ごとにばらす） */
   phase: number
+  /** 発射時の狙い（敵または敵の弾）。ホーミングで必ず当てる */
+  target?: Enemy | Projectile
 }
 interface Spark {
   pos: THREE.Vector3
@@ -49,6 +51,8 @@ export function Vulcan() {
   const sparks = useRef<Spark[]>([])
   const timer = useRef(0)
   const shotInBurst = useRef(0)
+  /** 撃ち始めた時の狙い（3 発分おぼえる） */
+  const burstTarget = useRef<Enemy | Projectile | null>(null)
   /** 敵ごとの被弾数（倒れるかリスポーンでリセット） */
   const hits = useRef(new Map<number, number>())
   const vc = BRO.vulcan
@@ -69,10 +73,14 @@ export function Vulcan() {
       const targetEnemy = refs.aimTarget >= 0 ? enemies.find((e) => e.id === refs.aimTarget && e.alive) : undefined
       const targetProj = refs.aimProjectile >= 0 ? projectiles[refs.aimProjectile] : undefined
       // 敵の弾がサイトに入っていればそちらを優先（撃ち落とす）
-      const target = targetProj && !targetProj.dead ? targetProj : targetEnemy
-      const canFire = vc.fireAlways || !!target
+      const aimNow = targetProj && !targetProj.dead ? targetProj : targetEnemy
+      // 3 発ずつ必ず撃ち切る：撃ち始めた時の狙いを burst 発分おぼえておく（途中でサイトから外れても撃つ）
+      const inBurst = shotInBurst.current > 0
+      const canFire = inBurst || vc.fireAlways || !!aimNow
       while (canFire && timer.current <= 0) {
-        // 3 発ずつのリズム：burst 発撃ったら burstGap だけ間を空ける
+        if (shotInBurst.current === 0) burstTarget.current = aimNow ?? null
+        const target = burstTarget.current
+        // burst 発撃ったら burstGap だけ間を空ける
         shotInBurst.current++
         if (shotInBurst.current >= vc.burst) {
           shotInBurst.current = 0
@@ -99,7 +107,7 @@ export function Vulcan() {
         dir.y += (Math.random() - 0.5) * vc.spread * 2
         dir.z += (Math.random() - 0.5) * vc.spread * 2
         dir.normalize()
-        const b: Bullet = { pos: muzzle.clone(), prev: muzzle.clone(), vel: dir.clone().multiplyScalar(vc.speed), t: 0, phase: Math.random() * Math.PI * 2 }
+        const b: Bullet = { pos: muzzle.clone(), prev: muzzle.clone(), vel: dir.clone().multiplyScalar(vc.speed), t: 0, phase: Math.random() * Math.PI * 2, target: target ?? undefined }
         bullets.current.push(b)
         if (bullets.current.length > MAX) bullets.current.shift()
         dbg.spawned++
@@ -108,12 +116,23 @@ export function Vulcan() {
       }
     } else {
       timer.current = Math.max(0, timer.current)
+      shotInBurst.current = 0
     }
     // 弾の移動と当たり判定（前フレーム位置→今の位置の線分と敵の距離）
     const list = bullets.current
     for (let i = list.length - 1; i >= 0; i--) {
       const b = list[i]
       b.t += dt
+      // ホーミング：発射時の狙い（生きていれば）へ向きを曲げる
+      const tg = b.target
+      const tgAlive = tg && ('alive' in tg ? tg.alive : !tg.dead)
+      if (tg && tgAlive) {
+        dir.subVectors(tg.pos, b.pos)
+        if (dir.lengthSq() > 1) {
+          dir.normalize().multiplyScalar(vc.speed)
+          b.vel.lerp(dir, Math.min(1, vc.homing * dt)).setLength(vc.speed)
+        }
+      }
       b.prev.copy(b.pos)
       b.pos.addScaledVector(b.vel, dt)
       // 当たり判定を先に（フレームが長い環境でも寿命切れより命中を優先）

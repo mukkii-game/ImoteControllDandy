@@ -94,8 +94,10 @@ export const BRO = {
     burst: 3,
     interval: 0.05,
     burstGap: 0.24,
-    speed: 3600,
-    lifeSec: 0.5,
+    speed: 1800,
+    lifeSec: 1.0,
+    /** ホーミング：発射時にサイトが捉えていた敵（弾）へ曲がって必ず当たる。1 秒あたりの向き直しの強さ */
+    homing: 14,
     hitRadius: 10,
     hitsToKill: 2,
     /** エネミービルのロック点は硬い（1 点あたりの必要発数） */
