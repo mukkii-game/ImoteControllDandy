@@ -7,8 +7,8 @@ export interface GameEvents {
   'bro.mount': void
   'bro.dismount': void
   'bro.jump': void
-  /** 投擲開始（妹が掴んで投げる） */
-  'bro.throw': { count: number }
+  /** ロックオン攻撃開始。from: 肩上（妹が掴んで投げる）か地上（兄が自力で跳ぶ）か */
+  'bro.throw': { count: number; from: 'shoulder' | 'ground' }
   /** 兄が敵に着弾 */
   'enemy.hit': { id: number; x: number; y: number; z: number }
   'bro.return': void

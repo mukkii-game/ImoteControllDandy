@@ -13,7 +13,7 @@ import { playVoice, seLock } from './audio'
 const proj = new THREE.Vector3()
 
 /**
- * ロックオン判定。溜め中（A 押下、肩上）にサイト中心近くの敵を順にロックする。
+ * ロックオン判定。溜め中（A 押下、肩上または地上）にサイト中心近くの敵を順にロックする。
  * 画面座標のキャッシュは HUD のマーカー描画にも使う。
  */
 export function LockonSystem() {
@@ -22,7 +22,7 @@ export function LockonSystem() {
   useFrame(() => {
     const st = useGame.getState()
     const a = useInput.getState().keys.a
-    const charging = st.mode === 'shoulder' && a && st.phase === 'play'
+    const charging = (st.mode === 'shoulder' || st.mode === 'ground') && a && st.phase === 'play'
     if (charging !== st.charging) st.setCharging(charging)
 
     lock.screen.clear()

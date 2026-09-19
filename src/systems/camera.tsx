@@ -121,6 +121,11 @@ export function CameraRig() {
         refs.camYaw = refs.imouto?.rotation.y ?? refs.camYaw
         refs.camPitch = CAMERA.shoulder.defaultPitch
         blendUntil.current = performance.now() + CAMERA.thrown.blendBackSec * 1000
+      } else if (st.mode === 'ground' && lastMode.current === 'thrown') {
+        // 地上発の攻撃から着地：兄の向きで地上カメラへなめらかに戻す
+        refs.camYaw = refs.broYaw
+        refs.camPitch = CAMERA.ground.defaultPitch
+        blendUntil.current = performance.now() + CAMERA.thrown.blendBackSec * 1000
       }
       lastMode.current = st.mode
     }

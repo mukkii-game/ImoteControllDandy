@@ -64,7 +64,7 @@ export const BRO = {
   runSpeed: 10.5,
   turnLerp: 14,
   jumpVelocity: 9,
-  /** 地上パンチ：この距離以内の敵を殴る（m）。無ければジャンプ */
+  /** 地上パンチ：この距離以内の敵を殴る（m）。ロックオン攻撃でもこの距離内はダッシュ打撃 */
   punchRange: 60,
   gravity: 28,
   /** 肩へ飛び乗る演出の秒数（距離に応じて min〜max） */
@@ -169,6 +169,20 @@ export const LOCKON = {
   explosionSec: 0.6,
   /** まとめ着弾のスコア倍率（n 体で n*multi） */
   comboMulti: 1.5,
+  /** 地上からのロックオン攻撃：兄が自力で跳ぶ */
+  ground: {
+    /** 跳ぶ前のタメ（秒）と、その小ジャンプの高さ（m） */
+    windupSec: 0.25,
+    hopHeight: 2.5,
+    /** 最後の敵から地面に降りる秒数 */
+    landSec: 0.6,
+    /** BRO.punchRange 以内・地表近く（この高さ以下）の敵はダッシュ打撃（飛ばずに殴る） */
+    meleeMaxHeight: 30,
+    /** ダッシュ打撃の速さ（m/s） */
+    dashSpeed: 120,
+  },
+  /** 短く押して離した（この秒数未満）時は、ロック無しならジャンプ */
+  tapSec: 0.25,
 }
 
 /** テスト用の的（ステップ4で戦闘機に置き換え） */
@@ -198,7 +212,7 @@ export const CAMERA = {
     fov: 78,
     distance: 4.5,
     /** 注視点の高さ（兄の腰〜胸） */
-    targetHeight: 1.3,
+    targetHeight: 5,
     defaultPitch: 0.12,
   },
   /** タイトル画面：妹の正面から見上げ、下に兄・上にロロの顔 */
@@ -219,9 +233,9 @@ export const CAMERA = {
   /** 肩上：肩アンカーを中心にオービット。少し望遠 */
   shoulder: {
     fov: 55,
-    distance: 34,
+    distance: 33,
     /** 頭ボーンからの注視点オフセット（m） */
-    targetHeight: 0,
+    targetHeight: -9,
     defaultPitch: 0.3,
   },
   /** 乗降中にカメラが体を突き抜けないよう外側に膨らませる距離(m) */

@@ -126,7 +126,7 @@ export function Imouto() {
   }, [vrm, choice, setLoaded, setResolved, scale])
 
   useEffect(() => on('imouto.hit', () => { hitTimer.current = HIT.faceSec }), [])
-  useEffect(() => on('bro.throw', () => { throwK.current = 0 }), [])
+  useEffect(() => on('bro.throw', ({ from }) => { if (from === 'shoulder') throwK.current = 0 }), [])
 
   useFrame((_, dt) => {
     if (!vrm) return

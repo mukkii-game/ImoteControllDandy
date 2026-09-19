@@ -31,15 +31,30 @@ export function Bro() {
   const steer = useRef<number | null>(null)
   const poseBlend = useRef(0)
   /** 投擲シーケンス */
-  const throwSeq = useRef<{ targets: number[]; idx: number; phase: 'windup' | 'fly' | 'pause' | 'return'; t: number; from: THREE.Vector3; hits: number }>({
+  const throwSeq = useRef<{
+    targets: number[]
+    idx: number
+    phase: 'windup' | 'fly' | 'pause' | 'return'
+    t: number
+    from: THREE.Vector3
+    hits: number
+    /** 肩上から妹に投げられたか、地上から自力で跳んだか */
+    origin: 'shoulder' | 'ground'
+    /** 今向かっている敵をダッシュ打撃で殴るか（地上・近距離） */
+    melee: boolean
+  }>({
     targets: [],
     idx: 0,
     phase: 'windup',
     t: 0,
     from: new THREE.Vector3(),
     hits: 0,
+    origin: 'shoulder',
+    melee: false,
   })
   const wasA = useRef(false)
+  /** A を押し続けている秒数（短押し判定用） */
+  const aHoldT = useRef(0)
   const punchT = useRef(0)
   const selected = useModels((s) => s.bro)
   const setResolved = useModels((s) => s.setResolved)
@@ -128,12 +143,15 @@ export function Bro() {
           moving = Math.min(1, mag)
         }
         const grounded = g.position.y <= 0.001
+        const aNow = input.keys.a && playing
+        const heldSec = aHoldT.current
+        aHoldT.current = aNow ? aHoldT.current + dt : 0
         if (pressedA && grounded) {
-          // 近くに敵がいればパンチ（自動ロックオン）、いなければジャンプ
+          // 押した瞬間：近くに敵がいればその場でパンチ（自動ロックオン）。押し続ければサイトでロック
           let best: (typeof enemies)[number] | null = null
           let bd = BRO.punchRange
           for (const e of enemies) {
-            if (!e.alive || e.pos.y > 30) continue
+            if (!e.alive || e.pos.y > LOCKON.ground.meleeMaxHeight) continue
             const d = Math.hypot(e.pos.x - g.position.x, e.pos.z - g.position.z)
             if (d < bd) {
               bd = d
@@ -148,11 +166,29 @@ export function Bro() {
             emit('enemy.hit', { id: best.id, x: best.pos.x, y: best.pos.y, z: best.pos.z })
             st.addScore(100)
             punchT.current = 0.35
-          } else {
+          }
+        }
+        // 離した瞬間：ロックがあれば自力で跳んで順に体当たり。無ければ短押しはジャンプ
+        if (wasA.current && !aNow) {
+          if (lock.ids.length > 0) {
+            const seq = throwSeq.current
+            seq.targets = [...lock.ids]
+            seq.idx = 0
+            seq.phase = 'windup'
+            seq.t = 0
+            seq.hits = 0
+            seq.origin = 'ground'
+            seq.melee = false
+            seq.from.copy(g.position)
+            clearLocks()
+            st.setMode('thrown')
+            emit('bro.throw', { count: seq.targets.length, from: seq.origin })
+          } else if (grounded && heldSec < LOCKON.tapSec && punchT.current <= 0) {
             vy.current = BRO.jumpVelocity
             emit('bro.jump', undefined)
           }
         }
+        wasA.current = aNow
         punchT.current = Math.max(0, punchT.current - dt)
         vy.current -= BRO.gravity * dt
         g.position.y = Math.max(0, g.position.y + vy.current * dt)
@@ -205,10 +241,12 @@ export function Bro() {
           seq.phase = 'windup'
           seq.t = 0
           seq.hits = 0
+          seq.origin = 'shoulder'
+          seq.melee = false
           seq.from.copy(g.position)
           clearLocks()
           st.setMode('thrown')
-          emit('bro.throw', { count: seq.targets.length })
+          emit('bro.throw', { count: seq.targets.length, from: seq.origin })
         }
         wasA.current = aNow
         if (pressedB) {
@@ -231,16 +269,30 @@ export function Bro() {
           }
           return null
         }
+        const fromGround = seq.origin === 'ground'
+        const gc = LOCKON.ground
+        /** 次の敵へ向かう準備。地上発で近く・低い敵ならダッシュ打撃にする */
+        const beginFly = () => {
+          seq.phase = 'fly'
+          seq.t = 0
+          seq.from.copy(g.position)
+          const e = nextTarget()
+          seq.melee = !!e && fromGround && e.pos.y <= gc.meleeMaxHeight && Math.hypot(e.pos.x - g.position.x, e.pos.z - g.position.z) <= BRO.punchRange
+        }
         if (seq.phase === 'windup') {
-          // 妹の肩で一瞬タメ（妹の腕が振りかぶる時間）。位置は肩に追従
-          shoulderWorld(v)
-          g.position.copy(v)
-          g.position.y += Math.sin(Math.min(1, seq.t / LOCKON.windupSec) * Math.PI) * 4
-          if (seq.t >= LOCKON.windupSec) {
-            seq.phase = 'fly'
-            seq.t = 0
-            seq.from.copy(g.position)
+          const windup = fromGround ? gc.windupSec : LOCKON.windupSec
+          if (fromGround) {
+            // 地上：その場で小さく跳ねてタメ
+            g.position.x = seq.from.x
+            g.position.z = seq.from.z
+            g.position.y = seq.from.y + Math.sin(Math.min(1, seq.t / windup) * Math.PI) * gc.hopHeight
+          } else {
+            // 妹の肩で一瞬タメ（妹の腕が振りかぶる時間）。位置は肩に追従
+            shoulderWorld(v)
+            g.position.copy(v)
+            g.position.y += Math.sin(Math.min(1, seq.t / windup) * Math.PI) * 4
           }
+          if (seq.t >= windup) beginFly()
         } else if (seq.phase === 'fly') {
           const e = nextTarget()
           if (!e) {
@@ -249,11 +301,12 @@ export function Bro() {
             seq.from.copy(g.position)
           } else {
             const dist = seq.from.distanceTo(e.pos)
-            const dur = Math.max(0.12, dist / LOCKON.flySpeed)
+            const dur = Math.max(0.12, dist / (seq.melee ? gc.dashSpeed : LOCKON.flySpeed))
             const k = Math.min(1, seq.t / dur)
             g.position.lerpVectors(seq.from, e.pos, k)
-            // 少し弧を描く
-            g.position.y += Math.sin(k * Math.PI) * Math.min(25, dist * 0.12)
+            // 少し弧を描く（ダッシュ打撃は地面を走る）
+            if (seq.melee) g.position.y = THREE.MathUtils.lerp(seq.from.y, 0, k)
+            else g.position.y += Math.sin(k * Math.PI) * Math.min(25, dist * 0.12)
             const dx = e.pos.x - seq.from.x
             const dz = e.pos.z - seq.from.z
             if (Math.hypot(dx, dz) > 0.5) yawRef.current = Math.atan2(dx, dz)
@@ -261,6 +314,7 @@ export function Bro() {
               killEnemy(e.id, e.kind === 'dummy' ? DUMMY_ENEMIES.respawnSec : 0)
               seq.hits++
               emit('enemy.hit', { id: e.id, x: e.pos.x, y: e.pos.y, z: e.pos.z })
+              if (seq.melee) punchT.current = 0.35
               seq.idx++
               seq.phase = 'pause'
               seq.t = 0
@@ -269,27 +323,47 @@ export function Bro() {
           }
         } else if (seq.phase === 'pause') {
           if (seq.t >= LOCKON.hitPauseSec) {
-            seq.phase = nextTarget() ? 'fly' : 'return'
-            seq.t = 0
-            seq.from.copy(g.position)
+            if (nextTarget()) beginFly()
+            else {
+              seq.phase = 'return'
+              seq.t = 0
+              seq.from.copy(g.position)
+            }
           }
         } else if (seq.phase === 'return') {
-          const k = Math.min(1, seq.t / LOCKON.returnSec)
-          shoulderWorld(target)
-          const e = easeInOut(k)
-          g.position.lerpVectors(seq.from, target, e)
-          g.position.y += Math.sin(k * Math.PI) * SCALE.imoutoHeight * LOCKON.returnArc
-          const dx = target.x - seq.from.x
-          const dz = target.z - seq.from.z
-          if (Math.hypot(dx, dz) > 1) yawRef.current = Math.atan2(dx, dz)
-          if (k >= 1) {
+          const finish = () => {
             if (seq.hits > 0) {
               st.addScore(Math.round(100 * seq.hits * (seq.hits > 1 ? seq.hits * LOCKON.comboMulti : 1)))
               if (seq.hits > 1) st.setCombo(seq.hits)
             }
-            st.setMode('shoulder')
             wasA.current = input.keys.a
             emit('bro.return', undefined)
+          }
+          if (fromGround) {
+            // 地上発：その場から真下の地面へ降りる
+            const k = Math.min(1, seq.t / gc.landSec)
+            g.position.x = seq.from.x
+            g.position.z = seq.from.z
+            g.position.y = seq.from.y * (1 - easeInOut(k))
+            if (k >= 1) {
+              g.position.y = 0
+              vy.current = 0
+              st.setMode('ground')
+              finish()
+            }
+          } else {
+            const k = Math.min(1, seq.t / LOCKON.returnSec)
+            shoulderWorld(target)
+            const e = easeInOut(k)
+            g.position.lerpVectors(seq.from, target, e)
+            g.position.y += Math.sin(k * Math.PI) * SCALE.imoutoHeight * LOCKON.returnArc
+            const dx = target.x - seq.from.x
+            const dz = target.z - seq.from.z
+            if (Math.hypot(dx, dz) > 1) yawRef.current = Math.atan2(dx, dz)
+            if (k >= 1) {
+              st.setMode('shoulder')
+              finish()
+            }
           }
         }
         g.rotation.y = yawRef.current
@@ -323,12 +397,14 @@ export function Bro() {
     refs.broYaw = yawRef.current
 
     if (vrm) {
-      const onShoulder = st.mode === 'shoulder' || (st.mode === 'thrown' && throwSeq.current.phase === 'windup')
+      const seq = throwSeq.current
+      const onShoulder = st.mode === 'shoulder' || (st.mode === 'thrown' && seq.phase === 'windup' && seq.origin === 'shoulder')
       poseBlend.current += ((onShoulder ? 1 : 0) - poseBlend.current) * Math.min(1, 8 * dt)
-      if (st.mode === 'thrown' && throwSeq.current.phase !== 'windup') {
+      const inMelee = st.mode === 'thrown' && seq.origin === 'ground' && (seq.melee || seq.phase === 'windup' || (seq.phase === 'pause' && punchT.current > 0))
+      if (st.mode === 'thrown' && seq.phase !== 'windup' && !inMelee) {
         // ライダーキック姿勢。飛行方向へ体を倒す
         applyFlyPose(vrm, dt)
-        g.rotation.x = throwSeq.current.phase === 'return' ? -0.4 : 0.9
+        g.rotation.x = seq.phase === 'return' ? -0.4 : 0.9
       } else if (poseBlend.current > 0.5) {
         g.rotation.x = 0
         applyShoulderPose(vrm, steer.current, dt)

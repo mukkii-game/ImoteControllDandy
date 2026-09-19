@@ -49,7 +49,7 @@ export function Reticle() {
     }
   }, [])
 
-  const show = mode === 'shoulder' && phase === 'play'
+  const show = (mode === 'shoulder' || mode === 'ground') && phase === 'play'
   return (
     <div ref={layer} className={`reticle-layer ${show ? '' : 'hidden'} ${charging ? 'charging' : ''}`}>
       <div ref={ring} className="reticle-ring" />
