@@ -10,7 +10,7 @@ import { refs, shoulderWorld } from '../systems/refs'
 import { useGame } from '../systems/store'
 import { useVRM } from '../systems/loaders'
 import { emit } from '../systems/events'
-import { applyWalk, applyShoulderPose, applyFlyPose } from '../systems/procAnim'
+import { applyWalk, applyShoulderPose, applyFlyPose, applyPunchPose } from '../systems/procAnim'
 
 const v = new THREE.Vector3()
 const target = new THREE.Vector3()
@@ -40,6 +40,7 @@ export function Bro() {
     hits: 0,
   })
   const wasA = useRef(false)
+  const punchT = useRef(0)
   const selected = useModels((s) => s.bro)
   const setResolved = useModels((s) => s.setResolved)
   const { vrm, choice } = useVRM(candidates('bro', selected))
@@ -118,9 +119,31 @@ export function Bro() {
         }
         const grounded = g.position.y <= 0.001
         if (pressedA && grounded) {
-          vy.current = BRO.jumpVelocity
-          emit('bro.jump', undefined)
+          // 近くに敵がいればパンチ（自動ロックオン）、いなければジャンプ
+          let best: (typeof enemies)[number] | null = null
+          let bd = BRO.punchRange
+          for (const e of enemies) {
+            if (!e.alive || e.pos.y > 30) continue
+            const d = Math.hypot(e.pos.x - g.position.x, e.pos.z - g.position.z)
+            if (d < bd) {
+              bd = d
+              best = e
+            }
+          }
+          if (best) {
+            yawRef.current = Math.atan2(best.pos.x - g.position.x, best.pos.z - g.position.z)
+            g.position.x += Math.sin(yawRef.current) * Math.min(bd, 6)
+            g.position.z += Math.cos(yawRef.current) * Math.min(bd, 6)
+            killEnemy(best.id)
+            emit('enemy.hit', { id: best.id, x: best.pos.x, y: best.pos.y, z: best.pos.z })
+            st.addScore(100)
+            punchT.current = 0.35
+          } else {
+            vy.current = BRO.jumpVelocity
+            emit('bro.jump', undefined)
+          }
         }
+        punchT.current = Math.max(0, punchT.current - dt)
         vy.current -= BRO.gravity * dt
         g.position.y = Math.max(0, g.position.y + vy.current * dt)
         if (g.position.y <= 0) vy.current = Math.max(0, vy.current)
@@ -303,6 +326,7 @@ export function Bro() {
         runRatio.current += (moving - runRatio.current) * Math.min(1, 10 * dt)
         if (runRatio.current > 0.02) phase.current += (dt / BRO.stepPeriod) * Math.PI * 2 * Math.max(0.5, runRatio.current)
         applyWalk(vrm, phase.current, runRatio.current, BRO.walk, modelHeight)
+        if (punchT.current > 0) applyPunchPose(vrm, 1 - punchT.current / 0.35)
       }
       vrm.update(dt)
     }

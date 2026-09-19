@@ -11,6 +11,7 @@ import * as THREE from 'three'
  */
 export function bindMouse(el: HTMLElement): () => void {
   const apply = (dx: number, dy: number, sens: number) => {
+    if (dx !== 0 || dy !== 0) refs.lastLookInput = performance.now()
     refs.camYaw -= dx * sens
     refs.camPitch = THREE.MathUtils.clamp(refs.camPitch + dy * sens, CAMERA.pitchMin, CAMERA.pitchMax)
   }

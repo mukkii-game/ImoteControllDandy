@@ -64,6 +64,8 @@ export const BRO = {
   runSpeed: 10.5,
   turnLerp: 14,
   jumpVelocity: 9,
+  /** 地上パンチ：この距離以内の敵を殴る（m）。無ければジャンプ */
+  punchRange: 60,
   gravity: 28,
   /** 肩へ飛び乗る演出の秒数（距離に応じて min〜max） */
   mountSecMin: 0.9,
@@ -183,6 +185,9 @@ export const CAMERA = {
   pitchMax: 1.1,
   /** 地上：兄を中心にマウスで回すオービット。やや低めで妹が収まらない */
   ground: {
+    /** 妹の方へカメラが戻る：入力が止まってからの秒数と速さ */
+    pullDelaySec: 1.2,
+    pullLerp: 0.9,
     fov: 78,
     distance: 4.5,
     /** 注視点の高さ（兄の腰〜胸） */

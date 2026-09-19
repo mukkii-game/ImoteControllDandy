@@ -266,3 +266,12 @@ export function applySitPose(vrm: VRM, k: number, modelHeight: number) {
   b('leftLowerArm')?.rotation.set(0, -1.6 * k * g, -0.3 * g)
   b('rightLowerArm')?.rotation.set(0, 1.6 * k * g, 0.3 * g)
 }
+
+/** パンチ：右腕を前に突き出す。k: 0..1 */
+export function applyPunchPose(vrm: VRM, k: number) {
+  const g = armSign(vrm)
+  const a = Math.sin(k * Math.PI)
+  vrm.humanoid.getNormalizedBoneNode('rightUpperArm')?.rotation.set(-1.5 * a * g, 0.2 * a, 0.3 * g)
+  vrm.humanoid.getNormalizedBoneNode('rightLowerArm')?.rotation.set(0, 0, 0)
+  vrm.humanoid.getNormalizedBoneNode('spine')?.rotation.set(0.15 * a, -0.4 * a, 0)
+}

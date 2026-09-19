@@ -125,6 +125,17 @@ export function CameraRig() {
       lastMode.current = st.mode
     }
 
+    // 地上：しばらくカメラを触らないと妹の方へゆっくり向く（妹が心配な兄）
+    if (st.mode === 'ground' && refs.bro && refs.imouto && performance.now() - refs.lastLookInput > CAMERA.ground.pullDelaySec * 1000) {
+      const dx = refs.imouto.position.x - refs.bro.position.x
+      const dz = refs.imouto.position.z - refs.bro.position.z
+      const want = Math.atan2(dx, dz)
+      let diff = want - refs.camYaw
+      diff = Math.atan2(Math.sin(diff), Math.cos(diff))
+      refs.camYaw += diff * Math.min(1, CAMERA.ground.pullLerp * dt)
+      const wantPitch = -0.25
+      refs.camPitch += (wantPitch - refs.camPitch) * Math.min(1, CAMERA.ground.pullLerp * 0.5 * dt)
+    }
     computeGround(groundPos, groundLook)
     computeShoulder(shoulderPos, shoulderLook)
 
