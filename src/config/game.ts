@@ -4,7 +4,7 @@
 export const SCALE = {
   /** 1ユニット = 1m */
   imoutoHeight: 60,
-  broHeight: 3.6, // 見た目優先で2倍（仕様は1.8）
+  broHeight: 4.9, // 見た目優先（仕様は1.8）
 }
 
 export interface ModelChoice {
@@ -61,7 +61,7 @@ export const MODEL_CHOICES: { imouto: ModelChoice[]; bro: ModelChoice[] } = {
 
 export const BRO = {
   walkSpeed: 4,
-  runSpeed: 11, // ヒーローなので速い
+  runSpeed: 10.5,
   turnLerp: 14,
   jumpVelocity: 9,
   gravity: 28,
@@ -116,7 +116,7 @@ export const IMOUTO = {
   /** 子どもの横断歩道歩き：腕をピンと伸ばして大きく前後、大股 */
   walk: { legSwing: 0.85, kneeBend: 0.35, armSwing: 1.0, armDown: 1.35, bodyBob: 0.02, lean: 0.04, straightArms: true },
   /** 表情：口を大きく開けた笑顔（happy＋aa）。歩行中は少し強める */
-  face: { happy: 0.4, mouthOpen: 0.55, mouthOpenWalk: 0.8, blinkPeriod: 3.5 },
+  face: { happy: 0.4, mouthOpen: 0.35, mouthOpenWalk: 0.35, blinkPeriod: 3.5 },
   /** 肩の表面をレイキャストで探す（身長比）。肩関節から頭方向へ inward、真上 up の点から下向きに撃つ */
   shoulderProbe: { inward: 0.012, up: 0.08, far: 0.2, belowHead: 0.01, maxAbove: 0.05 },
   /** レイが当たらない時の高さ（肩関節から、身長比） */
@@ -125,12 +125,12 @@ export const IMOUTO = {
   /** アンカーがレイ結果へ寄る速さ */
   shoulderFollowLerp: 6,
   /** 兄の立ち位置の微調整（m、妹の向き基準）：forward=前、outward=肩先側、up=上 */
-  broSeat: { forward: 0, outward: 0, up: 0 },
+  broSeat: { forward: 0.9, outward: 1.4, up: -1.1 },
   /** 着地の揺れの強さ */
   stepShake: 1.0,
   /** 髪（スプリングボーン）：スケール補正に掛ける倍率と抵抗。ロード時のウォームアップ歩数 */
   hairStiffnessScale: 1.0,
-  hairGravityScale: 1.0,
+  hairGravityScale: 1.7,
   hairDrag: 0.7,
   hairWarmupSteps: 120,
   /** 兄の周りに髪を避けさせる球コライダー（m）。0 で無効 */

@@ -103,7 +103,30 @@ export function Fighters() {
     [],
   )
 
+  const enabledRef = useRef(false)
   useFrame((_, dt) => {
+    // 区間ゲート：妹が fromZ を越えるまで出さない
+    const imz = refs.imouto?.position.z ?? -Infinity
+    const enabled = imz >= FIGHTERS.fromZ
+    if (!enabled) {
+      if (enabledRef.current) enabledRef.current = false
+      ents.current.forEach((e, i) => {
+        e.alive = false
+        e.pos.set(0, -1000, 0)
+        const g = groups.current[i]
+        if (g) g.visible = false
+      })
+      deadTimer.current = 0
+      missileMesh.current.count = 0
+      pilotMesh.current.count = 0
+      return
+    }
+    if (!enabledRef.current) {
+      enabledRef.current = true
+      ents.current.forEach((e) => (e.alive = true))
+      setGen((g) => g + 1)
+      return
+    }
     // 編隊の位置
     const stunned = isStunned()
     u.current = (u.current + ((stunned ? FIGHTERS.speed * 0.15 : FIGHTERS.speed) * dt) / len) % 1

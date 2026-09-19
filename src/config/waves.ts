@@ -2,6 +2,8 @@
 
 /** ブルーインパルス編隊 */
 export const FIGHTERS = {
+  /** 妹の z がこれ以上で出現（区間2から） */
+  fromZ: -500,
   /** 編隊の機数と V 字の間隔（m） */
   count: 5,
   spacing: 18,
@@ -52,6 +54,7 @@ export const POLICE = {
 }
 
 export const TANKS = {
+  fromZ: -500,
   spacing: 260,
   aheadMin: 200,
   aheadMax: 600,

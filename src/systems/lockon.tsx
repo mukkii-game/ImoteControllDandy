@@ -5,6 +5,7 @@ import { enemies, lock } from './enemies'
 import { useGame } from './store'
 import { useInput } from './input'
 import { refs } from './refs'
+import { seLock } from './audio'
 
 // デバッグ用（Playwright から狙いを付ける）
 ;(window as unknown as { __dbg: unknown }).__dbg = { refs, lock, enemies }
@@ -38,7 +39,10 @@ export function LockonSystem() {
       if (e.pos.distanceTo(camPos) > LOCKON.maxRange) continue
       const dx = (sx - size.width / 2) / size.height
       const dy = (sy - size.height / 2) / size.height
-      if (Math.hypot(dx, dy) < LOCKON.reticleRadius) lock.ids.push(e.id)
+      if (Math.hypot(dx, dy) < LOCKON.reticleRadius) {
+        lock.ids.push(e.id)
+        seLock(lock.ids.length - 1)
+      }
     }
     // ロック中の敵が死んだら外す
     for (let i = lock.ids.length - 1; i >= 0; i--) {

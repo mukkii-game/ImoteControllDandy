@@ -1,5 +1,15 @@
 {
-  "_comment": "イベント名→音声ファイル。ステップ7で VOICEVOX 音声を public/audio/voice に置く",
-  "imouto.ittekimasu": "audio/voice/imouto_ittekimasu.mp3",
-  "bro.tou": "audio/voice/bro_tou.mp3"
+  "_comment": "イベント名→音声ファイル（public/ 基準）。ファイルが無ければ鳴らさない。差し替えは JSON 編集のみ",
+  "game.start": "audio/voice/imouto_ittekimasu.mp3",
+  "bro.throw": "audio/voice/bro_tou.mp3",
+  "bro.mount": "audio/voice/bro_ikuzo.mp3",
+  "imouto.hit": "audio/voice/imouto_ita.mp3",
+  "imouto.skill.skip": "audio/voice/imouto_ei.mp3",
+  "imouto.skill.shoe": "audio/voice/imouto_ei.mp3",
+  "imouto.skill.cry": "audio/voice/imouto_mou.mp3",
+  "game.clear": "audio/voice/imouto_ittekimasu2.mp3",
+  "game.late": "audio/voice/imouto_mou.mp3",
+  "bgm.title": "audio/bgm/title.mp3",
+  "bgm.play": "audio/bgm/play.mp3",
+  "bgm.ed": "audio/bgm/ed.mp3"
 }

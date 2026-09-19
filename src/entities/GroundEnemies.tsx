@@ -84,7 +84,7 @@ export function GroundEnemies() {
       }
     }
     const aliveTanks = tanks.current.filter((e) => e.alive)
-    if (aliveTanks.length < TANKS.max && Math.random() < dt * 0.4) {
+    if (im.position.z >= TANKS.fromZ && aliveTanks.length < TANKS.max && Math.random() < dt * 0.4) {
       const d = TANKS.aheadMin + Math.random() * (TANKS.aheadMax - TANKS.aheadMin)
       const side = (Math.random() < 0.5 ? -1 : 1) * TANKS.side
       const px = im.position.x + fx * d + Math.cos(yaw) * side

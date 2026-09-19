@@ -168,9 +168,10 @@ export function CameraRig() {
 
     if ((st.phase === 'clear' || st.phase === 'late') && refs.imouto) {
       // ED：校庭の引き。妹の頭が校舎より上に見える構図
+      // 妹の斜め前から、頭が校舎の屋根より上に見える引き
       const im = refs.imouto.position
-      const tgt = tmp.set(im.x, 28, im.z + 40)
-      const want = new THREE.Vector3(im.x + 150, 55, im.z - 190)
+      const tgt = tmp.set(im.x, 22, im.z + 20)
+      const want = new THREE.Vector3(im.x - 95, 30, im.z - 80)
       camera.position.lerp(want, Math.min(1, 2 * dt))
       smoothedLook.current.lerp(tgt, Math.min(1, 2 * dt))
       camera.lookAt(smoothedLook.current)

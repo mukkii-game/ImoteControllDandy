@@ -207,11 +207,11 @@ export function applySkillPose(vrm: VRM, id: 'skip' | 'shoe' | 'cry', t: number,
   b('rightLowerLeg')?.rotation.set(0, 0, 0)
   b('spine')?.rotation.set(0.25 * k, 0, 0)
   b('head')?.rotation.set(0.35 * k, 0, 0)
-  // 両手を顔へ：上腕を前上へ、前腕を強く曲げる
-  b('leftUpperArm')?.rotation.set(-1.9 * k * g, 0, -0.5 * g)
-  b('rightUpperArm')?.rotation.set(-1.9 * k * g, 0, 0.5 * g)
-  b('leftLowerArm')?.rotation.set(0, -2.2 * k * g, -0.4 * g)
-  b('rightLowerArm')?.rotation.set(0, 2.2 * k * g, 0.4 * g)
+  // 両手を顔へ：上腕を下ろしてから前へ振り上げ（X 回転）、前腕を顔側へ折る（Y 回転）
+  b('leftUpperArm')?.rotation.set(-1.6 * k * g, 0.6 * k, -1.0 * g)
+  b('rightUpperArm')?.rotation.set(-1.6 * k * g, -0.6 * k, 1.0 * g)
+  b('leftLowerArm')?.rotation.set(0, -2.6 * k * g, 0)
+  b('rightLowerArm')?.rotation.set(0, 2.6 * k * g, 0)
 }
 
 /** 投げる腕：左腕（兄が乗っている側）を後ろから前へ振る。k: 0..1 */
