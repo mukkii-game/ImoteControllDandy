@@ -230,7 +230,7 @@ export const LOCKON = {
   grab: {
     sec: 0.3,
     returnSec: 0.5,
-    handOffset: 2.0,
+    handOffset: 1.4,
     hold: { upper: [-0.15, 0.1, 1.15], lower: [0, -1.45, 0.15] },
     windBack: { upper: [1.0, 0.25, 0.85], lower: [0, -2.1, 0.1] },
     release: { upper: [-2.4, 0, 0.45], lower: [0, -0.25, 0] },
