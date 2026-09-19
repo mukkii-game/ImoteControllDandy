@@ -33,3 +33,14 @@ npm run build    # dist/ に出力（itch.io 用）
 - 兄：Seed-san by VirtualCast, Inc.（VRM Public License 1.0）
 
 モデルは Esc の調整パネル「モデル」で切り替えられます。追加は `public/models/` に置いて `src/config/game.ts` の MODEL_CHOICES に1行足すだけです。
+
+## 引き継ぎメモ（2026-09-19 時点）
+- 遊べる URL：https://mukkii-game.github.io/ImoteControllDandy/ （push で自動デプロイ）
+- 操作：左クリック/Shift=乗降、右クリック長押し=ロックオン→離して投擲、1/2/3（テンキー可）=技、ホイール=技選択・ホイールクリック=発動、Esc/Tab=調整パネル
+- 妹は自動で歩く（W 加速・S 減速・A D 旋回）。歩幅・速度は半分ずつ落とした状態。制限時間 11:00
+- 揺れは停止中（CAMERA.shakeAmp = 0）。後で調整する
+- 音：public/audio/se/ に効果音ラボの SE（出典は SOURCES.md）。無ければ合成音。VOICEVOX 音声と BGM は voices.json の名前で置けば鳴る
+- モデル：妹は VRoid Hub のショート（public/models/custom/imouto.vrm、クレジット必要・作者名は未記入）。兄は Seed-san（ロボアーム非表示・服を黒く）。models/custom/bro.vrm を置けば差し替え
+- 外部 glb（パトカー・戦車・戦闘機）は public/models/kit/manifest.json で差し替え可（README あり）
+- 未着手：所沢ネタ、音声命令、デモムービー用 BGM、スマホ実機確認、投擲中の兄が小さい問題、ED の構図
+- 調整した数値はすべて src/config/game.ts。Esc パネルの「変更をコピー」で JSON を出せる
