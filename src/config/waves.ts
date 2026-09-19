@@ -116,13 +116,17 @@ export const FIGHTERS = {
     kinds: {
       near: { secMin: 8, secMax: 13, center: [0, 110, 260], amp: [260, 55, 60], speed: 1.2, radius: 0, height: 0 },
       far: { secMin: 7, secMax: 11, center: [0, 150, 460], amp: [420, 90, 80], speed: 0.9, radius: 0, height: 0 },
-      overhead: { secMin: 12, secMax: 18, center: [0, 170, 20], amp: [0, 0, 0], speed: 1.1, radius: 90, height: 0 },
+      overhead: { secMin: 12, secMax: 18, center: [0, 210, 20], amp: [0, 0, 0], speed: 1.1, radius: 135, height: 0 },
     },
     /** 上空集合の中心（妹ローカル：x=右, y=高さ, z=前） */
-    overheadCenter: [0, 150, 20] as [number, number, number],
+    overheadCenter: [0, 210, 20] as [number, number, number],
   },
-  /** 爆撃（上空集合中）：何秒に 1 発落とすか、落下の加速度、命中とみなす半径（妹の胴体中心から）。妹にダメージは無い（演出だけ） */
-  bomb: { interval: 0.9, gravity: 40, hitRadius: 45, size: 2.4 },
+  /**
+   * 爆撃（上空集合中）：黒い爆弾が明るい光をまとって、ゆっくり妹へ向かって落ちてくる（見えやすく）。
+   * interval=何秒に 1 発、speed=妹へ向かう速さ（m/s）、homing=妹の方へ曲がる強さ、gravity=落下の加速度、
+   * hitRadius=命中とみなす半径（妹の胴体中心から）。size=爆弾の半径、haloSize=光の半径。妹にダメージは無い（減速と被弾エフェクトだけ）
+   */
+  bomb: { interval: 0.9, speed: 28, homing: 1.5, gravity: 4, hitRadius: 30, size: 4, haloSize: 11, color: '#111318', haloColor: '#fff0a0', haloOpacity: 0.55, pulse: 6 },
   /** パラシュートで降りるパイロット */
   pilotFallSpeed: 6,
   pilotSec: 8,

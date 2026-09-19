@@ -86,10 +86,15 @@ export const BRO = {
    */
   vulcan: {
     fireAlways: true,
-    /** 連射間隔（秒）、弾速（m/s）、弾の寿命（秒）、当たり判定の半径（m） */
-    interval: 0.07,
-    speed: 720,
-    lifeSec: 1.4,
+    /**
+     * 連射：3 発ずつ「ダダダッ」のリズム。burst=1 回に撃つ発数、interval=その中の間隔（秒）、burstGap=次の 3 発までの間（秒）。
+     * 弾速（m/s。ほぼ一瞬で届く）、弾の寿命（秒）、当たり判定の半径（m）
+     */
+    burst: 3,
+    interval: 0.05,
+    burstGap: 0.24,
+    speed: 7200,
+    lifeSec: 0.3,
     hitRadius: 10,
     hitsToKill: 2,
     /** エネミービルのロック点は硬い（1 点あたりの必要発数） */
@@ -97,10 +102,10 @@ export const BRO = {
     /** 自動照準：サイトからこの半径（画面高さ比）に入った敵を狙う。ばらつき（rad） */
     aimRadius: 0.1,
     spread: 0.012,
-    /** 銃口の高さ（m、兄の足元から）。曳光弾の長さ・太さ（m）と色 */
+    /** 銃口の高さ（m、兄の足元から）。曳光弾の長さ・太さ（m）と色。発射時はサイトの円と同じくらいの大きさに見える太さ */
     muzzleHeight: 2.6,
-    tracerLen: 4,
-    tracerWidth: 0.4,
+    tracerLen: 40,
+    tracerWidth: 2.4,
     color: '#ffd166',
     /** 1 発当てた時と倒した時のスコア */
     hitScore: 10,
@@ -289,6 +294,9 @@ export const CAMERA = {
     /** 注視点の高さ（兄の腰〜胸） */
     targetHeight: 5,
     defaultPitch: 0.12,
+    /** 地上の上下の見回し範囲（rad、マイナスが上）。地上はサイトが上下に動かないぶん、肩上（カメラ＋サイト）と同じくらい上まで見えるように広め */
+    pitchMin: -1.35,
+    pitchMax: 1.2,
     /** カメラの追従の速さ（通常／ダッシュ中）。ダッシュ中は遅らせて、兄が先に飛び出しカメラが後から追いつく（目に優しく） */
     followLerp: 18,
     dashFollowLerp: 3.2,

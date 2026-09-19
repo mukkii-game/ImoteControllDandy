@@ -42,6 +42,7 @@ export function Vulcan() {
   const bullets = useRef<Bullet[]>([])
   const sparks = useRef<Spark[]>([])
   const timer = useRef(0)
+  const shotInBurst = useRef(0)
   /** 敵ごとの被弾数（倒れるかリスポーンでリセット） */
   const hits = useRef(new Map<number, number>())
   const vc = BRO.vulcan
@@ -62,7 +63,14 @@ export function Vulcan() {
       const target = refs.aimTarget >= 0 ? enemies.find((e) => e.id === refs.aimTarget && e.alive) : undefined
       const canFire = vc.fireAlways || !!target
       while (canFire && timer.current <= 0) {
-        timer.current += vc.interval
+        // 3 発ずつのリズム：burst 発撃ったら burstGap だけ間を空ける
+        shotInBurst.current++
+        if (shotInBurst.current >= vc.burst) {
+          shotInBurst.current = 0
+          timer.current += vc.burstGap
+        } else {
+          timer.current += vc.interval
+        }
         muzzle.copy(bro.position)
         muzzle.y += vc.muzzleHeight
         if (target) {
@@ -99,8 +107,9 @@ export function Vulcan() {
       b.t += dt
       b.prev.copy(b.pos)
       b.pos.addScaledVector(b.vel, dt)
-      let dead = b.t > vc.lifeSec || b.pos.y < 0
-      if (!dead) {
+      // 当たり判定を先に（フレームが長い環境でも寿命切れより命中を優先）
+      let dead = false
+      {
         seg.subVectors(b.pos, b.prev)
         const segLen2 = seg.lengthSq()
         for (const e of enemies) {
@@ -130,6 +139,7 @@ export function Vulcan() {
           break
         }
       }
+      if (b.t > vc.lifeSec || b.pos.y < 0) dead = true
       if (dead) list.splice(i, 1)
     }
     // 描画：曳光弾（進行方向に向けた細長い箱）

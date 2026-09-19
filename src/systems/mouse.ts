@@ -23,7 +23,7 @@ export function bindMouse(el: HTMLElement): () => void {
     if (g.mode === 'ground' && g.phase === 'play' && LOCKON.reticle.groundHorizontalOnly) {
       // 地上：サイトは左右にだけ動く（タックルの向き）。上下はカメラ
       refs.reticleX = THREE.MathUtils.clamp(refs.reticleX + dx * LOCKON.reticle.sensitivity, -window.innerWidth / 2, window.innerWidth / 2)
-      refs.camPitch = THREE.MathUtils.clamp(refs.camPitch + dy * sens, CAMERA.pitchMin, CAMERA.pitchMax)
+      refs.camPitch = THREE.MathUtils.clamp(refs.camPitch + dy * sens, CAMERA.ground.pitchMin, CAMERA.ground.pitchMax)
       return
     }
     refs.camYaw -= dx * sens

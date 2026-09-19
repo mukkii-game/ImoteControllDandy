@@ -13,6 +13,7 @@
 | lock.mp3 | 決定ボタンを押す26 | ロックオン音 | https://soundeffect-lab.info/sound/button/ | - |
 | fire.mp3 | 雷魔法4 | 兄の玉の発射音（肩上から） | https://soundeffect-lab.info/sound/battle/ | - |
 | building1.mp3 / building2.mp3 | 建物が壊れる音 ×2 | 建物が潰れた・砕けたときにランダムで片方 | https://soundeffect-lab.info/sound/battle/ | - |
+| vulcan.mp3 | 気弾1 | 地上のバルカン 1 発ごと | https://soundeffect-lab.info/sound/battle/ | - |
 
 ## BGM（public/audio/bgm/play.mp3）
 

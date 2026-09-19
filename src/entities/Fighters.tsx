@@ -31,6 +31,7 @@ const loiterP = new THREE.Vector3()
 const loiterN = new THREE.Vector3()
 const sweepL = new THREE.Vector3()
 const viewR = new THREE.Vector3()
+const bombAim = new THREE.Vector3()
 
 /**
  * 編隊の「横」方向：ロロから見て画面の横になる向き（ロロ→機体の視線に直交する水平ベクトル）。
@@ -108,6 +109,7 @@ export function Fighters({ squad = 0 }: { squad?: number }) {
   const bombs = useRef<Missile[]>([])
   const bombTimer = useRef(1)
   const bombMesh = useRef<THREE.InstancedMesh>(null!)
+  const bombHalo = useRef<THREE.InstancedMesh>(null!)
   const pilots = useRef<Pilot[]>([])
   const fireTimer = useRef(FIGHTERS.missileInterval)
   const deadTimer = useRef(0)
@@ -260,26 +262,40 @@ export function Fighters({ squad = 0 }: { squad?: number }) {
     if (im && overhead && L.active && L.k > 0.5 && alive.length > 0 && bombTimer.current <= 0 && !stunned) {
       bombTimer.current = bc.interval
       const b = alive[Math.floor(Math.random() * alive.length)]
-      bombs.current.push({ pos: b.pos.clone().setY(b.pos.y - 3), vel: new THREE.Vector3((Math.random() - 0.5) * 6, -10, (Math.random() - 0.5) * 6), t: 0 })
+      // 妹の胴体へ向けてゆっくり飛ぶ
+      const start = b.pos.clone().setY(b.pos.y - 3)
+      const aim = new THREE.Vector3(im.position.x, im.position.y + 35, im.position.z).sub(start).normalize().multiplyScalar(bc.speed)
+      bombs.current.push({ pos: start, vel: aim, t: 0 })
     }
     for (let i = bombs.current.length - 1; i >= 0; i--) {
       const bm = bombs.current[i]
       bm.t += dt
+      if (im) {
+        // 妹の方へゆるく曲がる（ホーミング）
+        bombAim.set(im.position.x, im.position.y + 35, im.position.z).sub(bm.pos).normalize().multiplyScalar(bc.speed)
+        bm.vel.lerp(bombAim, Math.min(1, bc.homing * dt))
+      }
       bm.vel.y -= bc.gravity * dt
       bm.pos.addScaledVector(bm.vel, dt)
       const near = im && Math.hypot(bm.pos.x - im.position.x, bm.pos.z - im.position.z) < bc.hitRadius
       const hitBody = near && bm.pos.y < 62 && bm.pos.y > 8
       if (hitBody) emit('imouto.hit', { x: bm.pos.x, y: bm.pos.y, z: bm.pos.z })
       else if (bm.pos.y <= 1) emit('bomb.burst', { x: bm.pos.x, y: 2, z: bm.pos.z })
-      if (hitBody || bm.pos.y <= 1 || bm.t > 12) bombs.current.splice(i, 1)
+      if (hitBody || bm.pos.y <= 1 || bm.t > 20) bombs.current.splice(i, 1)
     }
     bombMesh.current.count = bombs.current.length
+    bombHalo.current.count = bombs.current.length
+    const haloPulse = 1 + 0.18 * Math.sin(performance.now() / 1000 * bc.pulse)
     bombs.current.forEach((bm, i) => {
       m4.identity()
       m4.setPosition(bm.pos)
       bombMesh.current.setMatrixAt(i, m4)
+      m4.makeScale(haloPulse, haloPulse, haloPulse)
+      m4.setPosition(bm.pos)
+      bombHalo.current.setMatrixAt(i, m4)
     })
     bombMesh.current.instanceMatrix.needsUpdate = true
+    bombHalo.current.instanceMatrix.needsUpdate = true
     // ミサイル
     fireTimer.current -= dt
     if (im && alive.length > 0 && fireTimer.current <= 0 && !stunned) {
@@ -341,9 +357,14 @@ export function Fighters({ squad = 0 }: { squad?: number }) {
         Array.from({ length: FIGHTERS.count }, (_, i) => (
           <SmokeRibbon key={`s${gen}-${i}`} source={groups.current[i]} color={FIGHTERS.smokeColors[i % FIGHTERS.smokeColors.length]} points={FIGHTERS.smokePoints} width={FIGHTERS.smokeWidth} opacity={FIGHTERS.smokeOpacity} />
         ))}
+      {/* 爆弾：黒い玉と、その周りの明るい光（見えやすく） */}
       <instancedMesh ref={bombMesh} args={[undefined, undefined, 48]}>
-        <sphereGeometry args={[FIGHTERS.bomb.size, 8, 8]} />
-        <meshToonMaterial color="#333a44" gradientMap={toonGradient()} />
+        <sphereGeometry args={[FIGHTERS.bomb.size, 10, 8]} />
+        <meshBasicMaterial color={FIGHTERS.bomb.color} />
+      </instancedMesh>
+      <instancedMesh ref={bombHalo} args={[undefined, undefined, 48]} userData={{ noXray: true }}>
+        <sphereGeometry args={[FIGHTERS.bomb.haloSize, 10, 8]} />
+        <meshBasicMaterial color={FIGHTERS.bomb.haloColor} transparent opacity={FIGHTERS.bomb.haloOpacity} blending={THREE.AdditiveBlending} depthWrite={false} />
       </instancedMesh>
       <instancedMesh ref={missileMesh} args={[undefined, undefined, 32]}>
         <sphereGeometry args={[1.6, 8, 8]} />
