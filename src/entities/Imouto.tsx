@@ -160,7 +160,9 @@ export function Imouto() {
     let speedMul = hitTimer.current > 0 ? HIT.slowFactor : 1
     if (sk === 'skip') speedMul = SKILLS.skip.speedMul
     if (sk === 'shoe' || sk === 'cry') speedMul = 0
-    const targetSpeed = (sk === 'skip' ? 1 : Math.max(0, m.y)) * IMOUTO.walkSpeed * speedMul
+    // 自動歩行：常に前進。W で加速、S で減速。兄は方向だけ変える
+    const drive = playing ? (m.y > 0.2 ? IMOUTO.boostMul : m.y < -0.2 ? IMOUTO.slowMul : 1) : 0
+    const targetSpeed = (sk === 'skip' ? 1 : drive) * IMOUTO.walkSpeed * speedMul
     speed.current += (targetSpeed - speed.current) * Math.min(1, IMOUTO.accel * dt)
     g.position.x += Math.sin(g.rotation.y) * speed.current * dt
     g.position.z += Math.cos(g.rotation.y) * speed.current * dt

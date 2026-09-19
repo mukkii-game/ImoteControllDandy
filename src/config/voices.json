@@ -9,6 +9,9 @@
   "imouto.skill.cry": "audio/voice/imouto_mou.mp3",
   "game.clear": "audio/voice/imouto_ittekimasu2.mp3",
   "game.late": "audio/voice/imouto_mou.mp3",
+  "se.step": "audio/se/stomp.mp3",
+  "se.boom": "audio/se/boom.mp3",
+  "se.throw": "audio/se/whoosh.mp3",
   "bgm.title": "audio/bgm/title.mp3",
   "bgm.play": "audio/bgm/play.mp3",
   "bgm.ed": "audio/bgm/ed.mp3"

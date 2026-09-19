@@ -20,6 +20,8 @@ export interface GameEvents {
   'shoe.launch': { x: number; y: number; z: number; yaw: number }
   'game.clear': void
   'game.late': void
+  /** 建物が砕ける（ブロック破片を出す） */
+  'building.break': { x: number; z: number; w: number; h: number; d: number; color: string }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

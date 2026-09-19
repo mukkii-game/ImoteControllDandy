@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { on, emit } from '../systems/events'
 import { useGame } from '../systems/store'
+import { refs } from '../systems/refs'
 import * as THREE from 'three'
 import { STAGE, GAME } from '../config/game'
 import { toonGradient } from '../systems/toon'
@@ -127,28 +128,43 @@ function Buildings({ list }: { list: Building[] }) {
     return m
   }, [list])
 
-  useEffect(
-    () =>
-      on('imouto.step', ({ x, z }) => {
-        let n = 0
-        const r = GAME.crushRadius
-        list.forEach((b, i) => {
-          if (crushed.current.has(i)) return
-          // 建物の矩形と足元円の距離
-          const dx = Math.max(Math.abs(x - b.x) - b.w / 2, 0)
-          const dz = Math.max(Math.abs(z - b.z) - b.d / 2, 0)
-          if (Math.hypot(dx, dz) < r) {
-            crushed.current.set(i, 0)
-            emit('enemy.hit', { id: -1, x: b.x, y: 4, z: b.z })
-            n++
-          }
-        })
-        if (n > 0) useGame.getState().addScore(-GAME.crushPenalty * n)
-      }),
-    [list],
-  )
+  const broken = useRef<Set<number>>(new Set())
+  const bodyClock = useRef(0)
+
+  /** 足元円内の建物を潰す／砕く。低い建物はぺちゃんこ、高い建物はブロックに砕ける */
+  const hitBuildings = (x: number, z: number, r: number) => {
+    let n = 0
+    list.forEach((b, i) => {
+      if (crushed.current.has(i) || broken.current.has(i)) return
+      const dx = Math.max(Math.abs(x - b.x) - b.w / 2, 0)
+      const dz = Math.max(Math.abs(z - b.z) - b.d / 2, 0)
+      if (Math.hypot(dx, dz) >= r) return
+      n++
+      if (b.h <= GAME.stompHeight) {
+        crushed.current.set(i, 0)
+        emit('enemy.hit', { id: -1, x: b.x, y: 4, z: b.z })
+      } else {
+        broken.current.add(i)
+        o.position.set(b.x, 0, b.z)
+        o.scale.set(0.0001, 0.0001, 0.0001)
+        o.updateMatrix()
+        mesh.setMatrixAt(i, o.matrix)
+        mesh.instanceMatrix.needsUpdate = true
+        emit('building.break', { x: b.x, z: b.z, w: b.w, h: b.h, d: b.d, color: b.color })
+      }
+    })
+    if (n > 0) useGame.getState().addScore(-GAME.crushPenalty * n)
+  }
+
+  useEffect(() => on('imouto.step', ({ x, z }) => hitBuildings(x, z, GAME.crushRadius)), [list]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useFrame((_, dt) => {
+    // 体（胴）に当たった建物も壊す
+    bodyClock.current += dt
+    if (bodyClock.current > 0.12 && refs.imouto) {
+      bodyClock.current = 0
+      hitBuildings(refs.imouto.position.x, refs.imouto.position.z, GAME.bodyRadius)
+    }
     if (crushed.current.size === 0) return
     let dirty = false
     crushed.current.forEach((t, i) => {

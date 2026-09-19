@@ -198,8 +198,16 @@ export function seChime() {
 /** イベントに音を紐付ける。App で一度呼ぶ */
 export function bindAudio(): () => void {
   const offs = [
-    on('imouto.step', ({ strength }) => seStomp(Math.min(1, strength))),
-    on('enemy.hit', () => seBoom()),
+    on('imouto.step', ({ strength }) => {
+      playVoice('se.step', Math.min(1, 0.5 + strength)).then((ok) => {
+        if (!ok) seStomp(Math.min(1, strength))
+      })
+    }),
+    on('enemy.hit', () => {
+      playVoice('se.boom').then((ok) => {
+        if (!ok) seBoom()
+      })
+    }),
     on('bro.throw', () => {
       seWhoosh(1)
       playVoice('bro.throw')

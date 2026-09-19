@@ -97,19 +97,22 @@ export const IMOUTO = {
     text: 'ロロ',
     vertical: true,
     u: 0.5,
-    v: 0.245,
+    v: 0.25,
     /** テクスチャ幅に対する1文字の大きさ */
-    size: 0.18,
-    lineGap: 1.15,
+    size: 0.26,
+    lineGap: 1.08,
     color: '#ff2d8a',
     outline: '#7a1040',
-    outlineWidth: 0.012,
+    outlineWidth: 0.016,
     font: '900 {px}px "Rounded Mplus 1c", "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Yu Gothic UI", "Noto Sans JP", sans-serif',
     /** 描画の上下反転（UV の向きがモデルによって違うため） */
     flipY: false,
   },
-  /** 歩行速度（m/s）。1歩で車数台分 */
+  /** 歩行速度（m/s）。1歩で車数台分。妹は自動で歩き続ける */
   walkSpeed: 22,
+  /** W で加速、S で減速（倍率） */
+  boostMul: 1.4,
+  slowMul: 0.5,
   /** 1歩の周期（秒） */
   stepPeriod: 1.15,
   /** 旋回速度（rad/s） */
@@ -222,7 +225,7 @@ export const CAMERA = {
   followLerp: 7,
   /** シェイク減衰 */
   shakeDecay: 4.5,
-  shakeAmp: 0.6,
+  shakeAmp: 0, // 一旦停止（後で調整）
 }
 
 export const STAGE = {
@@ -261,6 +264,11 @@ export const GAME = {
   crushRadius: 34,
   crushPenalty: 30,
   crushSec: 0.35,
+  /** 体に当たった建物：胴体の半径（m）と、この高さ以下の建物は踏み潰し、以上はブロックに砕ける */
+  bodyRadius: 22,
+  stompHeight: 26,
+  debrisPerBuilding: 10,
+  debrisSec: 3.5,
   /** 公園：この範囲は建物を置かない（|x| < halfWidth, z in [from, to]） */
   park: { halfWidth: 320, from: 560, to: 1250 },
 }
