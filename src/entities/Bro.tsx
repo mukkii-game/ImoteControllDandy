@@ -183,8 +183,9 @@ export function Bro() {
         g.position.copy(v)
         yawRef.current = refs.imouto?.rotation.y ?? 0
         g.rotation.y = yawRef.current
+        // 肩上は常に腕組み（指差しは一旦オフ。BRO.pointWhileSteering で復活）
         const m = readMove()
-        steer.current = m.y > 0.2 ? (m.x > 0.3 ? 1 : m.x < -0.3 ? -1 : 0) : m.x > 0.3 ? 1 : m.x < -0.3 ? -1 : m.y > 0.2 ? 0 : null
+        steer.current = BRO.pointWhileSteering ? (m.y > 0.2 ? (m.x > 0.3 ? 1 : m.x < -0.3 ? -1 : 0) : m.x > 0.3 ? 1 : m.x < -0.3 ? -1 : m.y > 0.2 ? 0 : null) : null
         // A を離した瞬間、ロックがあれば投擲開始
         const aNow = input.keys.a && playing
         if (wasA.current && !aNow && lock.ids.length > 0) {

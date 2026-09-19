@@ -76,9 +76,11 @@ export const BRO = {
   dismountAhead: 22,
   dismountSide: 8,
   dismountSec: 1.1,
+  /** 肩上で操作中に指差しするか（false なら常に腕組み） */
+  pointWhileSteering: false,
   /** 走りアニメの1歩の周期（秒） */
-  stepPeriod: 0.42,
-  walk: { legSwing: 0.9, kneeBend: 1.2, armSwing: 0.8, armDown: 1.2, bodyBob: 0.03, lean: 0.25, straightArms: false },
+  stepPeriod: 0.5,
+  walk: { legSwing: 0.75, kneeBend: 1.1, armSwing: 0.7, armDown: 1.2, bodyBob: 0.018, lean: 0.2, straightArms: false },
   /** マフラーの色 */
   scarfColor: '#e0312b',
 }

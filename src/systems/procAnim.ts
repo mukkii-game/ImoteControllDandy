@@ -48,10 +48,12 @@ export function applyWalk(vrm: VRM, phase: number, ratio: number, p: WalkParams,
   }
   const s = Math.sin(phase)
   const swing = s * p.legSwing * ratio
+  // 膝：ゼロ交差で折れ線にならないよう smoothstep で滑らかに
+  const sm = (x: number) => x * x * (3 - 2 * x)
   set('leftUpperLeg', swing)
   set('rightUpperLeg', -swing)
-  set('leftLowerLeg', Math.max(0, -s) * p.kneeBend * ratio)
-  set('rightLowerLeg', Math.max(0, s) * p.kneeBend * ratio)
+  set('leftLowerLeg', sm(Math.max(0, -s)) * p.kneeBend * ratio)
+  set('rightLowerLeg', sm(Math.max(0, s)) * p.kneeBend * ratio)
   // 腕は Z 回転で下ろす。左右の向きは armSign で吸収（VRM0/1 の差）
   const g = armSign(vrm)
   const arm = s * p.armSwing * ratio
@@ -63,7 +65,8 @@ export function applyWalk(vrm: VRM, phase: number, ratio: number, p: WalkParams,
   const hips = h.getNormalizedBoneNode('hips')
   if (hips) {
     const base = (hips.userData.baseY ??= hips.position.y) as number
-    hips.position.y = base + Math.abs(Math.cos(phase)) * p.bodyBob * modelHeight * ratio
+    // 上下動：|cos| だと尖った山になってカクつくので 1-cos(2φ) で滑らかに
+    hips.position.y = base + ((1 - Math.cos(phase * 2)) / 2) * p.bodyBob * modelHeight * ratio
   }
   set('spine', p.lean * ratio)
 }

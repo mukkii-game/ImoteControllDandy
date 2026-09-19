@@ -215,6 +215,10 @@ export function CameraRig() {
       const kk = Math.min(1, CAMERA.thrown.followLerp * dt)
       camera.position.lerp(desiredPos, kk)
       smoothedLook.current.lerp(desiredLook, Math.min(1, kk * 2))
+    } else if (st.mode === 'ground') {
+      // 地上：位置も軽く追従させて、歩幅の刻みでカクつかないように
+      camera.position.lerp(desiredPos, Math.min(1, 18 * dt))
+      smoothedLook.current.lerp(desiredLook, Math.min(1, 14 * dt))
     } else {
       camera.position.copy(desiredPos)
       smoothedLook.current.lerp(desiredLook, snap ? 1 : Math.min(1, k * 3))
