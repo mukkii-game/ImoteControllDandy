@@ -593,9 +593,12 @@ export const SOUND = {
   lockVolume: 0.8,
   /** バルカン 1 発の音量（連射なので小さめ） */
   vulcanVolume: 0.25,
-  /** 被弾の「いたっ」：何回に 1 回つぶやくか、と連続で鳴らすときの最短間隔（秒） */
-  hitVoiceEvery: 3,
-  hitVoiceMinGapSec: 0.8,
+  /** 被弾の「痛っ」：何回に 1 回鳴らすか、鳴ったあと鳴らさない秒数、用意した声の種類数（voices.json の imouto.hit.1..N からランダム） */
+  hitVoiceEvery: 1,
+  hitVoiceMinGapSec: 3,
+  hitVoices: 5,
+  /** タックル音の種類数（voices.json の se.tackle.1..N を順繰り） */
+  tackleSounds: 2,
 }
 
 /** 「泣け」：水色の涙の玉が目から四方へ一度に大量に飛び散る。当たった敵は一撃 */

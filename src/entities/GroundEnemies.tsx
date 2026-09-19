@@ -38,7 +38,6 @@ export function GroundEnemies() {
   const policeMesh = useRef<THREE.InstancedMesh>(null!)
   const lightMesh = useRef<THREE.InstancedMesh>(null!)
   const tankMesh = useRef<THREE.InstancedMesh>(null!)
-  const shellMesh = useRef<THREE.InstancedMesh>(null!)
   const shells = useRef<{ pos: THREE.Vector3; vel: THREE.Vector3; t: number; proj?: Projectile }[]>([])
   const shellTimer = useRef(TANKS.shellInterval)
   const lastSpawnDist = useRef(0)
@@ -142,7 +141,7 @@ export function GroundEnemies() {
         const target = tmpV.set(im.position.x + (Math.random() - 0.5) * 10, 8 + Math.random() * 40, im.position.z + (Math.random() - 0.5) * 8)
         const vel = target.clone().sub(s.pos).normalize().multiplyScalar(POLICE.shotSpeed)
         const sp = s.pos.clone().setY(3)
-        shells.current.push({ pos: sp, vel, t: 0, proj: addProjectile(sp, 5) })
+        shells.current.push({ pos: sp, vel, t: 0, proj: addProjectile(sp, PROJECTILE.hitRadius, 'missile', vel) })
       }
     }
     // 後ろに置き去りになった敵は消す
@@ -160,7 +159,7 @@ export function GroundEnemies() {
       const target = tmpV.set(im.position.x + (Math.random() - 0.5) * 10, 4 + Math.random() * 40, im.position.z + (Math.random() - 0.5) * 8)
       const vel = target.clone().sub(t.pos).normalize().multiplyScalar(TANKS.shellSpeed)
       const sp = t.pos.clone().setY(8)
-      shells.current.push({ pos: sp, vel, t: 0, proj: addProjectile(sp, 6) })
+      shells.current.push({ pos: sp, vel, t: 0, proj: addProjectile(sp, PROJECTILE.hitRadius, 'missile', vel) })
     }
     for (let i = shells.current.length - 1; i >= 0; i--) {
       const s = shells.current[i]
@@ -215,13 +214,7 @@ export function GroundEnemies() {
     } else {
       write(tankMesh.current, tanks.current, TANKS.size.h / 2, () => yaw + Math.PI)
     }
-    shellMesh.current.count = shells.current.length
-    shells.current.forEach((s, i) => {
-      m4.identity()
-      m4.setPosition(s.pos)
-      shellMesh.current.setMatrixAt(i, m4)
-    })
-    shellMesh.current.instanceMatrix.needsUpdate = true
+    // （砲弾の見た目は entities/Projectiles.tsx が登録簿から描く）
   })
 
   return (
@@ -249,10 +242,6 @@ export function GroundEnemies() {
       <instancedMesh ref={tankMesh} args={[undefined, undefined, 16]} castShadow>
         <boxGeometry args={[TANKS.size.w, TANKS.size.h, TANKS.size.d]} />
         <meshToonMaterial color="#6b7a4a" gradientMap={grad} />
-      </instancedMesh>
-      <instancedMesh ref={shellMesh} args={[undefined, undefined, 32]}>
-        <sphereGeometry args={[PROJECTILE.bodyRadius, 8, 8]} />
-        <meshBasicMaterial color={PROJECTILE.color} />
       </instancedMesh>
     </XrayRoot>
   )

@@ -115,12 +115,9 @@ export function Fighters({ squad = 0 }: { squad?: number }) {
   const missiles = useRef<Missile[]>([])
   const bombs = useRef<Missile[]>([])
   const bombTimer = useRef(1)
-  const bombMesh = useRef<THREE.InstancedMesh>(null!)
-  const bombHalo = useRef<THREE.InstancedMesh>(null!)
   const pilots = useRef<Pilot[]>([])
   const fireTimer = useRef(FIGHTERS.missileInterval)
   const deadTimer = useRef(0)
-  const missileMesh = useRef<THREE.InstancedMesh>(null!)
   const pilotMesh = useRef<THREE.InstancedMesh>(null!)
   const len = useMemo(() => curve.getLength(), [curve])
   /** 滞在（旋回）の状態。セットごとにリセット */
@@ -162,9 +159,7 @@ export function Fighters({ squad = 0 }: { squad?: number }) {
         if (g) g.visible = false
       })
       deadTimer.current = 0
-      missileMesh.current.count = 0
       pilotMesh.current.count = 0
-      bombMesh.current.count = 0
       return
     }
     if (!enabledRef.current) {
@@ -272,7 +267,7 @@ export function Fighters({ squad = 0 }: { squad?: number }) {
       // 妹の胴体へ向けてゆっくり飛ぶ
       const start = b.pos.clone().setY(b.pos.y - 3)
       const aim = new THREE.Vector3(im.position.x, im.position.y + 35, im.position.z).sub(start).normalize().multiplyScalar(bc.speed)
-      bombs.current.push({ pos: start, vel: aim, t: 0, proj: addProjectile(start, bc.haloSize) })
+      bombs.current.push({ pos: start, vel: aim, t: 0, proj: addProjectile(start, bc.haloSize, 'bomb', aim) })
     }
     for (let i = bombs.current.length - 1; i >= 0; i--) {
       const bm = bombs.current[i]
@@ -298,19 +293,7 @@ export function Fighters({ squad = 0 }: { squad?: number }) {
         bombs.current.splice(i, 1)
       }
     }
-    bombMesh.current.count = bombs.current.length
-    bombHalo.current.count = bombs.current.length
-    const haloPulse = 1 + 0.18 * Math.sin(performance.now() / 1000 * bc.pulse)
-    bombs.current.forEach((bm, i) => {
-      m4.identity()
-      m4.setPosition(bm.pos)
-      bombMesh.current.setMatrixAt(i, m4)
-      m4.makeScale(haloPulse, haloPulse, haloPulse)
-      m4.setPosition(bm.pos)
-      bombHalo.current.setMatrixAt(i, m4)
-    })
-    bombMesh.current.instanceMatrix.needsUpdate = true
-    bombHalo.current.instanceMatrix.needsUpdate = true
+    // （爆弾とミサイルの見た目は entities/Projectiles.tsx が登録簿から描く）
     // ミサイル
     fireTimer.current -= dt
     if (im && alive.length > 0 && fireTimer.current <= 0 && !stunned) {
@@ -319,7 +302,7 @@ export function Fighters({ squad = 0 }: { squad?: number }) {
       const target = new THREE.Vector3(im.position.x + (Math.random() - 0.5) * 10, im.position.y + 6 + Math.random() * 48, im.position.z + (Math.random() - 0.5) * 8)
       const vel = target.sub(shooter.pos).normalize().multiplyScalar(FIGHTERS.missileSpeed)
       const mp = shooter.pos.clone()
-      missiles.current.push({ pos: mp, vel, t: 0, proj: addProjectile(mp, 6) })
+      missiles.current.push({ pos: mp, vel, t: 0, proj: addProjectile(mp, PROJECTILE.hitRadius, 'missile', vel) })
     }
     for (let i = missiles.current.length - 1; i >= 0; i--) {
       const ms = missiles.current[i]
@@ -332,13 +315,6 @@ export function Fighters({ squad = 0 }: { squad?: number }) {
         missiles.current.splice(i, 1)
       }
     }
-    missileMesh.current.count = missiles.current.length
-    missiles.current.forEach((ms, i) => {
-      m4.identity()
-      m4.setPosition(ms.pos)
-      missileMesh.current.setMatrixAt(i, m4)
-    })
-    missileMesh.current.instanceMatrix.needsUpdate = true
     // パイロット（パラシュート）
     for (let i = pilots.current.length - 1; i >= 0; i--) {
       const p = pilots.current[i]
@@ -376,19 +352,6 @@ export function Fighters({ squad = 0 }: { squad?: number }) {
         Array.from({ length: FIGHTERS.count }, (_, i) => (
           <SmokeRibbon key={`s${gen}-${i}`} source={groups.current[i]} color={FIGHTERS.smokeColors[i % FIGHTERS.smokeColors.length]} points={FIGHTERS.smokePoints} width={FIGHTERS.smokeWidth} opacity={FIGHTERS.smokeOpacity} />
         ))}
-      {/* 爆弾：黒い玉と、その周りの明るい光（見えやすく） */}
-      <instancedMesh ref={bombMesh} args={[undefined, undefined, 48]}>
-        <sphereGeometry args={[FIGHTERS.bomb.size, 10, 8]} />
-        <meshBasicMaterial color={FIGHTERS.bomb.color} />
-      </instancedMesh>
-      <instancedMesh ref={bombHalo} args={[undefined, undefined, 48]} userData={{ noXray: true }}>
-        <sphereGeometry args={[FIGHTERS.bomb.haloSize, 10, 8]} />
-        <meshBasicMaterial color={FIGHTERS.bomb.haloColor} transparent opacity={FIGHTERS.bomb.haloOpacity} blending={THREE.AdditiveBlending} depthWrite={false} />
-      </instancedMesh>
-      <instancedMesh ref={missileMesh} args={[undefined, undefined, 32]}>
-        <sphereGeometry args={[PROJECTILE.bodyRadius, 8, 8]} />
-        <meshBasicMaterial color={PROJECTILE.color} />
-      </instancedMesh>
       <instancedMesh ref={pilotMesh} args={[undefined, undefined, 16]}>
         <coneGeometry args={[4, 5, 10]} />
         <meshToonMaterial color="#ffe08a" gradientMap={toonGradient()} />

@@ -14,7 +14,6 @@ import { PROJECTILE } from '../config/waves'
 const impact = new THREE.Vector3()
 import { useGame } from '../systems/store'
 
-const m4 = new THREE.Matrix4()
 const tmp = new THREE.Vector3()
 const lead = new THREE.Vector3()
 const fwd = new THREE.Vector3()
@@ -88,7 +87,6 @@ export function Helis() {
   const respawn = useRef<number[]>([])
   const vel = useRef<THREE.Vector3[]>([])
   const missiles = useRef<Missile[]>([])
-  const missileMesh = useRef<THREE.InstancedMesh>(null!)
   const fireTimer = useRef(HELIS.shotInterval)
   const seeds = useMemo(() => Array.from({ length: HELIS.groups }, () => Math.random()), [])
 
@@ -176,7 +174,7 @@ export function Helis() {
       const target = new THREE.Vector3(im.position.x + (Math.random() - 0.5) * 10, im.position.y + 10 + Math.random() * 45, im.position.z + (Math.random() - 0.5) * 8)
       const v = target.sub(shooter.pos).normalize().multiplyScalar(HELIS.shotSpeed)
       const mp = shooter.pos.clone()
-      missiles.current.push({ pos: mp, vel: v, t: 0, proj: addProjectile(mp, 6) })
+      missiles.current.push({ pos: mp, vel: v, t: 0, proj: addProjectile(mp, PROJECTILE.hitRadius, 'missile', v) })
     }
     for (let i = missiles.current.length - 1; i >= 0; i--) {
       const ms = missiles.current[i]
@@ -189,13 +187,7 @@ export function Helis() {
         missiles.current.splice(i, 1)
       }
     }
-    missileMesh.current.count = missiles.current.length
-    missiles.current.forEach((ms, i) => {
-      m4.identity()
-      m4.setPosition(ms.pos)
-      missileMesh.current.setMatrixAt(i, m4)
-    })
-    missileMesh.current.instanceMatrix.needsUpdate = true
+    // （ミサイルの見た目は entities/Projectiles.tsx が登録簿から描く）
   })
 
   return (
@@ -205,10 +197,6 @@ export function Helis() {
           <HeliMesh rotor={(el) => (rotors.current[i] = el)} tail={(el) => (tails.current[i] = el)} />
         </group>
       ))}
-      <instancedMesh ref={missileMesh} args={[undefined, undefined, 32]}>
-        <sphereGeometry args={[PROJECTILE.bodyRadius, 8, 8]} />
-        <meshBasicMaterial color={PROJECTILE.color} />
-      </instancedMesh>
     </XrayRoot>
   )
 }

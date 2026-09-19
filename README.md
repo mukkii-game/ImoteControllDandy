@@ -72,7 +72,7 @@ npm run build    # dist/ に出力（itch.io 用）
 - 空の敵：戦闘機は 2 編隊（FIGHTERS.squadrons、各 7 機）が同時に別方向から。ヘリは 2 編隊 × 4 機（HELIS.groups / perGroup / formation）でまとまって妹の周りを回る。全体的に前より遠め（loiter.kinds の center、HELIS.keepDist 260）。戦闘機の速度は 220 m/s
 - スタートは z=-1000（ビル街 z=-500 の手前）。エネミービルは右に満洲・左に山田うどん（BOSSES）。体を左右に揺らし上半分がしなりながらにじり寄る（BOSS.sway）
 - 被弾：SPEC 通り 0.5 秒減速（HIT.slowSec / slowFactor）＋驚き顔＋「いたっ」の声（line_imouto_hit、SOUND.hitVoiceMinGapSec で連呼を抑える）。ダメージは無い
-- 敵の弾は大きめ（PROJECTILE.bodyRadius 3.5m）で黄色い光をまとい（entities/ProjectileGlow.tsx）、速さは 55〜60 m/s とゆっくり。妹の体への着弾は体の表面の点（systems/projectiles.ts の imoutoImpact）で、爆発は兄と同じくらい（HIT.explosionRadius 5m）。「いたっ」は 3 回に 1 回（SOUND.hitVoiceEvery）
+- 敵の弾はミサイル型（灰色の胴体＋赤い先端、PROJECTILE.bodyRadius 0.9m）で黄色い光をまとい、速さは 28〜30 m/s。爆弾は黒い玉（FIGHTERS.bomb）。見た目は entities/Projectiles.tsx が登録簿（systems/projectiles.ts）からまとめて描く。妹の体への着弾は体の表面の点（imoutoImpact）で、爆発は兄と同じくらい（HIT.explosionRadius 5m）＋火の玉→黒煙の粒（HIT.puffs）。「痛っ」は効果音ラボの SE 5 種からランダム、鳴ったら 3 秒は鳴らさない（SOUND.hitVoiceMinGapSec）。タックル音は 2 種を順繰り（SOUND.tackleSounds）
 - 敵の弾（爆弾・ミサイル・砲弾）は systems/projectiles.ts に登録され、地上のバルカンで撃ち落とせる（サイトに入れば自動照準の対象、敵より優先。撃ち落とすと爆発＋BRO.vulcan.projectileScore）
 - 「泣け」（TEARS、entities/Tears.tsx）：「うえーんうえーん」の声と吹き出し、目から水色の涙の玉 70 個が四方へ一度に飛び散り、当たった敵は一撃（従来の全敵スタンもそのまま）
 - 学校は超巨大（GAME.school：幅 900・高さ 220・時計塔 180）でフォグを受けない（fog={false}）。カメラ far 3400

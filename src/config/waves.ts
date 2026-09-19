@@ -98,7 +98,7 @@ export const FIGHTERS = {
   ] as { name: string; loiter: 'near' | 'far' | 'overhead'; path: [number, number, number][] }[],
   /** 何秒に1発ミサイルを撃つか（編隊全体） */
   missileInterval: 3.2,
-  missileSpeed: 60,
+  missileSpeed: 30,
   /** 抜けた後（または全滅後）、次のセットが来るまで */
   respawnSec: 2.5,
   /**
@@ -126,7 +126,7 @@ export const FIGHTERS = {
    * interval=何秒に 1 発、speed=妹へ向かう速さ（m/s）、homing=妹の方へ曲がる強さ、gravity=落下の加速度、
    * hitRadius=命中とみなす半径（妹の胴体中心から）。size=爆弾の半径、haloSize=光の半径。妹にダメージは無い（減速と被弾エフェクトだけ）
    */
-  bomb: { interval: 0.9, speed: 28, homing: 1.5, gravity: 4, hitRadius: 30, size: 4, haloSize: 11, color: '#111318', haloColor: '#fff0a0', haloOpacity: 0.55, pulse: 6 },
+  bomb: { interval: 0.9, speed: 14, homing: 1.5, gravity: 2, hitRadius: 30, size: 2, haloSize: 5, color: '#111318', haloColor: '#fff0a0', haloOpacity: 0.55, pulse: 6 },
   /** パラシュートで降りるパイロット */
   pilotFallSpeed: 6,
   pilotSec: 8,
@@ -157,7 +157,7 @@ export const HELIS = {
   size: 16,
   rotorSpeed: 28,
   shotInterval: 2.8,
-  shotSpeed: 55,
+  shotSpeed: 28,
   /** やられてから戻ってくるまで（秒）。遠くから飛んでくる */
   respawnSec: 6,
   spawnDist: 700,
@@ -179,7 +179,7 @@ export const POLICE = {
   fleeDist: 130,
   /** 何秒に 1 発撃つか（パトカー全体）と弾速 */
   shotInterval: 2.2,
-  shotSpeed: 60,
+  shotSpeed: 30,
 }
 
 /** エネミービル（ビルの形をした敵）。妹と同じくらい大きく、近づくとにじり寄ってくる。通り抜けられない */
@@ -211,7 +211,7 @@ export const TANKS = {
   /** 側方へのオフセット（道路脇）。1 グループは同じ側から、次のグループは反対側から */
   side: 40,
   shellInterval: 4,
-  shellSpeed: 55,
+  shellSpeed: 28,
   size: { w: 12, h: 7, d: 20 },
 }
 
@@ -220,9 +220,14 @@ export const TANKS = {
  * 光は登録簿（systems/projectiles）にある弾すべてに entities/ProjectileGlow が付ける
  */
 export const PROJECTILE = {
-  bodyRadius: 3.5,
-  color: '#ff8c3a',
-  haloRadius: 8,
+  /** ミサイル：胴体の半径（m）と長さ（半径比）、色（胴体は金属っぽい灰色、先端は赤） */
+  bodyRadius: 0.9,
+  bodyLength: 5,
+  color: '#8a8f99',
+  noseColor: '#e63946',
+  /** バルカンの当たり判定・自動照準に使う半径（m。見た目より大きめ） */
+  hitRadius: 4,
+  haloRadius: 2.5,
   haloColor: '#ffe9a0',
   haloOpacity: 0.5,
   pulse: 7,
@@ -232,8 +237,10 @@ export const PROJECTILE = {
 export const HIT = {
   slowSec: 0.5,
   slowFactor: 0.35,
-  /** 着弾の爆発の大きさ（m、兄と同じくらい） */
+  /** 着弾の爆発の大きさ（m、兄と同じくらい）と、飛び散る火の玉→黒煙の粒の数・大きさ（m） */
   explosionRadius: 5,
+  puffs: 7,
+  puffSize: 2.2,
   /** 驚き顔の秒数 */
   faceSec: 0.4,
   /** 命中判定の半径（m、妹の胴体中心から） */

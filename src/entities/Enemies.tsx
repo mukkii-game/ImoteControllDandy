@@ -134,8 +134,17 @@ export function Explosions() {
       pushDust(x, z, 1)
     })
     const off3 = on('imouto.hit', ({ x, y, z }) => {
-      // 妹の体への着弾：兄と同じくらいの小さな爆発（着弾点は体の表面）
+      // 妹の体への着弾：兄と同じくらいの小さな爆発（着弾点は体の表面）＋火の玉から黒煙になる粒
       list.current.push({ pos: new THREE.Vector3(x, y, z), t: 0, dust: false, radius: HIT.explosionRadius })
+      for (let i = 0; i < HIT.puffs; i++) {
+        puffs.current.push({
+          pos: new THREE.Vector3(x + (Math.random() - 0.5) * 2, y + (Math.random() - 0.5) * 2, z + (Math.random() - 0.5) * 2),
+          vel: new THREE.Vector3((Math.random() - 0.5) * 14, 4 + Math.random() * 10, (Math.random() - 0.5) * 14),
+          t: -i * 0.03,
+          size: HIT.puffSize * (0.7 + Math.random() * 0.6),
+        })
+      }
+      while (puffs.current.length > PUFF_MAX) puffs.current.shift()
       if (list.current.length > pool.length) list.current.shift()
     })
     const off2 = on('imouto.step', ({ x, z, strength }) => {
