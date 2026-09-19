@@ -11,6 +11,9 @@ import { useGame } from '../systems/store'
 
 const m4 = new THREE.Matrix4()
 const tmp = new THREE.Vector3()
+const lead = new THREE.Vector3()
+const fwd = new THREE.Vector3()
+const right = new THREE.Vector3()
 
 /** ヘリの機体（プリミティブ：胴体・尾・メインローター・テールローター） */
 function HeliMesh({ rotor, tail }: { rotor: (el: THREE.Object3D | null) => void; tail: (el: THREE.Object3D | null) => void }) {
@@ -62,29 +65,32 @@ interface Missile {
   t: number
 }
 
+const TOTAL = HELIS.groups * HELIS.perGroup
+
 /**
- * ヘリ編隊。開始直後から妹の周りを一定距離で回りながら待機し、時々ミサイルを撃つ。
- * やられると遠くから新しい機体が飛んでくる。
+ * ヘリ編隊。groups 個の編隊（各 perGroup 機）が、それぞれ妹の周りを一定距離で回りながら待機し、時々ミサイルを撃つ。
+ * 編隊内の並びは HELIS.formation（ロロから見て横一列）。やられた機体は遠くから新しい機体が飛んできて編隊に戻る。
  */
 export function Helis() {
   const groups = useRef<THREE.Group[]>([])
   const rotors = useRef<(THREE.Object3D | null)[]>([])
   const tails = useRef<(THREE.Object3D | null)[]>([])
   const ents = useRef<Enemy[]>([])
+  /** 編隊ごとの旋回角 */
   const angle = useRef<number[]>([])
   const respawn = useRef<number[]>([])
   const vel = useRef<THREE.Vector3[]>([])
   const missiles = useRef<Missile[]>([])
   const missileMesh = useRef<THREE.InstancedMesh>(null!)
   const fireTimer = useRef(HELIS.shotInterval)
-  const seeds = useMemo(() => Array.from({ length: HELIS.count }, () => Math.random()), [])
+  const seeds = useMemo(() => Array.from({ length: HELIS.groups }, () => Math.random()), [])
 
   useEffect(() => {
-    const created = Array.from({ length: HELIS.count }, (_, i) => {
+    for (let gI = 0; gI < HELIS.groups; gI++) angle.current[gI] = (gI / HELIS.groups) * Math.PI * 2
+    const created = Array.from({ length: TOTAL }, (_, i) => {
       const e = addEnemy('heli', new THREE.Vector3(0, -1000, 0))
       e.alive = false
-      angle.current[i] = (i / HELIS.count) * Math.PI * 2
-      respawn.current[i] = 0.5 + i * 1.5 // 少しずつ時間差で来る
+      respawn.current[i] = 0.5 + i * 0.4 // 少しずつ時間差で来る
       vel.current[i] = new THREE.Vector3()
       return e
     })
@@ -103,47 +109,58 @@ export function Helis() {
     const playing = useGame.getState().phase === 'play'
     const stunned = isStunned()
     const alive: Enemy[] = []
-    ents.current.forEach((e, i) => {
-      const g = groups.current[i]
-      if (!g) return
-      if (!e.alive) {
-        // 再出現：遠くに置いて飛んでくる
-        if (playing) respawn.current[i] -= dt
-        if (respawn.current[i] <= 0) {
-          e.alive = true
-          respawn.current[i] = HELIS.respawnSec
-          const a = angle.current[i]
-          e.pos.set(im.position.x + Math.cos(a) * HELIS.spawnDist, HELIS.height + 40, im.position.z + Math.sin(a) * HELIS.spawnDist)
-          vel.current[i].set(0, 0, 0)
+    for (let gI = 0; gI < HELIS.groups; gI++) {
+      // 編隊の先頭（妹の周りを回る点）と、その進行方向・ロロから見た横方向
+      angle.current[gI] += HELIS.orbitSpeed * (stunned ? 0.2 : 1) * dt * (0.8 + 0.4 * Math.sin(seeds[gI] * 10 + angle.current[gI] * 0.5))
+      const a = angle.current[gI]
+      const wob = Math.sin(a * 1.7 + seeds[gI] * 6) * HELIS.heightSpread
+      lead.set(im.position.x + Math.cos(a) * HELIS.keepDist, HELIS.height + wob + (seeds[gI] - 0.5) * HELIS.heightSpread, im.position.z + Math.sin(a) * HELIS.keepDist)
+      fwd.set(-Math.sin(a), 0, Math.cos(a)) // 旋回の接線
+      const dx = lead.x - im.position.x
+      const dz = lead.z - im.position.z
+      const l = Math.hypot(dx, dz) || 1
+      right.set(dz / l, 0, -dx / l) // ロロから見て横
+      for (let j = 0; j < HELIS.perGroup; j++) {
+        const i = gI * HELIS.perGroup + j
+        const e = ents.current[i]
+        const g = groups.current[i]
+        if (!e || !g) continue
+        if (!e.alive) {
+          // 再出現：遠くに置いて飛んでくる
+          if (playing) respawn.current[i] -= dt
+          if (respawn.current[i] <= 0) {
+            e.alive = true
+            respawn.current[i] = HELIS.respawnSec
+            e.pos.set(im.position.x + Math.cos(a) * HELIS.spawnDist, HELIS.height + 40, im.position.z + Math.sin(a) * HELIS.spawnDist)
+            vel.current[i].set(0, 0, 0)
+          }
+          g.visible = false
+          continue
         }
-        g.visible = false
-        return
+        alive.push(e)
+        const [fx, fy, fz] = HELIS.formation[j % HELIS.formation.length]
+        tmp.copy(lead).addScaledVector(right, fx).addScaledVector(fwd, fz)
+        tmp.y += fy
+        // なめらかに向かう（速度に上限）
+        const to = tmp.sub(e.pos)
+        const dist = to.length()
+        const spd = Math.min(HELIS.speed * (stunned ? 0.3 : 1), dist * 1.2)
+        if (dist > 0.01) to.normalize().multiplyScalar(spd)
+        vel.current[i].lerp(to, Math.min(1, 2.5 * dt))
+        e.pos.addScaledVector(vel.current[i], dt)
+        g.position.copy(e.pos)
+        // 向き：進行方向。傾き（バンク）は速度で
+        const v = vel.current[i]
+        if (Math.hypot(v.x, v.z) > 2) g.rotation.y = Math.atan2(v.x, v.z)
+        g.rotation.z = THREE.MathUtils.clamp(-v.x * 0.004, -0.35, 0.35)
+        g.rotation.x = THREE.MathUtils.clamp(Math.hypot(v.x, v.z) * 0.006, 0, 0.3)
+        const r = rotors.current[i]
+        if (r) r.rotation.y += HELIS.rotorSpeed * dt
+        const t = tails.current[i]
+        if (t) t.rotation.x += HELIS.rotorSpeed * 1.5 * dt
+        g.visible = true
       }
-      alive.push(e)
-      // 目標位置：妹の周りを回る点
-      angle.current[i] += HELIS.orbitSpeed * (stunned ? 0.2 : 1) * dt * (0.8 + 0.4 * Math.sin(seeds[i] * 10 + angle.current[i] * 0.5))
-      const a = angle.current[i]
-      const wob = Math.sin(a * 1.7 + seeds[i] * 6) * HELIS.heightSpread
-      tmp.set(im.position.x + Math.cos(a) * HELIS.keepDist, HELIS.height + wob + (seeds[i] - 0.5) * HELIS.heightSpread, im.position.z + Math.sin(a) * HELIS.keepDist)
-      // なめらかに向かう（速度に上限）
-      const to = tmp.sub(e.pos)
-      const dist = to.length()
-      const spd = Math.min(HELIS.speed * (stunned ? 0.3 : 1), dist * 1.2)
-      if (dist > 0.01) to.normalize().multiplyScalar(spd)
-      vel.current[i].lerp(to, Math.min(1, 2.5 * dt))
-      e.pos.addScaledVector(vel.current[i], dt)
-      g.position.copy(e.pos)
-      // 向き：進行方向。傾き（バンク）は速度で
-      const v = vel.current[i]
-      if (Math.hypot(v.x, v.z) > 2) g.rotation.y = Math.atan2(v.x, v.z)
-      g.rotation.z = THREE.MathUtils.clamp(-v.x * 0.004, -0.35, 0.35)
-      g.rotation.x = THREE.MathUtils.clamp(Math.hypot(v.x, v.z) * 0.006, 0, 0.3)
-      const r = rotors.current[i]
-      if (r) r.rotation.y += HELIS.rotorSpeed * dt
-      const t = tails.current[i]
-      if (t) t.rotation.x += HELIS.rotorSpeed * 1.5 * dt
-      g.visible = true
-    })
+    }
     // ミサイル
     fireTimer.current -= dt
     if (playing && alive.length > 0 && fireTimer.current <= 0 && !stunned) {
@@ -172,7 +189,7 @@ export function Helis() {
 
   return (
     <group>
-      {Array.from({ length: HELIS.count }, (_, i) => (
+      {Array.from({ length: TOTAL }, (_, i) => (
         <group key={i} ref={(el) => el && (groups.current[i] = el)} visible={false}>
           <HeliMesh rotor={(el) => (rotors.current[i] = el)} tail={(el) => (tails.current[i] = el)} />
         </group>

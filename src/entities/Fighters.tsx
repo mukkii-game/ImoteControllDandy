@@ -95,8 +95,9 @@ interface Pilot {
  * ブルーインパルス編隊。共通パス上を V 字で飛び、色違いのスモークを引く。
  * 全滅すると数秒後に再出現（次の編隊）。
  */
-export function Fighters() {
-  const [gen, setGen] = useState(0)
+export function Fighters({ squad = 0 }: { squad?: number }) {
+  // 編隊ごとにパスの順番をずらす（squad 番目の編隊は squad 個先の方向から入る）
+  const [gen, setGen] = useState(squad)
   const [mounted, setMounted] = useState(0)
   const curve = useMemo(() => buildCurve(gen), [gen])
   const groups = useRef<THREE.Group[]>([])

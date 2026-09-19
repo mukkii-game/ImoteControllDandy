@@ -50,6 +50,9 @@ export function BossBuildings() {
   const grad = useMemo(() => toonGradient(), [])
   const state = useRef<BossState[]>(BOSSES.map((cfg) => ({ cfg, pos: new THREE.Vector3(cfg.x, 0, cfg.z), yaw: Math.PI, alive: true, points: [], offsets: [], hitsLeft: BOSS.hits })))
   const groups = useRef<THREE.Group[]>([])
+  /** 上半分（屋上・顔・看板）の group：根元の傾きに加えてさらにしなる */
+  const tops = useRef<THREE.Group[]>([])
+  const swayT = useRef<number[]>([])
   const faces = useMemo(() => BOSSES.map((b) => {
     const t = new THREE.TextureLoader().load(b.image)
     t.colorSpace = THREE.SRGBColorSpace
@@ -120,6 +123,14 @@ export function BossBuildings() {
       }
       g.position.copy(b.pos)
       g.rotation.y = b.yaw
+      // 体を左右に揺らしながら近づく（根元で傾き、上半分はさらにしなる）。近づいている間だけ大きく揺れる
+      const creeping = playing && !stunned && dist < BOSS.aggroDist && dist > BOSS.stopDist
+      const sw = BOSS.sway
+      swayT.current[i] = (swayT.current[i] ?? 0) + dt * sw.speed * (creeping ? 1 : 0.35)
+      const tilt = Math.sin(swayT.current[i] + i * 1.7) * sw.amp * (creeping ? 1 : 0.4)
+      g.rotation.z = tilt
+      const top = tops.current[i]
+      if (top) top.rotation.z = tilt * sw.bend
       // ロック点をビルに追従
       const c = Math.cos(b.yaw)
       const s = Math.sin(b.yaw)
@@ -145,21 +156,24 @@ export function BossBuildings() {
               <boxGeometry args={[cfg.w, cfg.h, cfg.d]} />
               <meshToonMaterial color={cfg.color} gradientMap={grad} />
             </mesh>
-            {/* 屋上のふち */}
-            <mesh position={[0, cfg.h + 1, 0]} castShadow>
-              <boxGeometry args={[cfg.w + 3, 2, cfg.d + 3]} />
-              <meshToonMaterial color={cfg.signBg} gradientMap={grad} />
-            </mesh>
-            {/* 顔（プレイヤー側の側面の上の方に大きく） */}
-            <mesh position={[0, faceY, cfg.d / 2 + 0.4]}>
-              <planeGeometry args={[fw, fh]} />
-              <meshBasicMaterial map={faces[i]} transparent alphaTest={0.1} />
-            </mesh>
-            {/* 看板（店名） */}
-            <mesh position={[0, signY, cfg.d / 2 + 0.4]}>
-              <planeGeometry args={[cfg.w * 0.92, signH]} />
-              <meshBasicMaterial map={signs[i]} />
-            </mesh>
+            {/* 上半分（屋上・顔・看板）：ビルの中ほどを支点にさらに傾いて「しなる」 */}
+            <group ref={(el) => el && (tops.current[i] = el)} position={[0, cfg.h * 0.5, 0]}>
+              {/* 屋上のふち */}
+              <mesh position={[0, cfg.h * 0.5 + 1, 0]} castShadow>
+                <boxGeometry args={[cfg.w + 3, 2, cfg.d + 3]} />
+                <meshToonMaterial color={cfg.signBg} gradientMap={grad} />
+              </mesh>
+              {/* 顔（プレイヤー側の側面の上の方に大きく） */}
+              <mesh position={[0, faceY - cfg.h * 0.5, cfg.d / 2 + 0.4]}>
+                <planeGeometry args={[fw, fh]} />
+                <meshBasicMaterial map={faces[i]} transparent alphaTest={0.1} />
+              </mesh>
+              {/* 看板（店名） */}
+              <mesh position={[0, signY - cfg.h * 0.5, cfg.d / 2 + 0.4]}>
+                <planeGeometry args={[cfg.w * 0.92, signH]} />
+                <meshBasicMaterial map={signs[i]} />
+              </mesh>
+            </group>
             {/* 窓の帯 */}
             {Array.from({ length: 3 }, (_, r) => (
               <mesh key={r} position={[0, 6 + r * 7, cfg.d / 2 + 0.3]}>

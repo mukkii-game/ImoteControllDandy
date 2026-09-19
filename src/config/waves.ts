@@ -20,7 +20,9 @@ export const FIGHTERS = {
     [108, 20, 0],
   ] as [number, number, number][],
   /** 巡航速度 m/s */
-  speed: 110,
+  speed: 220,
+  /** 同時に飛ぶ編隊の数（それぞれ別の方向のパスを回す） */
+  squadrons: 2,
   /** 妹の正面（この距離・角度内）では減速してホバリング気味に留まる */
   hoverDist: 200,
   hoverAngleDeg: 70,
@@ -112,9 +114,9 @@ export const FIGHTERS = {
      * overhead はロロの上空を旋回（radius）。速さ speed（rad/s）
      */
     kinds: {
-      near: { secMin: 8, secMax: 13, center: [0, 95, 170], amp: [200, 45, 40], speed: 0.62, radius: 0, height: 0 },
-      far: { secMin: 7, secMax: 11, center: [0, 130, 320], amp: [320, 70, 60], speed: 0.45, radius: 0, height: 0 },
-      overhead: { secMin: 12, secMax: 18, center: [0, 150, 20], amp: [0, 0, 0], speed: 0.55, radius: 70, height: 0 },
+      near: { secMin: 8, secMax: 13, center: [0, 110, 260], amp: [260, 55, 60], speed: 1.2, radius: 0, height: 0 },
+      far: { secMin: 7, secMax: 11, center: [0, 150, 460], amp: [420, 90, 80], speed: 0.9, radius: 0, height: 0 },
+      overhead: { secMin: 12, secMax: 18, center: [0, 170, 20], amp: [0, 0, 0], speed: 1.1, radius: 90, height: 0 },
     },
     /** 上空集合の中心（妹ローカル：x=右, y=高さ, z=前） */
     overheadCenter: [0, 150, 20] as [number, number, number],
@@ -126,13 +128,24 @@ export const FIGHTERS = {
   pilotSec: 8,
 }
 
-/** ヘリ：開始直後から来て、妹から一定の距離を取りながら周りを回って待機し、時々撃つ */
+/** ヘリ：開始直後から来て、妹から一定の距離を取りながら周りを回って待機し、時々撃つ。編隊（groups × perGroup 機）でまとまって動く */
 export const HELIS = {
-  count: 3,
-  /** 妹からの距離（m）と高さ（m）。高さは機体ごとに少しずらす */
-  keepDist: 170,
-  height: 55,
-  heightSpread: 18,
+  /** 編隊の数と、1 編隊の機数（最低 4 機） */
+  groups: 2,
+  perGroup: 4,
+  /** 編隊内の並び（機体ごと）：[横 m, 高さ m, 前後 m]。横一列（ロロから見て横）に少し上下差 */
+  formation: [
+    [-54, 6, 0],
+    [-18, 0, 8],
+    [18, 0, 8],
+    [54, 6, 0],
+    [-90, 12, -8],
+    [90, 12, -8],
+  ] as [number, number, number][],
+  /** 妹からの距離（m）と高さ（m）。高さは編隊ごとに少しずらす */
+  keepDist: 260,
+  height: 70,
+  heightSpread: 24,
   /** 妹の周りを回る角速度（rad/s）と機体の移動速度（m/s） */
   orbitSpeed: 0.22,
   speed: 45,
@@ -176,10 +189,13 @@ export const BOSS = {
   /** ロック点をビルの中に散らばらせる範囲（0..1、内側に寄せる） */
   pointInset: 0.3,
   score: 500,
+  /** 体を左右に揺らしながら近づく：根元の傾き（rad）、揺れの速さ（rad/s）、上半分の追加のしなり（根元の傾きに対する倍率） */
+  sway: { amp: 0.07, speed: 1.6, bend: 0.8 },
 }
+/** エネミービルの配置：スタート（z=-1000）の先、ビル街（z=-500）の手前。進行方向（+z）を向いて右にぎょうざの満洲、左に山田うどん（この世界は +z を向くと -x が画面右） */
 export const BOSSES = [
-  { name: 'ぎょうざの満洲', image: 'textures/boss_manshu.png', imageAspect: 350 / 381, x: -22, z: -1260, w: 46, h: 62, d: 46, color: '#ffe873', signBg: '#e5322d', signColor: '#ffffff' },
-  { name: '山田うどん', image: 'textures/boss_yamada.png', imageAspect: 248 / 449, x: 26, z: -1040, w: 48, h: 58, d: 48, color: '#fff4dc', signBg: '#d0301f', signColor: '#ffffff' },
+  { name: 'ぎょうざの満洲', image: 'textures/boss_manshu.png', imageAspect: 350 / 381, x: -70, z: -720, w: 46, h: 62, d: 46, color: '#ffe873', signBg: '#e5322d', signColor: '#ffffff' },
+  { name: '山田うどん', image: 'textures/boss_yamada.png', imageAspect: 248 / 449, x: 70, z: -660, w: 48, h: 58, d: 48, color: '#fff4dc', signBg: '#d0301f', signColor: '#ffffff' },
 ]
 
 export const TANKS = {
@@ -195,10 +211,10 @@ export const TANKS = {
   size: { w: 12, h: 7, d: 20 },
 }
 
-/** 被弾時の妹の反応（ダメージ無し。驚くだけ） */
+/** 被弾時の妹の反応（ダメージ無し）：驚き顔＋短い減速（SPEC：0.5 秒減速）。slowFactor は減速中の速度倍率 */
 export const HIT = {
-  slowSec: 0,
-  slowFactor: 1,
+  slowSec: 0.5,
+  slowFactor: 0.35,
   /** 驚き顔の秒数 */
   faceSec: 0.4,
   /** 命中判定の半径（m、妹の胴体中心から） */

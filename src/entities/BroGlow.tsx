@@ -4,6 +4,7 @@ import * as THREE from 'three'
 import { LOCKON } from '../config/game'
 import { refs } from '../systems/refs'
 import { useGame } from '../systems/store'
+import { on } from '../systems/events'
 import { SmokeRibbon } from '../systems/smoke'
 
 const m4 = new THREE.Matrix4()
@@ -11,14 +12,19 @@ const s3 = new THREE.Vector3()
 const p3 = new THREE.Vector3()
 
 /**
- * 光弾化した兄。攻撃中（thrown）は小さな光の芯＋薄いハロ＋周りを舞う光の粒（パーティクル）に包まれ、
- * 細めの光の軌跡を引く。画面を埋めすぎないように控えめ。
+ * 光弾化した兄。攻撃中（thrown）は光の芯＋ハロ＋周りを舞う光の粒（パーティクル）に包まれ、
+ * レーザーのような光の軌跡を引く。軌跡は戻ったあともフェードで消える（LOCKON.glow.trailFadeSec）。
+ * 肩に戻った瞬間は着地エフェクト（広がるリング＋閃光、LOCKON.landFx）。
  */
 export function BroGlow() {
   const group = useRef<THREE.Group>(null!)
   const core = useRef<THREE.Mesh>(null!)
   const halo = useRef<THREE.Mesh>(null!)
   const sparks = useRef<THREE.InstancedMesh>(null!)
+  const land = useRef<THREE.Group>(null!)
+  const landRing = useRef<THREE.Mesh>(null!)
+  const landFlash = useRef<THREE.Mesh>(null!)
+  const landT = useRef(Infinity)
   const [bro, setBro] = useState<THREE.Object3D | null>(null)
   const t = useRef(0)
   const k = useRef(0)
@@ -35,11 +41,22 @@ export function BroGlow() {
     }, 100)
     return () => clearInterval(id)
   }, [])
+  // 肩に戻った：着地エフェクト開始
+  useEffect(
+    () =>
+      on('bro.return', () => {
+        if (!refs.bro || !land.current) return
+        land.current.position.copy(refs.bro.position)
+        land.current.position.y += 1
+        landT.current = 0
+      }),
+    [],
+  )
 
   useFrame((_, dt) => {
     const st = useGame.getState()
-    const on = st.mode === 'thrown'
-    k.current += ((on ? 1 : 0) - k.current) * Math.min(1, 10 * dt)
+    const flying = st.mode === 'thrown'
+    k.current += ((flying ? 1 : 0) - k.current) * Math.min(1, 10 * dt)
     t.current += dt
     const g = group.current
     if (!g || !refs.bro) return
@@ -64,6 +81,23 @@ export function BroGlow() {
       m.setMatrixAt(i, m4)
     })
     m.instanceMatrix.needsUpdate = true
+    // 着地エフェクト：リングが広がりながら薄れ、閃光が縮む
+    const lf = LOCKON.landFx
+    const L = land.current
+    if (L) {
+      landT.current += dt
+      const u = landT.current / lf.sec
+      if (u >= 1) L.visible = false
+      else {
+        L.visible = true
+        const ease = 1 - (1 - u) * (1 - u)
+        landRing.current.scale.setScalar(Math.max(0.01, lf.radius * ease))
+        ;(landRing.current.material as THREE.MeshBasicMaterial).opacity = 0.9 * (1 - u)
+        landFlash.current.scale.setScalar(Math.max(0.01, lf.radius * 0.5 * (1 - u)))
+        ;(landFlash.current.material as THREE.MeshBasicMaterial).opacity = 0.8 * (1 - u)
+        L.lookAt(L.position.x, L.position.y + 1, L.position.z) // リングは水平
+      }
+    }
   })
 
   const active = useGame((s) => s.mode) === 'thrown'
@@ -83,10 +117,20 @@ export function BroGlow() {
           <meshBasicMaterial color={gl.coreColor} transparent opacity={0.85} blending={THREE.AdditiveBlending} depthWrite={false} />
         </instancedMesh>
       </group>
+      <group ref={land} visible={false}>
+        <mesh ref={landRing}>
+          <torusGeometry args={[1, 0.06, 8, 40]} />
+          <meshBasicMaterial color={gl.color} transparent blending={THREE.AdditiveBlending} depthWrite={false} />
+        </mesh>
+        <mesh ref={landFlash}>
+          <sphereGeometry args={[1, 10, 8]} />
+          <meshBasicMaterial color={gl.coreColor} transparent blending={THREE.AdditiveBlending} depthWrite={false} />
+        </mesh>
+      </group>
       {bro && (
         <>
-          <SmokeRibbon source={bro} color={gl.coreColor} points={gl.trailPoints} width={gl.trailWidth * 0.35} opacity={gl.trailOpacity} additive active={active} offsetY={1} />
-          <SmokeRibbon source={bro} color={gl.color} points={gl.trailPoints} width={gl.trailWidth} opacity={gl.trailOpacity * 0.5} additive active={active} offsetY={1} />
+          <SmokeRibbon source={bro} color={gl.coreColor} points={gl.trailPoints} width={gl.trailWidth * 0.35} opacity={gl.trailOpacity} additive active={active} offsetY={1} fadeSec={gl.trailFadeSec} />
+          <SmokeRibbon source={bro} color={gl.color} points={gl.trailPoints} width={gl.trailWidth} opacity={gl.trailOpacity * 0.5} additive active={active} offsetY={1} fadeSec={gl.trailFadeSec} />
         </>
       )}
     </group>

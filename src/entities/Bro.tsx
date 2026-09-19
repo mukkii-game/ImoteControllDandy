@@ -65,7 +65,7 @@ export function Bro() {
   const wasRight = useRef(false)
   const turnSayT = useRef(0)
   /** 地上の高速タックル */
-  const tackle = useRef({ active: false, queued: false, t: 0, hits: 0, dir: new THREE.Vector3(), from: new THREE.Vector3() })
+  const tackle = useRef({ active: false, queued: false, t: 0, hits: 0, dist: BRO.tackle.distance, dir: new THREE.Vector3(), from: new THREE.Vector3() })
   const tackleCd = useRef(0)
   const fadeK = useRef(0)
   const silhouette = useRef<Silhouette | null>(null)
@@ -181,20 +181,28 @@ export function Bro() {
           tk.active = true
           tk.t = 0
           tk.hits = 0
-          // 向き：カメラの向き＋サイトの左右のずれ（画面の半分 ≒ 水平画角の半分）
-          const hfov = THREE.MathUtils.degToRad(CAMERA.ground.fov) * (window.innerWidth / window.innerHeight) * 0.5
-          const aimYaw = refs.camYaw - (refs.reticleX / (window.innerWidth / 2)) * hfov * 0.6
+          // 向き：サイトが倒せる敵に重なっていればその敵へ（全距離）。そうでなければサイトの向き（カメラの向き＋サイトの左右のずれ）へ半分の距離
+          const target = refs.groundTarget >= 0 ? enemies.find((e) => e.id === refs.groundTarget && e.alive) : undefined
+          let aimYaw: number
+          if (target) {
+            aimYaw = Math.atan2(target.pos.x - g.position.x, target.pos.z - g.position.z)
+            tk.dist = tc.distance
+          } else {
+            const hfov = THREE.MathUtils.degToRad(CAMERA.ground.fov) * (window.innerWidth / window.innerHeight) * 0.5
+            aimYaw = refs.camYaw - (refs.reticleX / (window.innerWidth / 2)) * hfov * 0.6
+            tk.dist = tc.distance * tc.missDistanceMul
+          }
           tk.dir.set(Math.sin(aimYaw), 0, Math.cos(aimYaw))
           tk.from.copy(g.position)
           yawRef.current = aimYaw
           emit('bro.tackle', undefined)
         }
         if (tk.active) {
-          const dur = tc.distance / tc.speed
+          const dur = tk.dist / tc.speed
           tk.t += dt
           const k = Math.min(1, tk.t / dur)
-          const nx = tk.from.x + tk.dir.x * tc.distance * k
-          const nz = tk.from.z + tk.dir.z * tc.distance * k
+          const nx = tk.from.x + tk.dir.x * tk.dist * k
+          const nz = tk.from.z + tk.dir.z * tk.dist * k
           if (buildingAt(nx, nz, BRO.bodyRadius)) {
             // 建物にぶつかったらそこで止まる
             tk.active = false
@@ -379,7 +387,8 @@ export function Bro() {
                 cv.updateArcLengths()
                 seq.curveLen = cv.getLength()
               }
-              const dur = Math.max(0.15, seq.curveLen / LOCKON.flySpeed)
+              // 距離に関係なくほぼ一定時間で着く（遠いほど加速）
+              const dur = THREE.MathUtils.clamp(seq.curveLen / LOCKON.flySpeed, LOCKON.hopMinSec, LOCKON.hopSec)
               k = Math.min(1, seq.t / dur)
               cv.getPointAt(k, g.position)
               cv.getTangentAt(k, v)
@@ -387,7 +396,7 @@ export function Bro() {
             } else {
               // 2 体目以降：真っ直ぐ（ダッシュ打撃は地面を走る）
               const dist = seq.from.distanceTo(e.pos)
-              const dur = Math.max(0.12, dist / (seq.melee ? gc.dashSpeed : LOCKON.flySpeed))
+              const dur = seq.melee ? Math.max(0.12, dist / gc.dashSpeed) : THREE.MathUtils.clamp(dist / LOCKON.flySpeed, LOCKON.hopMinSec, LOCKON.hopSec)
               k = Math.min(1, seq.t / dur)
               g.position.lerpVectors(seq.from, e.pos, k)
               if (seq.melee) g.position.y = THREE.MathUtils.lerp(seq.from.y, 0, k)

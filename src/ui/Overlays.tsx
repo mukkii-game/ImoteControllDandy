@@ -51,6 +51,7 @@ export function Overlays() {
           <div className="logo">
             <span>いもーと</span>
             <span>コントロールダンディ</span>
+            <span className="subtitle">進め！ジャイアントロロ</span>
           </div>
           <div className="sub story">
             巨大妹「{IMOUTO.name}」を学校に送り届けるんだ

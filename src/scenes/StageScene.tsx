@@ -53,6 +53,7 @@ import { Stage } from './Stage'
 import { ShadowFollower } from '../systems/shadow'
 import { Explosions } from '../entities/Enemies'
 import { Fighters } from '../entities/Fighters'
+import { FIGHTERS } from '../config/waves'
 import { GroundEnemies } from '../entities/GroundEnemies'
 import { Shoe } from '../entities/Shoe'
 import { Debris } from '../entities/Debris'
@@ -72,14 +73,16 @@ export function StageScene() {
       gl={{ antialias: true }}
     >
       <color attach="background" args={[STAGE.skyColor]} />
-      <fog attach="fog" args={[STAGE.fogColor, 300, CAMERA.far]} />
+      <fog attach="fog" args={[STAGE.fogColor, STAGE.fogNear, STAGE.fogFar]} />
       <ambientLight intensity={0.7} />
       <hemisphereLight args={['#fff2d0', '#6a7a4a', 0.5]} />
       <ShadowFollower size={H * 1.6} />
       <Stage />
       <Imouto />
       <Bro />
-      <Fighters />
+      {Array.from({ length: FIGHTERS.squadrons }, (_, i) => (
+        <Fighters key={i} squad={i} />
+      ))}
       <Helis />
       <GroundEnemies />
       <BossBuildings />

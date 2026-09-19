@@ -22,6 +22,8 @@ export const refs = {
   reticleY: 0,
   /** 兄がダッシュ（タックル）中か。残像エフェクト用 */
   broDash: false,
+  /** 地上：サイトが重なっている倒せる敵の id（無ければ -1）。lockon が毎フレーム更新。サイトが赤く光り、タックルはその敵へ */
+  groundTarget: -1,
   /** 兄の頭の画面座標 [x, y, 画面内か]（吹き出し用。lockon が毎フレーム更新） */
   broScreen: [0, 0, false] as [number, number, boolean],
   /** 妹の頭の画面座標（吹き出し用） */

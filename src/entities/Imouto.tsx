@@ -133,7 +133,9 @@ export function Imouto() {
     }
   }, [vrm, choice, setLoaded, setResolved, scale])
 
-  useEffect(() => on('imouto.hit', () => { hitTimer.current = HIT.faceSec }), [])
+  useEffect(() => on('imouto.hit', () => { hitTimer.current = HIT.faceSec; slowTimer.current = HIT.slowSec }), [])
+  /** 被弾の減速（SPEC：0.5 秒減速）。残り秒数 */
+  const slowTimer = useRef(0)
   useEffect(() => on('bro.throw', ({ from }) => { if (from === 'shoulder') throwK.current = 0 }), [])
 
   useFrame((_, dt) => {
@@ -214,9 +216,12 @@ export function Imouto() {
       }
     }
     hitTimer.current = Math.max(0, hitTimer.current - dt)
+    slowTimer.current = Math.max(0, slowTimer.current - dt)
     let speedMul = 1
     if (sk === 'skip') speedMul = SKILLS.skip.speedMul
     if (sk === 'shoe' || sk === 'cry') speedMul = 0
+    // 被弾中は減速（よろけ）
+    if (slowTimer.current > 0) speedMul *= HIT.slowFactor
     // 自動歩行：常に前進。W で加速、S で減速。兄は方向だけ変える
     const drive = playing ? (m.y > 0.2 ? IMOUTO.boostMul : m.y < -0.2 ? IMOUTO.slowMul : 1) : 0
     const targetSpeed = (sk === 'skip' ? 1 : drive) * IMOUTO.walkSpeed * speedMul

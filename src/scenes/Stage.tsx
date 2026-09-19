@@ -388,38 +388,38 @@ function School() {
         <boxGeometry args={[g.gateHalfWidth * 2, 1.5, 1.5]} />
         <meshToonMaterial color="#6b5f4e" gradientMap={grad} />
       </mesh>
-      {/* 校舎（大きな本館。パイロット版：遠くからでも目印になる） */}
+      {/* 校舎（超巨大な本館。フォグを受けないのでスタート地点からでも見える） */}
       <mesh position={[0, sc.height / 2, sc.z]} castShadow receiveShadow>
         <boxGeometry args={[sc.width, sc.height, sc.depth]} />
-        <meshToonMaterial color="#e9e4d8" gradientMap={grad} />
+        <meshToonMaterial color="#e9e4d8" gradientMap={grad} fog={false} />
       </mesh>
-      {/* 窓の帯（階ごと） */}
+      {/* 窓の帯（階ごと。巨大なので 1 階＝8m） */}
       {Array.from({ length: Math.max(1, Math.floor(sc.height / 8)) }, (_, i) => (
         <mesh key={`w${i}`} position={[0, 5 + i * 8, sc.z - sc.depth / 2 - 0.3]} rotation={[0, Math.PI, 0]}>
           <planeGeometry args={[sc.width * 0.92, 3.2]} />
-          <meshBasicMaterial color="#8fb7d6" />
+          <meshBasicMaterial color="#8fb7d6" fog={false} />
         </mesh>
       ))}
       {/* 両翼（左右の校舎） */}
       {[-1, 1].map((sgn) => (
-        <mesh key={`wing${sgn}`} position={[sgn * (sc.width / 2 + 40), sc.height * 0.3, sc.z + 40]} castShadow receiveShadow>
-          <boxGeometry args={[90, sc.height * 0.6, sc.depth + 80]} />
-          <meshToonMaterial color="#e2dccd" gradientMap={grad} />
+        <mesh key={`wing${sgn}`} position={[sgn * (sc.width / 2 + sc.width * 0.1), sc.height * 0.3, sc.z + 40]} castShadow receiveShadow>
+          <boxGeometry args={[sc.width * 0.2, sc.height * 0.6, sc.depth + 80]} />
+          <meshToonMaterial color="#e2dccd" gradientMap={grad} fog={false} />
         </mesh>
       ))}
       {/* 時計塔 */}
       <mesh position={[0, sc.height + sc.towerHeight / 2, sc.z]} castShadow>
-        <boxGeometry args={[30, sc.towerHeight, 30]} />
-        <meshToonMaterial color="#d8d0c0" gradientMap={grad} />
+        <boxGeometry args={[sc.towerWidth, sc.towerHeight, sc.towerWidth]} />
+        <meshToonMaterial color="#d8d0c0" gradientMap={grad} fog={false} />
       </mesh>
-      <mesh position={[0, sc.height + sc.towerHeight * 0.6, sc.z - 15.5]} rotation={[0, Math.PI, 0]}>
-        <circleGeometry args={[10, 24]} />
-        <meshBasicMaterial color="#fff" />
+      <mesh position={[0, sc.height + sc.towerHeight * 0.6, sc.z - sc.towerWidth / 2 - 0.5]} rotation={[0, Math.PI, 0]}>
+        <circleGeometry args={[sc.towerWidth * 0.33, 24]} />
+        <meshBasicMaterial color="#fff" fog={false} />
       </mesh>
       {/* 体育館 */}
-      <mesh position={[sc.width / 2 + 160, 14, sc.z - 30]} castShadow receiveShadow>
+      <mesh position={[sc.width / 2 + sc.width * 0.3, 14, sc.z - 30]} castShadow receiveShadow>
         <boxGeometry args={[110, 28, 70]} />
-        <meshToonMaterial color="#cfd6d8" gradientMap={grad} />
+        <meshToonMaterial color="#cfd6d8" gradientMap={grad} fog={false} />
       </mesh>
     </group>
   )

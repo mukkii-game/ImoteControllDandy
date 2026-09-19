@@ -76,6 +76,9 @@ export const BRO = {
     /** 弧の高さ（兄の身長比）と、次のタックルまでの間（秒。連打で高速移動になる） */
     arcHeight: 1.0,
     cooldownSec: 0.05,
+    /** サイトが倒せる敵に重なるとサイトが赤く光る：その判定半径（画面高さ比）。重なっていない時のタックル距離は distance × missDistanceMul */
+    aimRadius: 0.09,
+    missDistanceMul: 0.5,
   },
   /** 建物との当たり半径（m）。建物は貫通できない */
   bodyRadius: 1.2,
@@ -102,7 +105,8 @@ export const BRO = {
 
 export const IMOUTO = {
   name: 'ロロ',
-  spawn: { x: 0, y: 0, z: -1540 },
+  /** スタート地点。ビル街（z=-500 から）の少し手前。エネミービルはこの先（config/waves.ts BOSSES） */
+  spawn: { x: 0, y: 0, z: -1000 },
   /**
    * 服のロゴ。Tops テクスチャに Canvas で描く（VRM ファイルは触らない）。
    * u/v は 0..1 のテクスチャ座標（胸の前面 UV の中心）。
@@ -167,18 +171,25 @@ export const LOCKON = {
   maxLocks: 16,
   /** サイト中心からこの半径（画面高さ比）に入った敵をロック */
   reticleRadius: 0.12,
-  /** ロック可能距離（m） */
-  maxRange: 700,
-  /** 投げの飛行速度（m/s）。待ちが無いように速く */
+  /** ロック可能距離（m）。距離に関係なくロックできるように事実上無制限（画面に映っていればロック） */
+  maxRange: 1e9,
+  /**
+   * 飛行：1 体ごとにかかる時間はほぼ一定（hopSec）。遠い敵ほど加速して同じ時間で着く（パンツァードラグーンのレーザーと同じ、距離無視）。
+   * 近い敵は flySpeed で飛んで hopMinSec より短くはならない
+   */
   flySpeed: 900,
-  /** 光弾化：兄を包む光のオーラ（芯・ハロの半径 m ≒ 兄の 5 倍の大きさ、色）と光の軌跡（半幅 m ≒ 兄の 3 倍の太さ・点数） */
-  glow: { color: '#7fe9ff', coreColor: '#ffffff', coreRadius: 2.2, haloRadius: 5, haloOpacity: 0.22, trailWidth: 2.6, trailPoints: 70, trailOpacity: 0.45, sparkles: 28, sparkleRadius: 7, sparkleSize: 0.55 },
+  hopSec: 0.16,
+  hopMinSec: 0.06,
+  /** 光弾化：兄を包む光のオーラ（芯・ハロの半径 m、色）と光の軌跡（半幅 m・点数）。trailFadeSec＝戻ったあと軌跡がフェードで消えるまでの秒数 */
+  glow: { color: '#7fe9ff', coreColor: '#ffffff', coreRadius: 4.4, haloRadius: 10, haloOpacity: 0.22, trailWidth: 5.2, trailPoints: 140, trailOpacity: 0.45, trailFadeSec: 0.8, sparkles: 28, sparkleRadius: 14, sparkleSize: 1.1 },
+  /** 肩に戻ったときの着地エフェクト：広がるリングの半径（m）と秒数 */
+  landFx: { radius: 16, sec: 0.45 },
   /** 妹が掴んで振りかぶる時間（秒） */
   windupSec: 0.15,
   /** 着弾ごとの停止（秒） */
-  hitPauseSec: 0.04,
+  hitPauseSec: 0.02,
   /** 最後の敵から肩へ戻る秒数 */
-  returnSec: 0.5,
+  returnSec: 0.25,
   /** 帰還の弧の高さ（妹の身長比） */
   returnArc: 0.2,
   /** 爆発の大きさ（m）と時間 */
@@ -231,7 +242,8 @@ export const DUMMY_ENEMIES = {
 
 export const CAMERA = {
   near: 0.3,
-  far: 1500,
+  /** 遠くの学校が見えるように広め（街は STAGE.drawDist / フォグで先に消える） */
+  far: 3400,
   /** マウス感度（rad / px） */
   mouseSensitivity: 0.0025,
   touchSensitivity: 0.006,
@@ -331,10 +343,13 @@ export const STAGE = {
   towerMax: 95,
   /** 描画の軽量化：建物を区画（ブロック数）ごとにまとめて、カメラからこの距離（m）より遠い区画は描かない。影はこの距離まで */
   chunkBlocks: 3,
-  drawDist: 1100,
-  shadowDist: 260,
-  /** これより遠い区画は外部モデルではなく箱で描く（LOD） */
-  lodDist: 520,
+  drawDist: 720,
+  shadowDist: 200,
+  /** これより遠い区画は外部モデルではなく箱で描く（LOD）。近く以外は箱 */
+  lodDist: 260,
+  /** フォグ：この距離から霞み始め、fogFar で完全に消える（drawDist と揃えると区画の出入りが見えない）。学校だけはフォグを受けない */
+  fogNear: 240,
+  fogFar: 720,
   /** 開始後 5 秒の平均 fps がこれ未満なら、影を切って解像度を 1 倍にする */
   autoLiteFps: 32,
   /** 外部モデル（Kenney、CC0）で家とビルを描く。false なら箱と屋根のまま。読めなかった時も箱に戻る */
@@ -357,8 +372,8 @@ export const GAME = {
   /** 校門の z（妹は +Z へ進む）。スタートは IMOUTO.spawn */
   gateZ: 1400,
   gateHalfWidth: 45,
-  /** 校舎・校庭の配置。パイロット版：遠くからでも分かる大きな校舎 */
-  school: { z: 1600, width: 420, depth: 80, height: 48, yardDepth: 120, towerHeight: 40 },
+  /** 校舎・校庭の配置。超巨大な校舎（スタート地点からでも見える。フォグを受けない） */
+  school: { z: 1700, width: 900, depth: 160, height: 220, yardDepth: 120, towerHeight: 180, towerWidth: 60 },
   /** 区間（z の境界）：住宅街 → ビル街 → 航空公園 */
   sections: [
     { name: '住宅街', from: -9999, to: -500 },
@@ -450,8 +465,8 @@ export const DEBRIS = {
   } as Record<string, { color: string; size: [number, number, number]; n: number }[]>,
   /** 兄の攻撃でやられた敵はノックバックして上へも吹っ飛ぶ：飛ぶ速さ（進行方向・上、m/s）と、飛ぶ本体の大きさ・色 */
   knockback: {
-    speed: 130,
-    up: 85,
+    speed: 170,
+    up: 160,
     /** 地上の敵だけ：本体が食らった方向へ派手に吹っ飛ぶ */
     body: {
       police: { size: [7, 4, 14], color: '#f5f5f5' },
@@ -460,7 +475,8 @@ export const DEBRIS = {
     } as Record<string, { size: [number, number, number]; color: string }>,
   },
   /** 空中の敵（戦闘機・ヘリ）：その場で爆発してモデルが離散し、通常の半分の重力でパラパラ落ちる */
-  air: { kinds: ['fighter', 'heli'], gravityScale: 0.5, spread: 34, up: 22, lifeSec: 6 },
+  /** 空中の敵：勢いよく上へ飛び散ってから、半分の重力でゆっくり落ちてくる */
+  air: { kinds: ['fighter', 'heli'], gravityScale: 0.5, spread: 60, up: 75, lifeSec: 7 },
   /** 黒煙：個数、上昇速度、寿命秒、大きさ m */
   smoke: { n: 6, rise: 8, sec: 1.5, size: 6 },
   /** 砂煙リング（家・ビルが壊れた時）の大きさ m */

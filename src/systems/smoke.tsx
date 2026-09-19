@@ -16,6 +16,7 @@ export function SmokeRibbon({
   additive = false,
   active = true,
   offsetY = 0,
+  fadeSec = 0,
 }: {
   source: THREE.Object3D
   color: string
@@ -25,6 +26,8 @@ export function SmokeRibbon({
   additive?: boolean
   active?: boolean
   offsetY?: number
+  /** active=false になったあと、履歴を残したまま fadeSec 秒かけて薄れて消える（0 なら即消える） */
+  fadeSec?: number
 }) {
   const N = points
   const geom = useMemo(() => {
@@ -59,15 +62,25 @@ export function SmokeRibbon({
     [color, opacity, additive],
   )
   const hist = useRef<THREE.Vector3[]>([])
+  const fade = useRef(0)
   const tmp = useMemo(() => new THREE.Vector3(), [])
 
-  useFrame(() => {
+  useFrame((_, dt) => {
     const h = hist.current
+    const u = mat.uniforms.uOpacity
     if (!active) {
+      if (fadeSec > 0 && h.length > 1 && fade.current < fadeSec) {
+        // 止まった位置に軌跡を残したまま薄れて消える
+        fade.current += dt
+        u.value = opacity * Math.max(0, 1 - fade.current / fadeSec)
+        return
+      }
       if (h.length) h.length = 0
       geom.setDrawRange(0, 0)
       return
     }
+    fade.current = 0
+    u.value = opacity
     geom.setDrawRange(0, Infinity)
     const p = source.getWorldPosition(tmp).clone()
     p.y += offsetY
