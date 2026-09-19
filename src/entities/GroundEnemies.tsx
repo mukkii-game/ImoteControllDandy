@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { POLICE, TANKS, HIT } from '../config/waves'
+import { POLICE, TANKS } from '../config/waves'
 import { STAGE } from '../config/game'
 import { addEnemy, killEnemy, isStunned, type Enemy } from '../systems/enemies'
 import { refs } from '../systems/refs'
@@ -10,7 +10,10 @@ import { toonGradient } from '../systems/toon'
 import { useGame } from '../systems/store'
 import { useKitModel } from '../systems/kit'
 import { XrayRoot } from '../systems/xray'
-import { addProjectile, removeProjectile, type Projectile } from '../systems/projectiles'
+import { addProjectile, removeProjectile, imoutoImpact, type Projectile } from '../systems/projectiles'
+import { PROJECTILE } from '../config/waves'
+
+const impact = new THREE.Vector3()
 
 const m4 = new THREE.Matrix4()
 const tmpV = new THREE.Vector3()
@@ -163,9 +166,9 @@ export function GroundEnemies() {
       const s = shells.current[i]
       s.t += dt
       s.pos.addScaledVector(s.vel, dt)
-      const hit = Math.hypot(s.pos.x - im.position.x, s.pos.z - im.position.z) < HIT.radius * 0.5 && s.pos.y > 0 && s.pos.y < 60
-      if (hit) emit('imouto.hit', { x: s.pos.x, y: s.pos.y, z: s.pos.z })
-      if (hit || s.t > 8 || s.pos.y < 0 || s.proj?.dead) {
+      const hit = !!imoutoImpact(s.pos, PROJECTILE.bodyRadius, impact)
+      if (hit) emit('imouto.hit', { x: impact.x, y: impact.y, z: impact.z })
+      if (hit || s.t > 14 || s.pos.y < 0 || s.proj?.dead) {
         removeProjectile(s.proj)
         shells.current.splice(i, 1)
       }
@@ -248,8 +251,8 @@ export function GroundEnemies() {
         <meshToonMaterial color="#6b7a4a" gradientMap={grad} />
       </instancedMesh>
       <instancedMesh ref={shellMesh} args={[undefined, undefined, 32]}>
-        <sphereGeometry args={[1.4, 8, 8]} />
-        <meshBasicMaterial color="#ffd166" />
+        <sphereGeometry args={[PROJECTILE.bodyRadius, 8, 8]} />
+        <meshBasicMaterial color={PROJECTILE.color} />
       </instancedMesh>
     </XrayRoot>
   )

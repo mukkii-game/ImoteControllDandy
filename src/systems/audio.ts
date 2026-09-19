@@ -288,6 +288,7 @@ export function seChime() {
 
 let lastBuildingAt = -1
 let lastHitVoiceAt = -1
+let hitCount = 0
 /** 建物が壊れた音。SOUND.building.minGapSec より短い間隔では鳴らさない（合成音のフォールバックあり） */
 function playBuilding() {
   const now = performance.now() / 1000
@@ -357,7 +358,9 @@ export function bindAudio(): () => void {
       })
     }),
     on('imouto.hit', () => {
-      // 「いたっ」：連続被弾で連呼しないよう間隔を空ける
+      // 「いたっ」：hitVoiceEvery 回に 1 回だけ。連続被弾で連呼しないよう間隔も空ける
+      hitCount++
+      if (hitCount % SOUND.hitVoiceEvery !== 0) return
       const now = performance.now() / 1000
       if (now - lastHitVoiceAt < SOUND.hitVoiceMinGapSec) return
       lastHitVoiceAt = now

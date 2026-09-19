@@ -7,6 +7,7 @@ import { BossBuildings } from '../entities/BossBuildings'
 import { BroGlow } from '../entities/BroGlow'
 import { Vulcan } from '../entities/Vulcan'
 import { Tears } from '../entities/Tears'
+import { ProjectileGlow } from '../entities/ProjectileGlow'
 import { XrayLayer } from '../systems/xray'
 import { BroAfterimage } from '../entities/BroAfterimage'
 
@@ -92,6 +93,7 @@ export function StageScene() {
       <BroGlow />
       <Vulcan />
       <Tears />
+      <ProjectileGlow />
       <XrayLayer />
       <BroAfterimage />
       <Shoe />

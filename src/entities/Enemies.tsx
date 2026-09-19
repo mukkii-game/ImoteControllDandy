@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { DUMMY_ENEMIES, LOCKON, DEBRIS } from '../config/game'
+import { HIT } from '../config/waves'
 import { addEnemy, enemies } from '../systems/enemies'
 import { refs } from '../systems/refs'
 import { on } from '../systems/events'
@@ -70,6 +71,8 @@ interface Boom {
   dust: boolean
   /** 砂煙の大きさ倍率 */
   scale?: number
+  /** 爆発の半径（m）。無ければ LOCKON.explosionRadius */
+  radius?: number
 }
 
 interface Puff {
@@ -131,7 +134,8 @@ export function Explosions() {
       pushDust(x, z, 1)
     })
     const off3 = on('imouto.hit', ({ x, y, z }) => {
-      list.current.push({ pos: new THREE.Vector3(x, y, z), t: 0, dust: false })
+      // 妹の体への着弾：兄と同じくらいの小さな爆発（着弾点は体の表面）
+      list.current.push({ pos: new THREE.Vector3(x, y, z), t: 0, dust: false, radius: HIT.explosionRadius })
       if (list.current.length > pool.length) list.current.shift()
     })
     const off2 = on('imouto.step', ({ x, z, strength }) => {
@@ -194,7 +198,7 @@ export function Explosions() {
         core.visible = true
         ring.visible = true
         ring.material.color.set('#ff7a2a')
-        const r = LOCKON.explosionRadius * (0.3 + 0.7 * Math.sqrt(k))
+        const r = (b.radius ?? LOCKON.explosionRadius) * (0.3 + 0.7 * Math.sqrt(k))
         core.scale.setScalar(r * (1 - k * 0.3))
         ring.scale.setScalar(r * 1.6)
         core.material.opacity = 1 - k

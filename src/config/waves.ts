@@ -98,7 +98,7 @@ export const FIGHTERS = {
   ] as { name: string; loiter: 'near' | 'far' | 'overhead'; path: [number, number, number][] }[],
   /** 何秒に1発ミサイルを撃つか（編隊全体） */
   missileInterval: 3.2,
-  missileSpeed: 140,
+  missileSpeed: 60,
   /** 抜けた後（または全滅後）、次のセットが来るまで */
   respawnSec: 2.5,
   /**
@@ -157,7 +157,7 @@ export const HELIS = {
   size: 16,
   rotorSpeed: 28,
   shotInterval: 2.8,
-  shotSpeed: 120,
+  shotSpeed: 55,
   /** やられてから戻ってくるまで（秒）。遠くから飛んでくる */
   respawnSec: 6,
   spawnDist: 700,
@@ -179,7 +179,7 @@ export const POLICE = {
   fleeDist: 130,
   /** 何秒に 1 発撃つか（パトカー全体）と弾速 */
   shotInterval: 2.2,
-  shotSpeed: 130,
+  shotSpeed: 60,
 }
 
 /** エネミービル（ビルの形をした敵）。妹と同じくらい大きく、近づくとにじり寄ってくる。通り抜けられない */
@@ -211,14 +211,29 @@ export const TANKS = {
   /** 側方へのオフセット（道路脇）。1 グループは同じ側から、次のグループは反対側から */
   side: 40,
   shellInterval: 4,
-  shellSpeed: 110,
+  shellSpeed: 55,
   size: { w: 12, h: 7, d: 20 },
+}
+
+/**
+ * 敵の弾（ミサイル・砲弾）の見た目：本体の半径（m）と、周りの明るい光（半径・色・脈動）。爆弾は FIGHTERS.bomb。
+ * 光は登録簿（systems/projectiles）にある弾すべてに entities/ProjectileGlow が付ける
+ */
+export const PROJECTILE = {
+  bodyRadius: 3.5,
+  color: '#ff8c3a',
+  haloRadius: 8,
+  haloColor: '#ffe9a0',
+  haloOpacity: 0.5,
+  pulse: 7,
 }
 
 /** 被弾時の妹の反応（ダメージ無し）：驚き顔＋短い減速（SPEC：0.5 秒減速）。slowFactor は減速中の速度倍率 */
 export const HIT = {
   slowSec: 0.5,
   slowFactor: 0.35,
+  /** 着弾の爆発の大きさ（m、兄と同じくらい） */
+  explosionRadius: 5,
   /** 驚き顔の秒数 */
   faceSec: 0.4,
   /** 命中判定の半径（m、妹の胴体中心から） */

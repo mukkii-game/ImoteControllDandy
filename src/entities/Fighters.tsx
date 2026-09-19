@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { FIGHTERS, HIT } from '../config/waves'
+import { FIGHTERS } from '../config/waves'
 import { addEnemy, enemies, isStunned, type Enemy } from '../systems/enemies'
 import { refs } from '../systems/refs'
 import { emit, on } from '../systems/events'
@@ -9,7 +9,10 @@ import { SmokeRibbon } from '../systems/smoke'
 import { toonGradient } from '../systems/toon'
 import { useKitModel } from '../systems/kit'
 import { XrayRoot } from '../systems/xray'
-import { addProjectile, removeProjectile, type Projectile } from '../systems/projectiles'
+import { addProjectile, removeProjectile, imoutoImpact, type Projectile } from '../systems/projectiles'
+import { PROJECTILE } from '../config/waves'
+
+const impact = new THREE.Vector3()
 
 const up = new THREE.Vector3(0, 1, 0)
 const tangent = new THREE.Vector3()
@@ -287,9 +290,8 @@ export function Fighters({ squad = 0 }: { squad?: number }) {
       }
       bm.vel.y -= bc.gravity * dt
       bm.pos.addScaledVector(bm.vel, dt)
-      const near = im && Math.hypot(bm.pos.x - im.position.x, bm.pos.z - im.position.z) < bc.hitRadius
-      const hitBody = near && bm.pos.y < 62 && bm.pos.y > 8
-      if (hitBody) emit('imouto.hit', { x: bm.pos.x, y: bm.pos.y, z: bm.pos.z })
+      const hitBody = !!imoutoImpact(bm.pos, bc.size, impact)
+      if (hitBody) emit('imouto.hit', { x: impact.x, y: impact.y, z: impact.z })
       else if (bm.pos.y <= 1) emit('bomb.burst', { x: bm.pos.x, y: 2, z: bm.pos.z })
       if (hitBody || bm.pos.y <= 1 || bm.t > 20) {
         removeProjectile(bm.proj)
@@ -323,9 +325,9 @@ export function Fighters({ squad = 0 }: { squad?: number }) {
       const ms = missiles.current[i]
       ms.t += dt
       ms.pos.addScaledVector(ms.vel, dt)
-      const hit = im && Math.hypot(ms.pos.x - im.position.x, ms.pos.z - im.position.z) < HIT.radius * 0.5 && ms.pos.y > 0 && ms.pos.y < 60
-      if (hit) emit('imouto.hit', { x: ms.pos.x, y: ms.pos.y, z: ms.pos.z })
-      if (hit || ms.t > 6 || ms.pos.y < 0 || ms.proj?.dead) {
+      const hit = !!imoutoImpact(ms.pos, PROJECTILE.bodyRadius, impact)
+      if (hit) emit('imouto.hit', { x: impact.x, y: impact.y, z: impact.z })
+      if (hit || ms.t > 12 || ms.pos.y < 0 || ms.proj?.dead) {
         removeProjectile(ms.proj)
         missiles.current.splice(i, 1)
       }
@@ -384,8 +386,8 @@ export function Fighters({ squad = 0 }: { squad?: number }) {
         <meshBasicMaterial color={FIGHTERS.bomb.haloColor} transparent opacity={FIGHTERS.bomb.haloOpacity} blending={THREE.AdditiveBlending} depthWrite={false} />
       </instancedMesh>
       <instancedMesh ref={missileMesh} args={[undefined, undefined, 32]}>
-        <sphereGeometry args={[1.6, 8, 8]} />
-        <meshBasicMaterial color="#ffb347" />
+        <sphereGeometry args={[PROJECTILE.bodyRadius, 8, 8]} />
+        <meshBasicMaterial color={PROJECTILE.color} />
       </instancedMesh>
       <instancedMesh ref={pilotMesh} args={[undefined, undefined, 16]}>
         <coneGeometry args={[4, 5, 10]} />

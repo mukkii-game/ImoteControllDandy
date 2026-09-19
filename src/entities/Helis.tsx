@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { HELIS, HIT } from '../config/waves'
+import { HELIS } from '../config/waves'
 import { addEnemy, enemies, isStunned, type Enemy } from '../systems/enemies'
 import { refs } from '../systems/refs'
 import { emit } from '../systems/events'
 import { toonGradient } from '../systems/toon'
 import { useKitModel } from '../systems/kit'
 import { XrayRoot } from '../systems/xray'
-import { addProjectile, removeProjectile, type Projectile } from '../systems/projectiles'
+import { addProjectile, removeProjectile, imoutoImpact, type Projectile } from '../systems/projectiles'
+import { PROJECTILE } from '../config/waves'
+
+const impact = new THREE.Vector3()
 import { useGame } from '../systems/store'
 
 const m4 = new THREE.Matrix4()
@@ -179,9 +182,9 @@ export function Helis() {
       const ms = missiles.current[i]
       ms.t += dt
       ms.pos.addScaledVector(ms.vel, dt)
-      const hit = Math.hypot(ms.pos.x - im.position.x, ms.pos.z - im.position.z) < HIT.radius * 0.5 && ms.pos.y > 0 && ms.pos.y < 60
-      if (hit) emit('imouto.hit', { x: ms.pos.x, y: ms.pos.y, z: ms.pos.z })
-      if (hit || ms.t > 6 || ms.pos.y < 0 || ms.proj?.dead) {
+      const hit = !!imoutoImpact(ms.pos, PROJECTILE.bodyRadius, impact)
+      if (hit) emit('imouto.hit', { x: impact.x, y: impact.y, z: impact.z })
+      if (hit || ms.t > 12 || ms.pos.y < 0 || ms.proj?.dead) {
         removeProjectile(ms.proj)
         missiles.current.splice(i, 1)
       }
@@ -203,8 +206,8 @@ export function Helis() {
         </group>
       ))}
       <instancedMesh ref={missileMesh} args={[undefined, undefined, 32]}>
-        <sphereGeometry args={[1.6, 8, 8]} />
-        <meshBasicMaterial color="#ffb347" />
+        <sphereGeometry args={[PROJECTILE.bodyRadius, 8, 8]} />
+        <meshBasicMaterial color={PROJECTILE.color} />
       </instancedMesh>
     </XrayRoot>
   )

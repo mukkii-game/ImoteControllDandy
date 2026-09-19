@@ -587,7 +587,8 @@ export const SOUND = {
   lockVolume: 0.8,
   /** バルカン 1 発の音量（連射なので小さめ） */
   vulcanVolume: 0.25,
-  /** 被弾の「いたっ」：連続で鳴らすときの最短間隔（秒） */
+  /** 被弾の「いたっ」：何回に 1 回つぶやくか、と連続で鳴らすときの最短間隔（秒） */
+  hitVoiceEvery: 3,
   hitVoiceMinGapSec: 0.8,
 }
 
