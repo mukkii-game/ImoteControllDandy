@@ -109,7 +109,6 @@ export function Imouto() {
     refs.head = vrm.humanoid.getNormalizedBoneNode('head')
     refs.rightHand = vrm.humanoid.getRawBoneNode('rightHand')
     refs.rightFinger = vrm.humanoid.getRawBoneNode('rightMiddleProximal')
-    refs.palmRatio = LOCKON.grab.palmRatio
     // 肩レイキャストは髪を除いた体だけ（髪は高ポリで重い）
     const targets: THREE.Object3D[] = []
     vrm.scene.traverse((o) => {

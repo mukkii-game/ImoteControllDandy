@@ -277,7 +277,7 @@ export function Bro() {
         grabK.current = THREE.MathUtils.clamp(grabK.current + (grabWant ? dt / LOCKON.grab.sec : -dt / LOCKON.grab.returnSec), 0, 1)
         shoulderWorld(v)
         if (grabK.current > 0.001) {
-          handWorld(target, LOCKON.grab.handOffset)
+          handWorld(target)
           v.lerp(target, easeInOut(grabK.current))
         }
         g.position.copy(v)
@@ -375,7 +375,7 @@ export function Bro() {
             g.position.y = seq.from.y + Math.sin(Math.min(1, seq.t / windup) * Math.PI) * gc.hopHeight
           } else {
             // 妹の右手に握られたまま投げモーションに付いていく。モーションが終わった瞬間に手から発射
-            handWorld(v, LOCKON.grab.handOffset)
+            handWorld(v)
             g.position.copy(v)
           }
           if (seq.t >= windup) beginFly(true)

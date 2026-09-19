@@ -49,6 +49,21 @@ export const TUNE_GROUPS: { title: string; items: TuneItem[] }[] = [
     ],
   },
   {
+    title: '掴み（オレを投げろ）：兄の位置と右腕の構え',
+    items: [
+      { path: 'LOCKON.grab.palmRatio', label: '手首→中指の付け根（0=手首）', min: -0.5, max: 1.5, step: 0.05 },
+      { path: 'LOCKON.grab.broSeat.forward', label: '兄 前後 m', min: -6, max: 6, step: 0.1 },
+      { path: 'LOCKON.grab.broSeat.right', label: '兄 左右 m', min: -6, max: 6, step: 0.1 },
+      { path: 'LOCKON.grab.broSeat.up', label: '兄 上下 m', min: -4, max: 6, step: 0.1 },
+      { path: 'LOCKON.grab.hold.upper.0', label: '上腕 前後（マイナス=前）', min: -2.5, max: 2.5, step: 0.05 },
+      { path: 'LOCKON.grab.hold.upper.1', label: '上腕 ひねり', min: -1.5, max: 1.5, step: 0.05 },
+      { path: 'LOCKON.grab.hold.upper.2', label: '上腕 開き（大きいほど体に付く）', min: 0, max: 1.6, step: 0.05 },
+      { path: 'LOCKON.grab.hold.lower.1', label: '肘の曲げ（マイナス=体の前）', min: -2.8, max: 0, step: 0.05 },
+      { path: 'LOCKON.grab.fingerCurl', label: '指の握り', min: 0, max: 1.6, step: 0.05 },
+      { path: 'LOCKON.windupSec', label: '投げモーション秒', min: 0.1, max: 1.5, step: 0.05 },
+    ],
+  },
+  {
     title: '肩の位置',
     items: [
       { path: 'IMOUTO.shoulderProbe.inward', label: '首寄り', min: -0.03, max: 0.05, step: 0.001 },

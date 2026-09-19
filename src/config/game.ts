@@ -230,7 +230,11 @@ export const LOCKON = {
   grab: {
     sec: 0.3,
     returnSec: 0.5,
-    handOffset: 1.4,
+    /**
+     * 兄の乗る位置：手のひらの点（palmRatio）からのずらし（m、妹の向き基準）。forward=妹の前、right=妹の右、up=上。
+     * Esc の調整パネル「掴み」からも動かせる（「変更をコピー」で JSON が出る）
+     */
+    broSeat: { forward: 0, right: 0, up: 1.4 },
     hold: { upper: [-0.15, 0.1, 1.15], lower: [0, -1.45, 0.15] },
     windBack: { upper: [1.0, 0.25, 0.85], lower: [0, -2.1, 0.1] },
     release: { upper: [-2.4, 0, 0.45], lower: [0, -0.25, 0] },

@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { LOCKON } from '../config/game'
 
 /** エンティティ間で共有する参照（カメラ・乗降で使う）。React state にしないのは毎フレーム更新のため */
 export const refs = {
@@ -8,11 +9,9 @@ export const refs = {
   shoulder: null as THREE.Object3D | null,
   /** 妹の頭ボーン。肩上カメラのオービット中心 */
   head: null as THREE.Object3D | null,
-  /** 妹の右手の骨（生ボーン）と中指の付け根。掴まれた兄はその間（手のひら）に乗る */
+  /** 妹の右手の骨（生ボーン）と中指の付け根。掴まれた兄はその間（手のひら）に乗る（LOCKON.grab.palmRatio / broSeat） */
   rightHand: null as THREE.Object3D | null,
   rightFinger: null as THREE.Object3D | null,
-  /** 手首→中指の付け根のどの割合の所に兄を置くか（LOCKON.grab.palmRatio を Imouto が入れる） */
-  palmRatio: 0.7,
   /** 兄の向き（yaw, rad） */
   broYaw: 0,
   /** カメラのオービット角（マウス操作）。yaw は「カメラが向いている方向」 */
@@ -47,15 +46,25 @@ export function shoulderWorld(out = tmp): THREE.Vector3 {
 }
 
 const tmp2 = new THREE.Vector3()
-/** 妹の右手のひら（兄が掴まれて乗る位置）。手首と中指の付け根の間。手の骨が無ければ肩 */
-export function handWorld(out = tmp, up = 0): THREE.Vector3 {
+/**
+ * 妹の右手のひら（兄が掴まれて乗る位置）。手首と中指の付け根の間（LOCKON.grab.palmRatio）に、
+ * 妹の向き基準のずらし（LOCKON.grab.broSeat：前・右・上、m）を足す。手の骨が無ければ肩
+ */
+export function handWorld(out = tmp): THREE.Vector3 {
   if (!refs.rightHand) return shoulderWorld(out)
+  const gr = LOCKON.grab
   refs.rightHand.getWorldPosition(out)
   if (refs.rightFinger) {
     refs.rightFinger.getWorldPosition(tmp2)
-    out.lerp(tmp2, refs.palmRatio)
+    out.lerp(tmp2, gr.palmRatio)
   }
-  out.y += up
+  const yaw = refs.imouto?.rotation.y ?? 0
+  const fx = Math.sin(yaw)
+  const fz = Math.cos(yaw)
+  // 妹の右手側 = (-cos yaw, +sin yaw)（この世界は +z を向くと -x が右）
+  out.x += fx * gr.broSeat.forward - Math.cos(yaw) * gr.broSeat.right
+  out.z += fz * gr.broSeat.forward + Math.sin(yaw) * gr.broSeat.right
+  out.y += gr.broSeat.up
   return out
 }
 
