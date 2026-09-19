@@ -9,7 +9,7 @@ import { toonGradient } from '../systems/toon'
 
 const HOUSE_PALETTE = ['#e8dcc8', '#f0e6d2', '#dcd0b8', '#e6d8c0', '#f2ead8']
 const ROOF_COLORS = ['#b5432f', '#4a5d8a', '#6b7a4a', '#8a5a3a']
-type Building = { x: number; z: number; w: number; h: number; d: number; color: string; roof?: boolean }
+type Building = { x: number; z: number; w: number; h: number; d: number; color: string; roof?: boolean; roofColor?: string }
 
 /**
  * 格子状のレトロな街。道路の格子＋ブロックごとにビル群。妹はどこでも歩ける。
@@ -62,6 +62,7 @@ export function Stage() {
                     h: 6 + rnd() * 5,
                     color: HOUSE_PALETTE[Math.floor(rnd() * HOUSE_PALETTE.length)],
                     roof: true,
+                    roofColor: ROOF_COLORS[Math.floor(rnd() * ROOF_COLORS.length)],
                   })
                 }
               continue
@@ -166,7 +167,9 @@ function Buildings({ list }: { list: Building[] }) {
       n++
       if (b.h <= GAME.stompHeight) {
         crushed.current.set(i, 0)
+        // 音用（id -1 は建物）。見た目は building.crush 側（屋根が飛ぶ・壁の破片・砂煙）
         emit('enemy.hit', { id: -1, x: b.x, y: 4, z: b.z })
+        emit('building.crush', { x: b.x, z: b.z, w: b.w, h: b.h, d: b.d, color: b.color, roofColor: b.roofColor })
       } else {
         broken.current.add(i)
         o.position.set(b.x, 0, b.z)
@@ -250,10 +253,10 @@ function School() {
   )
 }
 
-/** 住宅街の屋根（四角錐）。家が潰れたら屋根も一緒に沈む簡略化のため、潰れ判定は Buildings 側だけで行い、屋根は静的 */
+/** 住宅街の屋根（四角錐）。家が潰れたら（building.crush）その屋根は消し、Debris 側で吹き飛ぶ屋根に置き換える */
 function Roofs({ list }: { list: Building[] }) {
+  const houses = useMemo(() => list.filter((b) => b.roof), [list])
   const mesh = useMemo(() => {
-    const houses = list.filter((b) => b.roof)
     const geo = new THREE.ConeGeometry(1, 1, 4)
     const mat = new THREE.MeshToonMaterial({ gradientMap: toonGradient() })
     const m = new THREE.InstancedMesh(geo, mat, Math.max(1, houses.length))
@@ -265,13 +268,27 @@ function Roofs({ list }: { list: Building[] }) {
       o.scale.set(b.w * 0.78, b.w * 0.45, b.d * 0.78)
       o.updateMatrix()
       m.setMatrixAt(i, o.matrix)
-      m.setColorAt(i, c.set(ROOF_COLORS[i % ROOF_COLORS.length]))
+      m.setColorAt(i, c.set(b.roofColor ?? ROOF_COLORS[i % ROOF_COLORS.length]))
     })
     m.count = houses.length
     m.castShadow = true
     m.instanceMatrix.needsUpdate = true
     if (m.instanceColor) m.instanceColor.needsUpdate = true
     return m
-  }, [list])
+  }, [houses])
+  useEffect(() => {
+    const index = new Map<string, number>()
+    houses.forEach((b, i) => index.set(`${b.x},${b.z}`, i))
+    const o = new THREE.Object3D()
+    return on('building.crush', ({ x, z }) => {
+      const i = index.get(`${x},${z}`)
+      if (i === undefined) return
+      o.position.set(x, 0, z)
+      o.scale.set(0.0001, 0.0001, 0.0001)
+      o.updateMatrix()
+      mesh.setMatrixAt(i, o.matrix)
+      mesh.instanceMatrix.needsUpdate = true
+    })
+  }, [houses, mesh])
   return <primitive object={mesh} />
 }

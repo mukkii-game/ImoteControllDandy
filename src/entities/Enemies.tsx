@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { DUMMY_ENEMIES, LOCKON } from '../config/game'
+import { DUMMY_ENEMIES, LOCKON, DEBRIS } from '../config/game'
 import { addEnemy, enemies } from '../systems/enemies'
 import { refs } from '../systems/refs'
 import { on } from '../systems/events'
 import { useGame } from '../systems/store'
 
 const tmpColor = new THREE.Color()
+const PUFF_MAX = 96
+const SMOKE_FIRE = new THREE.Color('#ff8a3a')
+const SMOKE_DARK = new THREE.Color('#2a2a2a')
+const SMOKE_LIGHT = new THREE.Color('#b0b0b0')
 
 /**
  * テスト用の的：妹の周りを周回する球。ステップ4で戦闘機に置き換える。
@@ -65,11 +69,24 @@ interface Boom {
   t: number
   /** 砂煙（足元のリングだけ） */
   dust: boolean
+  /** 砂煙の大きさ倍率 */
+  scale?: number
 }
 
-/** 着弾の爆発（膨らむ球＋リング）。イベント駆動 */
+interface Puff {
+  pos: THREE.Vector3
+  vel: THREE.Vector3
+  t: number
+  size: number
+}
+
+/** 着弾の爆発（膨らむ球＋リング）、黒煙、砂煙。イベント駆動 */
 export function Explosions() {
   const list = useRef<Boom[]>([])
+  const puffs = useRef<Puff[]>([])
+  const puffMesh = useRef<THREE.InstancedMesh>(null!)
+  const puffM4 = useMemo(() => new THREE.Matrix4(), [])
+  const puffColor = useMemo(() => new THREE.Color(), [])
   const group = useRef<THREE.Group>(null!)
   const pool = useMemo(
     () =>
@@ -87,10 +104,28 @@ export function Explosions() {
 
   useEffect(() => {
     pool.forEach((g) => group.current.add(g))
-    const off1 = on('enemy.hit', ({ x, y, z }) => {
+    const off1 = on('enemy.hit', ({ id, x, y, z }) => {
+      if (id < 0) return // 建物は building.crush / building.break 側で砂煙
       list.current.push({ pos: new THREE.Vector3(x, y, z), t: 0, dust: false })
       if (list.current.length > pool.length) list.current.shift()
+      // 黒煙：ばらけて立ち上る
+      const s = DEBRIS.smoke
+      for (let i = 0; i < s.n; i++) {
+        puffs.current.push({
+          pos: new THREE.Vector3(x + (Math.random() - 0.5) * 6, y + (Math.random() - 0.5) * 4, z + (Math.random() - 0.5) * 6),
+          vel: new THREE.Vector3((Math.random() - 0.5) * 8, s.rise * (0.6 + Math.random() * 0.8), (Math.random() - 0.5) * 8),
+          t: -i * 0.05,
+          size: s.size * (0.7 + Math.random() * 0.6),
+        })
+      }
+      while (puffs.current.length > PUFF_MAX) puffs.current.shift()
     })
+    const pushDust = (x: number, z: number, scale: number) => {
+      list.current.push({ pos: new THREE.Vector3(x, 1, z), t: 0, dust: true, scale })
+      if (list.current.length > pool.length) list.current.shift()
+    }
+    const off4 = on('building.crush', ({ x, z, w }) => pushDust(x, z, Math.max(0.5, w / DEBRIS.dustSize)))
+    const off5 = on('building.break', ({ x, z, w }) => pushDust(x, z, Math.max(0.8, (w * 1.5) / DEBRIS.dustSize)))
     const off3 = on('imouto.hit', ({ x, y, z }) => {
       list.current.push({ pos: new THREE.Vector3(x, y, z), t: 0, dust: false })
       if (list.current.length > pool.length) list.current.shift()
@@ -104,10 +139,37 @@ export function Explosions() {
       off1()
       off2()
       off3()
+      off4()
+      off5()
     }
   }, [pool])
 
   useFrame((_, dt) => {
+    // 黒煙：上がりながら膨らんで薄くなる
+    const s = DEBRIS.smoke
+    puffs.current = puffs.current.filter((p) => (p.t += dt) < s.sec)
+    const pm = puffMesh.current
+    pm.count = puffs.current.length
+    puffs.current.forEach((p, i) => {
+      if (p.t < 0) {
+        puffM4.makeScale(0.0001, 0.0001, 0.0001)
+        pm.setMatrixAt(i, puffM4)
+        return
+      }
+      p.pos.addScaledVector(p.vel, dt)
+      p.vel.multiplyScalar(1 - 0.8 * dt)
+      const k = p.t / s.sec
+      const r = p.size * (0.4 + 1.2 * k)
+      puffM4.makeScale(r, r, r)
+      puffM4.setPosition(p.pos)
+      pm.setMatrixAt(i, puffM4)
+      // 最初は明るいオレンジ寄り、すぐ黒煙、最後は薄い灰色に
+      pm.setColorAt(i, k < 0.15 ? puffColor.copy(SMOKE_FIRE).lerp(SMOKE_DARK, k / 0.15) : puffColor.copy(SMOKE_DARK).lerp(SMOKE_LIGHT, (k - 0.15) / 0.85))
+    })
+    pm.instanceMatrix.needsUpdate = true
+    if (pm.instanceColor) pm.instanceColor.needsUpdate = true
+    ;(pm.material as THREE.MeshBasicMaterial).opacity = 0.75
+
     pool.forEach((g) => (g.visible = false))
     list.current = list.current.filter((b) => (b.t += dt) < LOCKON.explosionSec)
     list.current.forEach((b, i) => {
@@ -120,7 +182,7 @@ export function Explosions() {
       if (b.dust) {
         core.visible = false
         ring.visible = true
-        ring.scale.setScalar(20 + 40 * Math.sqrt(k))
+        ring.scale.setScalar((20 + 40 * Math.sqrt(k)) * (b.scale ?? 1))
         ring.material.color.set('#d9c8a0')
         ring.material.opacity = 0.7 * (1 - k)
       } else {
@@ -136,7 +198,15 @@ export function Explosions() {
     })
   })
 
-  return <group ref={group} />
+  return (
+    <group>
+      <group ref={group} />
+      <instancedMesh ref={puffMesh} args={[undefined, undefined, PUFF_MAX]} frustumCulled={false}>
+        <sphereGeometry args={[1, 10, 8]} />
+        <meshBasicMaterial transparent depthWrite={false} />
+      </instancedMesh>
+    </group>
+  )
 }
 
 const TRAIL_N = 40

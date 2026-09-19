@@ -291,6 +291,38 @@ export const GAME = {
   park: { halfWidth: 320, from: 560, to: 1250 },
 }
 
+/** 破壊表現：破片・部品・煙。物理エンジン無しの放物運動 */
+export const DEBRIS = {
+  /** 家が潰れた時：壁の破片数、屋根が飛び上がる速さ（m/s）、横に散る速さ */
+  house: { wallPieces: 6, roofUp: 16, spread: 14 },
+  /** 敵がやられた時：部品が飛び散る速さ（横・上、m/s） */
+  burst: { spread: 22, up: 18 },
+  /** 敵の種類ごとの部品（色・大きさ m・個数）。ここを変えれば見た目が変わる */
+  parts: {
+    police: [
+      { color: '#f5f5f5', size: [2.4, 1.4, 2.8], n: 5 },
+      { color: '#1a1a1a', size: [0.7, 1.8, 1.8], n: 4 },
+      { color: '#ff2a2a', size: [1.8, 0.6, 0.9], n: 1 },
+    ],
+    tank: [
+      { color: '#6b7a4a', size: [3.2, 2, 3.6], n: 6 },
+      { color: '#3f4633', size: [1, 1.8, 1.8], n: 6 },
+      { color: '#3f4633', size: [0.9, 0.9, 9], n: 1 },
+    ],
+    fighter: [
+      { color: '#1f3fbf', size: [3, 1, 4], n: 5 },
+      { color: '#f4f6ff', size: [2, 0.6, 3], n: 3 },
+      { color: '#1f3fbf', size: [10, 0.4, 3.2], n: 2 },
+      { color: '#e63946', size: [1.6, 0.6, 1.6], n: 1 },
+    ],
+    dummy: [{ color: '#ff8fa3', size: [2, 2, 2], n: 6 }],
+  } as Record<string, { color: string; size: [number, number, number]; n: number }[]>,
+  /** 黒煙：個数、上昇速度、寿命秒、大きさ m */
+  smoke: { n: 6, rise: 8, sec: 1.5, size: 6 },
+  /** 砂煙リング（家・ビルが壊れた時）の大きさ m */
+  dustSize: 30,
+}
+
 export const DEBUG = {
   showStats: false,
 }

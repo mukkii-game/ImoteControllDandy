@@ -22,6 +22,8 @@ export interface GameEvents {
   'game.late': void
   /** 建物が砕ける（ブロック破片を出す） */
   'building.break': { x: number; z: number; w: number; h: number; d: number; color: string }
+  /** 低い家が踏み潰される（屋根が飛び、壁の破片が散る） */
+  'building.crush': { x: number; z: number; w: number; h: number; d: number; color: string; roofColor?: string }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

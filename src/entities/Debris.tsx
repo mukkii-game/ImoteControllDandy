@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { GAME } from '../config/game'
+import { GAME, DEBRIS } from '../config/game'
 import { on } from '../systems/events'
+import { getEnemy } from '../systems/enemies'
 import { toonGradient } from '../systems/toon'
 
 interface Piece {
@@ -13,53 +14,98 @@ interface Piece {
   size: THREE.Vector3
   color: THREE.Color
   t: number
+  life: number
 }
 
-const MAX = 240
+const MAX_BOX = 320
+const MAX_ROOF = 40
 const m4 = new THREE.Matrix4()
 const q = new THREE.Quaternion()
+const s3 = new THREE.Vector3()
+const rnd = (a: number) => (Math.random() - 0.5) * 2 * a
 
 /**
- * 建物の破片。物理エンジン無しの簡易放物運動（地面で止まる）。
- * 高い建物が砕けたとき、幅高さを分割したブロックとして飛び散る。
+ * 破片・部品。物理エンジン無しの簡易放物運動（地面で弾んで止まる）。
+ * - 高いビルが砕ける：ブロック破片
+ * - 家が潰れる：屋根（四角錐）が丸ごと飛び、壁の破片が散る
+ * - 敵がやられる：種類ごとの部品（車体・タイヤ・翼など）が飛び散る（DEBRIS.parts）
  */
 export function Debris() {
-  const mesh = useRef<THREE.InstancedMesh>(null!)
-  const pieces = useRef<Piece[]>([])
+  const boxMesh = useRef<THREE.InstancedMesh>(null!)
+  const roofMesh = useRef<THREE.InstancedMesh>(null!)
+  const boxes = useRef<Piece[]>([])
+  const roofs = useRef<Piece[]>([])
   const grad = useMemo(() => toonGradient(), [])
 
-  useEffect(
-    () =>
-      on('building.break', ({ x, z, w, h, d, color }) => {
-        const n = GAME.debrisPerBuilding
-        const cols = 2
-        const rows = Math.max(2, Math.round(n / 2))
-        for (let i = 0; i < n; i++) {
-          const cx = x + ((i % cols) - 0.5) * (w / 2)
-          const cy = (Math.floor(i / cols) + 0.5) * (h / rows)
-          const cz = z + (Math.random() - 0.5) * d * 0.5
-          pieces.current.push({
-            pos: new THREE.Vector3(cx, cy, cz),
-            vel: new THREE.Vector3((Math.random() - 0.5) * 30, 8 + Math.random() * 18, (Math.random() - 0.5) * 30),
-            rot: new THREE.Euler(Math.random(), Math.random(), Math.random()),
-            rotV: new THREE.Vector3((Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4),
-            size: new THREE.Vector3(w / cols, h / rows, d * 0.6),
-            color: new THREE.Color(color),
-            t: 0,
-          })
+  useEffect(() => {
+    const push = (list: Piece[], max: number, p: Piece) => {
+      list.push(p)
+      while (list.length > max) list.shift()
+    }
+    const piece = (pos: THREE.Vector3, vel: THREE.Vector3, size: THREE.Vector3, color: string, life = GAME.debrisSec, spin = 4): Piece => ({
+      pos,
+      vel,
+      rot: new THREE.Euler(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI),
+      rotV: new THREE.Vector3(rnd(spin), rnd(spin), rnd(spin)),
+      size,
+      color: new THREE.Color(color),
+      t: 0,
+      life,
+    })
+    const offBreak = on('building.break', ({ x, z, w, h, d, color }) => {
+      const n = GAME.debrisPerBuilding
+      const cols = 2
+      const rows = Math.max(2, Math.round(n / 2))
+      for (let i = 0; i < n; i++) {
+        const cx = x + ((i % cols) - 0.5) * (w / 2)
+        const cy = (Math.floor(i / cols) + 0.5) * (h / rows)
+        const cz = z + rnd(d * 0.25)
+        push(boxes.current, MAX_BOX, piece(new THREE.Vector3(cx, cy, cz), new THREE.Vector3(rnd(15), 8 + Math.random() * 18, rnd(15)), new THREE.Vector3(w / cols, h / rows, d * 0.6), color))
+      }
+    })
+    const offCrush = on('building.crush', ({ x, z, w, h, d, color, roofColor }) => {
+      const c = DEBRIS.house
+      // 屋根：丸ごと飛び上がって回転しながら落ちる
+      if (roofColor) {
+        const r = piece(new THREE.Vector3(x, h + w * 0.22, z), new THREE.Vector3(rnd(c.spread * 0.5), c.roofUp, rnd(c.spread * 0.5)), new THREE.Vector3(w * 0.78, w * 0.45, d * 0.78), roofColor, GAME.debrisSec + 1, 3)
+        r.rot.set(0, Math.PI / 4, 0)
+        push(roofs.current, MAX_ROOF, r)
+      }
+      // 壁：四方へ散る
+      for (let i = 0; i < c.wallPieces; i++) {
+        const a = (i / c.wallPieces) * Math.PI * 2
+        const vel = new THREE.Vector3(Math.cos(a) * c.spread * (0.6 + Math.random() * 0.6), 6 + Math.random() * 10, Math.sin(a) * c.spread * (0.6 + Math.random() * 0.6))
+        const size = new THREE.Vector3(w * (0.2 + Math.random() * 0.2), h * (0.3 + Math.random() * 0.4), d * 0.15)
+        push(boxes.current, MAX_BOX, piece(new THREE.Vector3(x + Math.cos(a) * w * 0.4, h * 0.5, z + Math.sin(a) * d * 0.4), vel, size, color))
+      }
+    })
+    const offHit = on('enemy.hit', ({ id, x, y, z }) => {
+      if (id < 0) return
+      const kind = getEnemy(id)?.kind ?? 'dummy'
+      const parts = DEBRIS.parts[kind] ?? DEBRIS.parts.dummy
+      const b = DEBRIS.burst
+      for (const part of parts) {
+        for (let i = 0; i < part.n; i++) {
+          const vel = new THREE.Vector3(rnd(b.spread), b.up * (0.5 + Math.random()), rnd(b.spread))
+          const pos = new THREE.Vector3(x + rnd(2), Math.max(1, y + rnd(2)), z + rnd(2))
+          push(boxes.current, MAX_BOX, piece(pos, vel, new THREE.Vector3(...part.size), part.color, GAME.debrisSec, 8))
         }
-        while (pieces.current.length > MAX) pieces.current.shift()
-      }),
-    [],
-  )
+      }
+    })
+    return () => {
+      offBreak()
+      offCrush()
+      offHit()
+    }
+  }, [])
 
-  useFrame((_, dt) => {
+  const step = (list: Piece[], dt: number) => {
     const g = 40
-    for (let i = pieces.current.length - 1; i >= 0; i--) {
-      const p = pieces.current[i]
+    for (let i = list.length - 1; i >= 0; i--) {
+      const p = list[i]
       p.t += dt
-      if (p.t > GAME.debrisSec) {
-        pieces.current.splice(i, 1)
+      if (p.t > p.life) {
+        list.splice(i, 1)
         continue
       }
       p.vel.y -= g * dt
@@ -76,23 +122,37 @@ export function Debris() {
       p.rot.y += p.rotV.y * dt
       p.rot.z += p.rotV.z * dt
     }
-    const m = mesh.current
-    m.count = pieces.current.length
-    pieces.current.forEach((p, i) => {
+  }
+  const write = (m: THREE.InstancedMesh, list: Piece[]) => {
+    m.count = list.length
+    list.forEach((p, i) => {
       q.setFromEuler(p.rot)
-      const fade = p.t > GAME.debrisSec - 0.6 ? (GAME.debrisSec - p.t) / 0.6 : 1
-      m4.compose(p.pos, q, new THREE.Vector3(p.size.x * fade, p.size.y * fade, p.size.z * fade))
+      const fade = p.t > p.life - 0.6 ? (p.life - p.t) / 0.6 : 1
+      m4.compose(p.pos, q, s3.copy(p.size).multiplyScalar(fade))
       m.setMatrixAt(i, m4)
       m.setColorAt(i, p.color)
     })
     m.instanceMatrix.needsUpdate = true
     if (m.instanceColor) m.instanceColor.needsUpdate = true
+  }
+
+  useFrame((_, dt) => {
+    step(boxes.current, dt)
+    step(roofs.current, dt)
+    write(boxMesh.current, boxes.current)
+    write(roofMesh.current, roofs.current)
   })
 
   return (
-    <instancedMesh ref={mesh} args={[undefined, undefined, MAX]} castShadow>
-      <boxGeometry args={[1, 1, 1]} />
-      <meshToonMaterial gradientMap={grad} />
-    </instancedMesh>
+    <group>
+      <instancedMesh ref={boxMesh} args={[undefined, undefined, MAX_BOX]} castShadow frustumCulled={false}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshToonMaterial gradientMap={grad} />
+      </instancedMesh>
+      <instancedMesh ref={roofMesh} args={[undefined, undefined, MAX_ROOF]} castShadow frustumCulled={false}>
+        <coneGeometry args={[1, 1, 4]} />
+        <meshToonMaterial gradientMap={grad} />
+      </instancedMesh>
+    </group>
   )
 }
