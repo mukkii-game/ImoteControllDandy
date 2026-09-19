@@ -151,7 +151,7 @@ export function BossBuildings() {
         const signH = 9
         const signY = faceY - fh / 2 - signH / 2 - 2
         return (
-          <group key={cfg.name} ref={(el) => el && (groups.current[i] = el)} position={[cfg.x, 0, cfg.z]}>
+          <group key={`${cfg.name}-${i}`} ref={(el) => el && (groups.current[i] = el)} position={[cfg.x, 0, cfg.z]}>
             <mesh position={[0, cfg.h / 2, 0]} castShadow receiveShadow>
               <boxGeometry args={[cfg.w, cfg.h, cfg.d]} />
               <meshToonMaterial color={cfg.color} gradientMap={grad} />

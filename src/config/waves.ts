@@ -98,7 +98,7 @@ export const FIGHTERS = {
   ] as { name: string; loiter: 'near' | 'far' | 'overhead'; path: [number, number, number][] }[],
   /** 何秒に1発ミサイルを撃つか（編隊全体） */
   missileInterval: 3.2,
-  missileSpeed: 30,
+  missileSpeed: 15,
   /** 抜けた後（または全滅後）、次のセットが来るまで */
   respawnSec: 2.5,
   /**
@@ -157,7 +157,7 @@ export const HELIS = {
   size: 16,
   rotorSpeed: 28,
   shotInterval: 2.8,
-  shotSpeed: 28,
+  shotSpeed: 14,
   /** やられてから戻ってくるまで（秒）。遠くから飛んでくる */
   respawnSec: 6,
   spawnDist: 700,
@@ -179,27 +179,33 @@ export const POLICE = {
   fleeDist: 130,
   /** 何秒に 1 発撃つか（パトカー全体）と弾速 */
   shotInterval: 2.2,
-  shotSpeed: 30,
+  shotSpeed: 15,
 }
 
 /** エネミービル（ビルの形をした敵）。妹と同じくらい大きく、近づくとにじり寄ってくる。通り抜けられない */
 export const BOSS = {
   /** 倒すのに必要なロックオン命中数（＝ロック点の数） */
   hits: 4,
-  /** この距離まで妹が来たら寄ってくる（m）／これ以上は近づかない */
-  aggroDist: 450,
+  /** この距離まで妹が来たら寄ってくる（m、遠くから）／これ以上は近づかない／寄ってくる速さ（m/s、ゆっくり） */
+  aggroDist: 900,
   stopDist: 40,
-  creepSpeed: 4,
+  creepSpeed: 5,
   /** ロック点をビルの中に散らばらせる範囲（0..1、内側に寄せる） */
   pointInset: 0.3,
   score: 500,
   /** 体を左右に揺らしながら近づく：根元の傾き（rad）、揺れの速さ（rad/s）、上半分の追加のしなり（根元の傾きに対する倍率） */
   sway: { amp: 0.07, speed: 1.6, bend: 0.8 },
 }
-/** エネミービルの配置：スタート（z=-1000）の先、ビル街（z=-500）の手前。進行方向（+z）を向いて右にぎょうざの満洲、左に山田うどん（この世界は +z を向くと -x が画面右） */
+/**
+ * エネミービルの配置（進行方向 +z を向いて右＝-x、左＝+x）。
+ * 1 組目：スタート（z=-1000）の先、ビル街（z=-500）の手前。2 組目：学校（z=1400）との中間あたり、道から左右にそこそこ離れた所。
+ * どれも遠く（BOSS.aggroDist）からゆっくり（creepSpeed）妹へ近づいてくる
+ */
 export const BOSSES = [
   { name: 'ぎょうざの満洲', image: 'textures/boss_manshu.png', imageAspect: 350 / 381, x: -70, z: -720, w: 46, h: 62, d: 46, color: '#ffe873', signBg: '#e5322d', signColor: '#ffffff' },
   { name: '山田うどん', image: 'textures/boss_yamada.png', imageAspect: 248 / 449, x: 70, z: -660, w: 48, h: 58, d: 48, color: '#fff4dc', signBg: '#d0301f', signColor: '#ffffff' },
+  { name: 'ぎょうざの満洲', image: 'textures/boss_manshu.png', imageAspect: 350 / 381, x: -230, z: 160, w: 46, h: 62, d: 46, color: '#ffe873', signBg: '#e5322d', signColor: '#ffffff' },
+  { name: '山田うどん', image: 'textures/boss_yamada.png', imageAspect: 248 / 449, x: 230, z: 260, w: 48, h: 58, d: 48, color: '#fff4dc', signBg: '#d0301f', signColor: '#ffffff' },
 ]
 
 export const TANKS = {
@@ -211,7 +217,7 @@ export const TANKS = {
   /** 側方へのオフセット（道路脇）。1 グループは同じ側から、次のグループは反対側から */
   side: 40,
   shellInterval: 4,
-  shellSpeed: 28,
+  shellSpeed: 14,
   size: { w: 12, h: 7, d: 20 },
 }
 

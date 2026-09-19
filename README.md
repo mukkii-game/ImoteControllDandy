@@ -70,7 +70,8 @@ npm run build    # dist/ に出力（itch.io 用）
 - 爆撃（FIGHTERS.bomb）：黒い爆弾が黄色い光をまとって、妹の胴体へゆっくり曲がりながら飛んでくる（speed / homing / gravity）。当たると被弾エフェクト＋減速。上空集合の旋回は半径 135m・高さ 210m（loiter.kinds.overhead）
 - 吹っ飛び：地上の敵は上へ 160m/s、空中の敵は上へ 75m/s で勢いよく散ってから半分の重力で落ちる（DEBRIS.knockback / DEBRIS.air）
 - 空の敵：戦闘機は 2 編隊（FIGHTERS.squadrons、各 7 機）が同時に別方向から。ヘリは 2 編隊 × 4 機（HELIS.groups / perGroup / formation）でまとまって妹の周りを回る。全体的に前より遠め（loiter.kinds の center、HELIS.keepDist 260）。戦闘機の速度は 220 m/s
-- スタートは z=-1000（ビル街 z=-500 の手前）。エネミービルは右に満洲・左に山田うどん（BOSSES）。体を左右に揺らし上半分がしなりながらにじり寄る（BOSS.sway）
+- スタートは z=-1000（ビル街 z=-500 の手前）。エネミービルは 2 組：スタート先に右＝満洲・左＝山田うどん、学校との中間（z≈160〜260）にも道から左右 230m 離れて 1 組（BOSSES）。900m 手前から 5 m/s でゆっくり近づき（BOSS.aggroDist / creepSpeed）、体を左右に揺らし上半分がしなりながらにじり寄る（BOSS.sway）
+- 敵の弾（ミサイル・砲弾）の速さは 14〜15 m/s（爆弾は 14）
 - 被弾：SPEC 通り 0.5 秒減速（HIT.slowSec / slowFactor）＋驚き顔＋「いたっ」の声（line_imouto_hit、SOUND.hitVoiceMinGapSec で連呼を抑える）。ダメージは無い
 - 敵の弾はミサイル型（灰色の胴体＋赤い先端、PROJECTILE.bodyRadius 0.9m）で黄色い光をまとい、速さは 28〜30 m/s。爆弾は黒い玉（FIGHTERS.bomb）。見た目は entities/Projectiles.tsx が登録簿（systems/projectiles.ts）からまとめて描く。妹の体への着弾は体の表面の点（imoutoImpact）で、爆発は兄と同じくらい（HIT.explosionRadius 5m）＋赤っぽい煙（HIT.puffs、オレンジ→赤→暗い赤）と、少し遅れて出る灰色の煙（HIT.grayPuffs / grayDelaySec）の 2 段。「痛っ」は効果音ラボの SE 5 種からランダム、鳴ったら 3 秒は鳴らさない（SOUND.hitVoiceMinGapSec）。タックル音は 2 種を順繰り（SOUND.tackleSounds）
 - 敵の弾（爆弾・ミサイル・砲弾）は systems/projectiles.ts に登録され、地上のバルカンで撃ち落とせる（サイトに入れば自動照準の対象、敵より優先。撃ち落とすと爆発＋BRO.vulcan.projectileScore）
