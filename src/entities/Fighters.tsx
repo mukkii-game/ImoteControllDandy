@@ -9,6 +9,8 @@ import { SmokeRibbon } from '../systems/smoke'
 import { toonGradient } from '../systems/toon'
 import { useKitModel } from '../systems/kit'
 import { XrayRoot } from '../systems/xray'
+import { useQuality } from '../systems/quality'
+import { QUALITY } from '../config/game'
 import { addProjectile, removeProjectile, imoutoImpact, type Projectile } from '../systems/projectiles'
 import { PROJECTILE } from '../config/waves'
 
@@ -108,6 +110,8 @@ export function Fighters({ squad = 0 }: { squad?: number }) {
   // 編隊ごとにパスの順番をずらす（squad 番目の編隊は squad 個先の方向から入る）
   const [gen, setGen] = useState(squad)
   const [mounted, setMounted] = useState(0)
+  /** スモークの帯は品質プリセットで切れる（低では無し） */
+  const smokeOn = QUALITY.presets[useQuality((s) => s.level)].smoke
   const curve = useMemo(() => buildCurve(gen), [gen])
   const groups = useRef<THREE.Group[]>([])
   const ents = useRef<Enemy[]>([])
@@ -348,6 +352,7 @@ export function Fighters({ squad = 0 }: { squad?: number }) {
         </group>
       ))}
       {mounted > 0 &&
+        smokeOn &&
         groups.current.length >= FIGHTERS.count &&
         Array.from({ length: FIGHTERS.count }, (_, i) => (
           <SmokeRibbon key={`s${gen}-${i}`} source={groups.current[i]} color={FIGHTERS.smokeColors[i % FIGHTERS.smokeColors.length]} points={FIGHTERS.smokePoints} width={FIGHTERS.smokeWidth} opacity={FIGHTERS.smokeOpacity} />

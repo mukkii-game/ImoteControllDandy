@@ -1,6 +1,7 @@
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { useEffect, useRef } from 'react'
-import { CAMERA, SCALE, STAGE } from '../config/game'
+import { CAMERA, SCALE, STAGE, QUALITY } from '../config/game'
+import { useQuality, preset, effectiveDpr } from '../systems/quality'
 import { useGame } from '../systems/store'
 import { Helis } from '../entities/Helis'
 import { BossBuildings } from '../entities/BossBuildings'
@@ -11,26 +12,38 @@ import { Projectiles } from '../entities/Projectiles'
 import { XrayLayer } from '../systems/xray'
 import { BroAfterimage } from '../entities/BroAfterimage'
 
-/** 開始後しばらく fps を測り、低ければ影を切って解像度を 1 倍にする（自動の軽量化） */
+/**
+ * 品質プリセットの適用：影の有無・描画解像度（最大フルHD）を反映し、auto なら開始後しばらく fps を測って低／中／高を決める
+ */
 function AutoQuality() {
   const gl = useThree((s) => s.gl)
   const setDpr = useThree((s) => s.setDpr)
-  const acc = useRef({ t: 0, n: 0, warm: 0, done: false })
+  const version = useQuality((s) => s.version)
+  const acc = useRef({ t: 0, n: 0, warm: 0 })
+  // プリセットが変わったら影と解像度を反映
+  useEffect(() => {
+    const p = preset()
+    gl.shadowMap.enabled = p.shadows
+    gl.shadowMap.needsUpdate = true
+    setDpr(effectiveDpr())
+    const onResize = () => setDpr(effectiveDpr())
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [version, gl, setDpr])
   useFrame((_, dt) => {
+    const q = useQuality.getState()
+    if (q.autoDone || q.choice !== 'auto' || useGame.getState().phase !== 'play') return
     const a = acc.current
-    if (a.done || useGame.getState().phase !== 'play') return
     a.warm += dt
-    if (a.warm < 3) return // 読み込み直後は測らない
+    if (a.warm < QUALITY.auto.warmupSec) return // 読み込み直後は測らない
     a.t += dt
     a.n++
-    if (a.t >= 5) {
+    if (a.t >= QUALITY.auto.measureSec) {
       const fps = a.n / a.t
-      a.done = true
-      if (fps < STAGE.autoLiteFps) {
-        gl.shadowMap.enabled = false
-        setDpr(1)
-        console.info(`fps ${fps.toFixed(0)}：重いので影を切り、解像度を 1 倍にしました`)
-      }
+      const level = fps < QUALITY.auto.lowBelow ? 'low' : fps < QUALITY.auto.midBelow ? 'mid' : 'high'
+      useQuality.setState({ autoDone: true })
+      if (level !== q.level) q.applyLevel(level)
+      console.info(`fps ${fps.toFixed(0)}：品質を「${QUALITY.presets[level].label}」にしました`)
     }
   })
   return null
@@ -64,30 +77,30 @@ import { Debris } from '../entities/Debris'
 import { GameFlow } from '../systems/flow'
 import { LockonSystem } from '../systems/lockon'
 
-/** ?lite：影なし・解像度 1 倍・外部モデルなし（低スペック機・自動テスト用） */
-const LITE = location.search.includes('lite')
-
+/** 品質は systems/quality.ts（?q=low|mid|high|auto、?lite は low）。プリセットが変わると街・ヘリ・影ライトは作り直す */
 export function StageScene() {
   const H = SCALE.imoutoHeight
+  const version = useQuality((s) => s.version)
+  const p = preset()
   return (
     <Canvas
-      shadows={!LITE}
+      shadows
       camera={{ fov: CAMERA.ground.fov, near: CAMERA.near, far: CAMERA.far, position: [0, 2, 70] }}
-      dpr={LITE ? 1 : [1, 1.25]}
+      dpr={effectiveDpr()}
       gl={{ antialias: true }}
     >
       <color attach="background" args={[STAGE.skyColor]} />
       <fog attach="fog" args={[STAGE.fogColor, STAGE.fogNear, STAGE.fogFar]} />
       <ambientLight intensity={0.7} />
       <hemisphereLight args={['#fff2d0', '#6a7a4a', 0.5]} />
-      <ShadowFollower size={H * 1.6} />
-      <Stage />
+      <ShadowFollower key={`sh${version}`} size={H * 1.6} mapSize={p.shadowMapSize} />
+      <Stage key={`st${version}`} />
       <Imouto />
       <Bro />
       {Array.from({ length: FIGHTERS.squadrons }, (_, i) => (
         <Fighters key={i} squad={i} />
       ))}
-      <Helis />
+      <Helis key={`he${version}`} />
       <GroundEnemies />
       <BossBuildings />
       <BroGlow />

@@ -71,13 +71,13 @@ interface Missile {
   proj?: Projectile
 }
 
-const TOTAL = HELIS.groups * HELIS.perGroup
-
 /**
  * ヘリ編隊。groups 個の編隊（各 perGroup 機）が、それぞれ妹の周りを一定距離で回りながら待機し、時々ミサイルを撃つ。
  * 編隊内の並びは HELIS.formation（ロロから見て横一列）。やられた機体は遠くから新しい機体が飛んできて編隊に戻る。
  */
 export function Helis() {
+  // 編隊数は品質プリセットで変わる（変わったら StageScene が key で作り直す）
+  const TOTAL = HELIS.groups * HELIS.perGroup
   const groups = useRef<THREE.Group[]>([])
   const rotors = useRef<(THREE.Object3D | null)[]>([])
   const tails = useRef<(THREE.Object3D | null)[]>([])

@@ -117,5 +117,6 @@ canvas { display: block; }
 .overlay .story { font-size: min(2.6vw, 20px); font-weight: 800; line-height: 1.6; text-shadow: 0 2px 0 #000; margin-top: 10px; }
 .app, .app canvas { cursor: default; }
 
-@media (pointer: coarse) { .skill-hint { display: none; } .skillbar { right: 200px; } }
+/* スマホ：技ボタンは右下の「乗降・投げ」の上に並べる（左のスティックと重ならない） */
+@media (pointer: coarse) { .skill-hint { display: none; } .skillbar { right: 24px; bottom: 126px; gap: 8px; } .skill { width: 62px; height: 62px; } .skill .key { font-size: 15px; } .skill .label { font-size: 10px; } }
 @media (pointer: fine) { .skillbar { right: 24px; } }

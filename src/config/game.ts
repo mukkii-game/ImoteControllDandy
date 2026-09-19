@@ -638,3 +638,24 @@ export const TEARS = {
   eyeForward: 3,
   eyeUp: 0.5,
 }
+
+/**
+ * 品質プリセット（低／中／高）。処理落ち対策。選択は Esc パネルか URL の ?q=low|mid|high|auto。
+ * dpr=描画解像度の倍率（画面の画素密度に対して。1 未満でぼやける代わりに軽い）。描画解像度は最大でも maxWidth×maxHeight（フルHD）で頭打ち
+ */
+export type QualityLevel = 'low' | 'mid' | 'high'
+export const QUALITY = {
+  /** 起動時の選択（auto＝開始後に fps を測って決める） */
+  default: 'auto' as 'auto' | QualityLevel,
+  /** auto のとき、測定が終わるまでのプリセット */
+  autoStart: 'mid' as QualityLevel,
+  /** auto：開始 warmupSec 秒後から measureSec 秒の平均 fps が lowBelow 未満なら低、midBelow 未満なら中、それ以上なら高 */
+  auto: { warmupSec: 3, measureSec: 5, lowBelow: 25, midBelow: 45 },
+  maxWidth: 1920,
+  maxHeight: 1080,
+  presets: {
+    low: { label: '低', shadows: false, shadowMapSize: 1024, shadowDist: 120, dpr: 0.75, drawDist: 450, lodDist: 120, fogNear: 150, fogFar: 450, kit: false, fighterSquadrons: 1, heliGroups: 1, smoke: false, xray: false },
+    mid: { label: '中', shadows: false, shadowMapSize: 1024, shadowDist: 160, dpr: 1, drawDist: 600, lodDist: 200, fogNear: 200, fogFar: 600, kit: true, fighterSquadrons: 2, heliGroups: 2, smoke: true, xray: true },
+    high: { label: '高', shadows: true, shadowMapSize: 2048, shadowDist: 200, dpr: 1, drawDist: 720, lodDist: 260, fogNear: 240, fogFar: 720, kit: true, fighterSquadrons: 2, heliGroups: 2, smoke: true, xray: true },
+  } as Record<QualityLevel, { label: string; shadows: boolean; shadowMapSize: number; shadowDist: number; dpr: number; drawDist: number; lodDist: number; fogNear: number; fogFar: number; kit: boolean; fighterSquadrons: number; heliGroups: number; smoke: boolean; xray: boolean }>,
+}

@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { TUNE_GROUPS, getTune, setTune, resetTune, diffTune, saveTune, loadTune } from '../config/tuning'
 import { useGame } from '../systems/store'
 import { useModels } from '../systems/models'
-import { MODEL_CHOICES } from '../config/game'
+import { MODEL_CHOICES, QUALITY } from '../config/game'
+import { useQuality, type QualityChoice } from '../systems/quality'
 
 /** Esc で開閉。スライダーで config の数値をその場で書き換える。変更分は JSON でコピーできる */
 export function TunePanel() {
@@ -12,6 +13,7 @@ export function TunePanel() {
   const [, force] = useState(0)
   const [copied, setCopied] = useState(false)
   const models = useModels()
+  const quality = useQuality()
 
   useEffect(() => {
     loadTune()
@@ -74,6 +76,19 @@ export function TunePanel() {
         </button>
       </div>
       <div className="tune-body">
+        <div className="tune-group">
+          <div className="tune-title">品質（処理落ち対策）</div>
+          <label className="tune-row tune-row-select">
+            <span>プリセット</span>
+            <select value={quality.choice} onChange={(e) => quality.setChoice(e.target.value as QualityChoice)}>
+              <option value="auto">自動（今：{QUALITY.presets[quality.level].label}）</option>
+              <option value="low">低（影なし・解像度 0.75・街は箱・敵少なめ）</option>
+              <option value="mid">中（影なし・解像度 1）</option>
+              <option value="high">高（影あり）</option>
+            </select>
+          </label>
+          <div className="tune-note">描画解像度は最大でもフルHD（1920×1080）。URL に ?q=low を付けても同じ。選択は保存されます</div>
+        </div>
         <div className="tune-group">
           <div className="tune-title">モデル</div>
           {(['imouto', 'bro'] as const).map((who) => (
