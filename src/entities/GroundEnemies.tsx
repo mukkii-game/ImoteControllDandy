@@ -37,6 +37,9 @@ export function GroundEnemies() {
   const shells = useRef<{ pos: THREE.Vector3; vel: THREE.Vector3; t: number }[]>([])
   const shellTimer = useRef(TANKS.shellInterval)
   const lastSpawnDist = useRef(0)
+  /** 戦車グループの出る側（+1 右 / -1 左）と、そのグループで出した数 */
+  const tankSide = useRef(1)
+  const tankGroupCount = useRef(0)
   const grad = useMemo(() => toonGradient(), [])
   const policeKit = useKitModel('police')
   const tankKit = useKitModel('tank')
@@ -89,9 +92,15 @@ export function GroundEnemies() {
       }
     }
     const aliveTanks = tanks.current.filter((e) => e.alive)
+    // グループが全滅したら次のグループは反対側から（視線の誘導）
+    if (aliveTanks.length === 0 && tankGroupCount.current > 0) {
+      tankSide.current *= -1
+      tankGroupCount.current = 0
+    }
     if (im.position.z >= TANKS.fromZ && aliveTanks.length < TANKS.max && Math.random() < dt * 0.4) {
+      tankGroupCount.current++
       const d = TANKS.aheadMin + Math.random() * (TANKS.aheadMax - TANKS.aheadMin)
-      const side = (Math.random() < 0.5 ? -1 : 1) * TANKS.side
+      const side = tankSide.current * TANKS.side
       const px = im.position.x + fx * d + Math.cos(yaw) * side
       const pz = im.position.z + fz * d - Math.sin(yaw) * side
       const dead = tanks.current.find((e) => !e.alive)

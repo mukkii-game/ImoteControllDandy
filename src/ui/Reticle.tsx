@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useGame } from '../systems/store'
 import { lock } from '../systems/enemies'
 import { LOCKON } from '../config/game'
+import { refs } from '../systems/refs'
 
 /**
  * サイト（画面中央）とロックマーカー。毎フレーム DOM を直接更新（React 再描画なし）。
@@ -13,6 +14,7 @@ export function Reticle() {
   const layer = useRef<HTMLDivElement>(null)
   const ring = useRef<HTMLDivElement>(null)
   const count = useRef<HTMLDivElement>(null)
+  const sight = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     let raf = 0
@@ -41,6 +43,8 @@ export function Reticle() {
       })
       if (count.current) count.current.textContent = lock.ids.length ? `LOCK ${lock.ids.length}` : ''
       if (ring.current) ring.current.style.height = ring.current.style.width = `${LOCKON.reticleRadius * 2 * window.innerHeight}px`
+      // サイトの位置（溜め中はマウスで動く）
+      if (sight.current) sight.current.style.transform = `translate(${refs.reticleX}px, ${refs.reticleY}px)`
     }
     tick()
     return () => {
@@ -52,9 +56,11 @@ export function Reticle() {
   const show = (mode === 'shoulder' || mode === 'ground') && phase === 'play'
   return (
     <div ref={layer} className={`reticle-layer ${show ? '' : 'hidden'} ${charging ? 'charging' : ''}`}>
-      <div ref={ring} className="reticle-ring" />
-      <div className="reticle-dot" />
-      <div ref={count} className="lock-count" />
+      <div ref={sight} className="reticle-sight">
+        <div ref={ring} className="reticle-ring" />
+        <div className="reticle-dot" />
+        <div ref={count} className="lock-count" />
+      </div>
     </div>
   )
 }

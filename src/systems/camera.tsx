@@ -88,6 +88,8 @@ export function CameraRig() {
   const shakeT = useRef(0)
   const lastMode = useRef(useGame.getState().mode)
   const blendUntil = useRef(0)
+  /** 地上発の攻撃中にカメラを留めておく位置 */
+  const holdPos = useRef(new THREE.Vector3())
 
   useEffect(
     () =>
@@ -117,10 +119,15 @@ export function CameraRig() {
       } else if (st.mode === 'dismounting') {
         refs.camPitch = CAMERA.ground.defaultPitch
       } else if (st.mode === 'shoulder' && lastMode.current === 'thrown') {
-        // 帰還直後：妹の正面向き・既定ピッチへ、なめらかに戻す
-        refs.camYaw = refs.imouto?.rotation.y ?? refs.camYaw
-        refs.camPitch = CAMERA.shoulder.defaultPitch
-        blendUntil.current = performance.now() + CAMERA.thrown.blendBackSec * 1000
+        if (CAMERA.thrown.enabled) {
+          // 帰還直後：妹の正面向き・既定ピッチへ、なめらかに戻す
+          refs.camYaw = refs.imouto?.rotation.y ?? refs.camYaw
+          refs.camPitch = CAMERA.shoulder.defaultPitch
+          blendUntil.current = performance.now() + CAMERA.thrown.blendBackSec * 1000
+        }
+      } else if (st.mode === 'thrown' && st.attackFrom === 'ground' && !CAMERA.thrown.enabled) {
+        // 地上発：カメラはその場に留まり、飛ぶ兄を目で追う
+        holdPos.current.copy(camera.position)
       } else if (st.mode === 'ground' && lastMode.current === 'thrown') {
         // 地上発の攻撃から着地：兄の向きで地上カメラへなめらかに戻す
         refs.camYaw = refs.broYaw
@@ -157,10 +164,22 @@ export function CameraRig() {
         fov = CAMERA.shoulder.fov
         break
       case 'thrown':
-        computeThrown(thrownPos, thrownLook)
-        desiredPos.copy(thrownPos)
-        desiredLook.copy(thrownLook)
-        fov = CAMERA.thrown.fov
+        if (CAMERA.thrown.enabled) {
+          computeThrown(thrownPos, thrownLook)
+          desiredPos.copy(thrownPos)
+          desiredLook.copy(thrownLook)
+          fov = CAMERA.thrown.fov
+        } else if (st.attackFrom === 'shoulder') {
+          // 投擲中もカメラは変えない（肩上のまま。兄が画面から出ても追わない）
+          desiredPos.copy(shoulderPos)
+          desiredLook.copy(shoulderLook)
+          fov = CAMERA.shoulder.fov
+        } else {
+          // 地上発：その場から兄を目で追う
+          desiredPos.copy(holdPos.current)
+          if (refs.bro) desiredLook.copy(refs.bro.position)
+          fov = CAMERA.ground.fov
+        }
         break
       case 'mounting': {
         const e = easeInOut(st.transition)
@@ -235,7 +254,8 @@ export function CameraRig() {
     }
     // オービットはマウス直結なので位置は即応、注視点だけ軽くなめらかに
     const k = snap ? 1 : Math.min(1, CAMERA.followLerp * dt)
-    if (st.mode === 'thrown' || performance.now() < blendUntil.current) {
+    const throwCam = st.mode === 'thrown' && (CAMERA.thrown.enabled || st.attackFrom === 'ground')
+    if (throwCam || performance.now() < blendUntil.current) {
       const kk = Math.min(1, CAMERA.thrown.followLerp * dt)
       camera.position.lerp(desiredPos, kk)
       smoothedLook.current.lerp(desiredLook, Math.min(1, kk * 2))

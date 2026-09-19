@@ -183,6 +183,19 @@ export const LOCKON = {
   },
   /** 短く押して離した（この秒数未満）時は、ロック無しならジャンプ */
   tapSec: 0.25,
+  /** サイト（パンツァードラグーン式）：溜め中はマウスでサイト自体が画面内を動く。画面端に寄るとカメラがその方向へ押されて回る */
+  reticle: {
+    /** マウス 1px でサイトが動く px */
+    sensitivity: 1.0,
+    /** 画面の中心からこの割合（画面の半分の大きさ比）を越えるとカメラを押し始める */
+    edge: 0.62,
+    /** 端まで押し込んだ時のカメラ回転速度（rad/s） */
+    pushSpeed: 1.6,
+    /** 溜めを離した後、サイトが中央に戻る速さ */
+    recenterLerp: 10,
+  },
+  /** 1 体目への飛行ルート：ベジェ曲線（距離比）。side=横へ膨らむ、up=上へ膨らむ、End=着弾側の膨らみ */
+  curve: { side: 0.45, up: 0.25, sideEnd: 0.15, upEnd: 0.1 },
 }
 
 /** テスト用の的（ステップ4で戦闘機に置き換え） */
@@ -217,8 +230,9 @@ export const CAMERA = {
   },
   /** タイトル画面：妹の正面から見上げ、下に兄・上にロロの顔 */
   title: { fov: 56, ahead: 69, side: 12, height: 1.5, lookAhead: 10, lookHeight: 26, broAhead: 57, broSide: 6 },
-  /** 投擲中：兄と妹の両方を画面に。center は兄寄りの重み */
+  /** 投擲中：兄と妹の両方を画面に。center は兄寄りの重み。enabled=false なら投擲中もカメラを変えない（今はこちら） */
   thrown: {
+    enabled: false,
     fov: 70,
     broWeight: 0.6,
     /** 兄と妹の距離に応じた引き（最小・係数） */
@@ -259,6 +273,15 @@ export const STAGE = {
   buildingMax: 38,
   towerChance: 0.05,
   towerMax: 95,
+  /** 外部モデル（Kenney、CC0）で家とビルを描く。false なら箱と屋根のまま。読めなかった時も箱に戻る */
+  kit: {
+    enabled: true,
+    houses: ['a', 'b', 'c', 'd', 'f', 'h', 'j', 'm', 'p', 's'].map((t) => `models/kit/houses/house-${t}.glb`),
+    buildings: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map((t) => `models/kit/buildings/building-${t}.glb`),
+    skyscrapers: ['a', 'b', 'c', 'd', 'e'].map((t) => `models/kit/buildings/skyscraper-${t}.glb`),
+    /** 家をマスに対してどのくらいの大きさにするか（1 = マスいっぱい） */
+    houseFill: 0.95,
+  },
 }
 
 /** ゲーム進行（区間・校門・制限時間） */
@@ -270,8 +293,8 @@ export const GAME = {
   /** 校門の z（妹は +Z へ進む）。スタートは IMOUTO.spawn */
   gateZ: 1400,
   gateHalfWidth: 45,
-  /** 校舎・校庭の配置 */
-  school: { z: 1560, width: 220, depth: 60, height: 14, yardDepth: 120 },
+  /** 校舎・校庭の配置。パイロット版：遠くからでも分かる大きな校舎 */
+  school: { z: 1600, width: 420, depth: 80, height: 48, yardDepth: 120, towerHeight: 40 },
   /** 区間（z の境界）：住宅街 → ビル街 → 航空公園 */
   sections: [
     { name: '住宅街', from: -9999, to: -500 },

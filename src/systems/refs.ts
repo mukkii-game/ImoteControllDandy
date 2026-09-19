@@ -17,6 +17,9 @@ export const refs = {
   camPos: new THREE.Vector3(),
   /** 最後にカメラ入力があった時刻（ms）。地上の「妹が気になる」引き戻しに使う */
   lastLookInput: 0,
+  /** サイトの画面中心からのずれ（px）。溜め中はマウスでこれが動く */
+  reticleX: 0,
+  reticleY: 0,
   /** 兄の乗降アニメ用の始点（ワールド） */
   mountStart: new THREE.Vector3(),
   mountDuration: 1,

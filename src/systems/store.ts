@@ -18,6 +18,9 @@ interface GameState {
   /** 溜め中（サイト表示） */
   charging: boolean
   setCharging: (v: boolean) => void
+  /** 今のロックオン攻撃がどこから始まったか（カメラの扱いが変わる） */
+  attackFrom: 'shoulder' | 'ground'
+  setAttackFrom: (v: 'shoulder' | 'ground') => void
   score: number
   addScore: (n: number) => void
   /** 直近のコンボ表示 */
@@ -50,6 +53,8 @@ export const useGame = create<GameState>((set) => ({
   bumpTune: () => set((s) => ({ tuneVersion: s.tuneVersion + 1 })),
   charging: false,
   setCharging: (charging) => set({ charging }),
+  attackFrom: 'shoulder',
+  setAttackFrom: (attackFrom) => set({ attackFrom }),
   score: 0,
   addScore: (n) => set((s) => ({ score: s.score + n })),
   combo: null,

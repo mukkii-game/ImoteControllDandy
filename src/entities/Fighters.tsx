@@ -15,10 +15,14 @@ const nextT = new THREE.Vector3()
 const m4 = new THREE.Matrix4()
 const q = new THREE.Quaternion()
 
-/** 妹ローカルの点列（x=右, z=前）。ワールドへは毎フレーム妹の位置・向きで変換するので、編隊は妹に付いて回る */
-function buildCurve(): THREE.CatmullRomCurve3 {
-  const pts = FIGHTERS.path.map(([x, y, z]) => new THREE.Vector3(x, y, z))
-  return new THREE.CatmullRomCurve3(pts, true, 'catmullrom', 0.5)
+/**
+ * 妹ローカルの点列（x=右, z=前）。ワールドへは毎フレーム妹の位置・向きで変換するので、編隊は妹に付いて回る。
+ * エネセット：gen ごとに出現方向（FIGHTERS.passes）を順番に回す。開いた道なので入ってきて抜けていく。
+ */
+function buildCurve(gen: number): THREE.CatmullRomCurve3 {
+  const pass = FIGHTERS.passes[gen % FIGHTERS.passes.length]
+  const pts = pass.path.map(([x, y, z]) => new THREE.Vector3(x, y, z))
+  return new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.5)
 }
 const localP = new THREE.Vector3()
 const localN = new THREE.Vector3()
@@ -76,7 +80,7 @@ interface Pilot {
 export function Fighters() {
   const [gen, setGen] = useState(0)
   const [mounted, setMounted] = useState(0)
-  const curve = useMemo(() => buildCurve(), [gen])
+  const curve = useMemo(() => buildCurve(gen), [gen])
   const groups = useRef<THREE.Group[]>([])
   const ents = useRef<Enemy[]>([])
   const u = useRef(0)
@@ -136,36 +140,37 @@ export function Fighters() {
     // 編隊の位置
     const stunned = isStunned()
     // 妹の正面付近では減速してホバリング気味に（ロックオンしやすく、大きく見える）
-    curve.getPointAt(u.current, localP)
+    curve.getPointAt(THREE.MathUtils.clamp(u.current, 0, 1), localP)
     const ang = Math.abs(Math.atan2(localP.x, localP.z)) * (180 / Math.PI)
     const inFront = localP.z > 0 && ang < FIGHTERS.hoverAngleDeg && Math.hypot(localP.x, localP.z) < FIGHTERS.hoverDist
     let spd = FIGHTERS.speed * (inFront ? FIGHTERS.hoverSpeedMul : 1)
     if (stunned) spd *= 0.15
-    u.current = (u.current + (spd * dt) / len) % 1
+    u.current += (spd * dt) / len
+    // 最後尾まで抜けたらこのセットは終わり（生き残りは次の方向へ飛び去った扱い）
+    const maxBack = Math.max(...FIGHTERS.formation.map((f) => f[2] < 0 ? -f[2] : 0))
+    if (u.current > 1 + maxBack / len + 0.02) ents.current.forEach((e) => (e.alive = false))
     const alive = ents.current.filter((e) => e.alive)
     ents.current.forEach((e, i) => {
       const g = groups.current[i]
       if (!g) return
-      // V 字：後方へずらしたパラメータ＋横オフセット
-      const row = Math.ceil(i / 2)
-      const side = i === 0 ? 0 : i % 2 ? -1 : 1
-      const du = (row * FIGHTERS.spacing * 1.2) / len
-      const uu = (u.current - du + 1) % 1
+      // 編隊：機体ごとに [横, 高さ, 後ろ] のオフセット（前後・上下にばらして重ならないように）
+      const [fx, fy, fb] = FIGHTERS.formation[i % FIGHTERS.formation.length]
+      const uu = THREE.MathUtils.clamp(u.current + fb / len, 0, 1)
       curve.getPointAt(uu, localP)
       toWorld(localP, e.pos)
-      curve.getPointAt((uu + 0.01) % 1, localN)
+      curve.getPointAt(Math.min(1, uu + 0.01), localN)
       toWorld(localN, nextT)
       tangent.subVectors(nextT, e.pos).normalize()
       const right = new THREE.Vector3().crossVectors(tangent, up).normalize()
-      e.pos.addScaledVector(right, side * row * FIGHTERS.spacing)
-      nextT.addScaledVector(right, side * row * FIGHTERS.spacing)
+      e.pos.addScaledVector(right, fx)
+      e.pos.y += fy
+      nextT.addScaledVector(right, fx)
+      nextT.y += fy
       g.position.copy(e.pos)
-      // 向きとバンク
+      // 向き
       m4.lookAt(nextT, e.pos, up)
       q.setFromRotationMatrix(m4)
       g.quaternion.copy(q)
-      const bank = right.y === 0 ? 0 : 0
-      g.rotateZ(bank)
       g.visible = e.alive
     })
     // ミサイル
@@ -228,7 +233,7 @@ export function Fighters() {
       {mounted > 0 &&
         groups.current.length >= FIGHTERS.count &&
         Array.from({ length: FIGHTERS.count }, (_, i) => (
-          <SmokeRibbon key={`s${gen}-${i}`} source={groups.current[i]} color={FIGHTERS.smokeColors[i % FIGHTERS.smokeColors.length]} points={FIGHTERS.smokePoints} width={FIGHTERS.smokeWidth} />
+          <SmokeRibbon key={`s${gen}-${i}`} source={groups.current[i]} color={FIGHTERS.smokeColors[i % FIGHTERS.smokeColors.length]} points={FIGHTERS.smokePoints} width={FIGHTERS.smokeWidth} opacity={FIGHTERS.smokeOpacity} />
         ))}
       <instancedMesh ref={missileMesh} args={[undefined, undefined, 32]}>
         <sphereGeometry args={[1.6, 8, 8]} />

@@ -14,6 +14,7 @@ import { applyWalk, applyShoulderPose, applyFlyPose, applyPunchPose } from '../s
 
 const v = new THREE.Vector3()
 const target = new THREE.Vector3()
+const UP = new THREE.Vector3(0, 1, 0)
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2)
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3)
 
@@ -42,6 +43,9 @@ export function Bro() {
     origin: 'shoulder' | 'ground'
     /** 今向かっている敵をダッシュ打撃で殴るか（地上・近距離） */
     melee: boolean
+    /** 1 体目への曲線ルート（無ければ直線） */
+    curve: THREE.CubicBezierCurve3 | null
+    curveLen: number
   }>({
     targets: [],
     idx: 0,
@@ -51,6 +55,8 @@ export function Bro() {
     hits: 0,
     origin: 'shoulder',
     melee: false,
+    curve: null,
+    curveLen: 0,
   })
   const wasA = useRef(false)
   /** A を押し続けている秒数（短押し判定用） */
@@ -181,6 +187,7 @@ export function Bro() {
             seq.melee = false
             seq.from.copy(g.position)
             clearLocks()
+            st.setAttackFrom('ground')
             st.setMode('thrown')
             emit('bro.throw', { count: seq.targets.length, from: seq.origin })
           } else if (grounded && heldSec < LOCKON.tapSec && punchT.current <= 0) {
@@ -245,6 +252,7 @@ export function Bro() {
           seq.melee = false
           seq.from.copy(g.position)
           clearLocks()
+          st.setAttackFrom('shoulder')
           st.setMode('thrown')
           emit('bro.throw', { count: seq.targets.length, from: seq.origin })
         }
@@ -271,13 +279,33 @@ export function Bro() {
         }
         const fromGround = seq.origin === 'ground'
         const gc = LOCKON.ground
-        /** 次の敵へ向かう準備。地上発で近く・低い敵ならダッシュ打撃にする */
-        const beginFly = () => {
+        /** 次の敵へ向かう準備。地上発で近く・低い敵ならダッシュ打撃にする。1 体目はベジェ曲線で大きく回り込む */
+        const beginFly = (first: boolean) => {
           seq.phase = 'fly'
           seq.t = 0
           seq.from.copy(g.position)
           const e = nextTarget()
           seq.melee = !!e && fromGround && e.pos.y <= gc.meleeMaxHeight && Math.hypot(e.pos.x - g.position.x, e.pos.z - g.position.z) <= BRO.punchRange
+          seq.curve = null
+          if (e && first && !seq.melee) {
+            const c = LOCKON.curve
+            const dir = new THREE.Vector3().subVectors(e.pos, g.position)
+            const dist = dir.length()
+            dir.normalize()
+            const side = new THREE.Vector3().crossVectors(dir, UP)
+            if (side.lengthSq() < 0.01) side.set(1, 0, 0)
+            side.normalize()
+            // 妹の体から離れる側へ膨らむ（肩上なら体を突き抜けない）
+            const im = refs.imouto?.position
+            const away = im ? Math.sign(side.dot(v.subVectors(g.position, im))) || 1 : 1
+            side.multiplyScalar(away)
+            const p1 = g.position.clone().addScaledVector(dir, dist * 0.25).addScaledVector(side, dist * c.side).addScaledVector(UP, dist * c.up)
+            const p2 = e.pos.clone().addScaledVector(dir, -dist * 0.25).addScaledVector(side, dist * c.sideEnd).addScaledVector(UP, dist * c.upEnd)
+            const curve = new THREE.CubicBezierCurve3(g.position.clone(), p1, p2, e.pos.clone())
+            curve.arcLengthDivisions = 60
+            seq.curve = curve
+            seq.curveLen = curve.getLength()
+          }
         }
         if (seq.phase === 'windup') {
           const windup = fromGround ? gc.windupSec : LOCKON.windupSec
@@ -292,7 +320,7 @@ export function Bro() {
             g.position.copy(v)
             g.position.y += Math.sin(Math.min(1, seq.t / windup) * Math.PI) * 4
           }
-          if (seq.t >= windup) beginFly()
+          if (seq.t >= windup) beginFly(true)
         } else if (seq.phase === 'fly') {
           const e = nextTarget()
           if (!e) {
@@ -300,16 +328,31 @@ export function Bro() {
             seq.t = 0
             seq.from.copy(g.position)
           } else {
-            const dist = seq.from.distanceTo(e.pos)
-            const dur = Math.max(0.12, dist / (seq.melee ? gc.dashSpeed : LOCKON.flySpeed))
-            const k = Math.min(1, seq.t / dur)
-            g.position.lerpVectors(seq.from, e.pos, k)
-            // 少し弧を描く（ダッシュ打撃は地面を走る）
-            if (seq.melee) g.position.y = THREE.MathUtils.lerp(seq.from.y, 0, k)
-            else g.position.y += Math.sin(k * Math.PI) * Math.min(25, dist * 0.12)
-            const dx = e.pos.x - seq.from.x
-            const dz = e.pos.z - seq.from.z
-            if (Math.hypot(dx, dz) > 0.5) yawRef.current = Math.atan2(dx, dz)
+            let k: number
+            if (seq.curve) {
+              // 1 体目：ベジェ曲線で回り込む。敵が動くので終点だけ追従させる
+              const cv = seq.curve
+              if (cv.v3.distanceToSquared(e.pos) > 1) {
+                cv.v3.copy(e.pos)
+                cv.updateArcLengths()
+                seq.curveLen = cv.getLength()
+              }
+              const dur = Math.max(0.15, seq.curveLen / LOCKON.flySpeed)
+              k = Math.min(1, seq.t / dur)
+              cv.getPointAt(k, g.position)
+              cv.getTangentAt(k, v)
+              if (Math.hypot(v.x, v.z) > 0.05) yawRef.current = Math.atan2(v.x, v.z)
+            } else {
+              // 2 体目以降：真っ直ぐ（ダッシュ打撃は地面を走る）
+              const dist = seq.from.distanceTo(e.pos)
+              const dur = Math.max(0.12, dist / (seq.melee ? gc.dashSpeed : LOCKON.flySpeed))
+              k = Math.min(1, seq.t / dur)
+              g.position.lerpVectors(seq.from, e.pos, k)
+              if (seq.melee) g.position.y = THREE.MathUtils.lerp(seq.from.y, 0, k)
+              const dx = e.pos.x - seq.from.x
+              const dz = e.pos.z - seq.from.z
+              if (Math.hypot(dx, dz) > 0.5) yawRef.current = Math.atan2(dx, dz)
+            }
             if (k >= 1) {
               killEnemy(e.id, e.kind === 'dummy' ? DUMMY_ENEMIES.respawnSec : 0)
               seq.hits++
@@ -323,7 +366,7 @@ export function Bro() {
           }
         } else if (seq.phase === 'pause') {
           if (seq.t >= LOCKON.hitPauseSec) {
-            if (nextTarget()) beginFly()
+            if (nextTarget()) beginFly(false)
             else {
               seq.phase = 'return'
               seq.t = 0

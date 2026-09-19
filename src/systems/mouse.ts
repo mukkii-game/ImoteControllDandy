@@ -1,4 +1,4 @@
-import { CAMERA } from '../config/game'
+import { CAMERA, LOCKON } from '../config/game'
 import { refs } from './refs'
 import { useGame } from './store'
 import { useInput } from './input'
@@ -7,11 +7,18 @@ import * as THREE from 'three'
 /**
  * マウス／タッチでカメラを回す。
  * PC：キャンバスをクリックでポインターロック、以降マウス移動で回転。Esc で解除。ドラッグでも可。
+ * 溜め中（サイト表示中）はカメラではなくサイト自体が画面内を動く（画面端でカメラが押される処理は lockon 側）。
  * タッチ：画面右半分（仮想パッド以外）をドラッグ。
  */
 export function bindMouse(el: HTMLElement): () => void {
   const apply = (dx: number, dy: number, sens: number) => {
     if (dx !== 0 || dy !== 0) refs.lastLookInput = performance.now()
+    if (useGame.getState().charging) {
+      const k = LOCKON.reticle.sensitivity
+      refs.reticleX = THREE.MathUtils.clamp(refs.reticleX + dx * k, -window.innerWidth / 2, window.innerWidth / 2)
+      refs.reticleY = THREE.MathUtils.clamp(refs.reticleY + dy * k, -window.innerHeight / 2, window.innerHeight / 2)
+      return
+    }
     refs.camYaw -= dx * sens
     refs.camPitch = THREE.MathUtils.clamp(refs.camPitch + dy * sens, CAMERA.pitchMin, CAMERA.pitchMax)
   }

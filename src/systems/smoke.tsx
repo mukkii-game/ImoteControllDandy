@@ -6,7 +6,7 @@ import * as THREE from 'three'
  * 交差リボンのスモーク。source の位置を毎フレーム先頭に追加し、後ろへ行くほど透明に。
  * 水平と垂直の2枚を交差させて、どの角度からも太く見せる。
  */
-export function SmokeRibbon({ source, color, points, width }: { source: THREE.Object3D; color: string; points: number; width: number }) {
+export function SmokeRibbon({ source, color, points, width, opacity = 0.75 }: { source: THREE.Object3D; color: string; points: number; width: number; opacity?: number }) {
   const N = points
   const geom = useMemo(() => {
     const g = new THREE.BufferGeometry()
@@ -32,11 +32,11 @@ export function SmokeRibbon({ source, color, points, width }: { source: THREE.Ob
         transparent: true,
         depthWrite: false,
         side: THREE.DoubleSide,
-        uniforms: { uColor: { value: new THREE.Color(color) } },
+        uniforms: { uColor: { value: new THREE.Color(color) }, uOpacity: { value: opacity } },
         vertexShader: `attribute float alpha; varying float vA; void main(){ vA = alpha; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
-        fragmentShader: `uniform vec3 uColor; varying float vA; void main(){ gl_FragColor = vec4(uColor, vA * 0.75); }`,
+        fragmentShader: `uniform vec3 uColor; uniform float uOpacity; varying float vA; void main(){ gl_FragColor = vec4(uColor, vA * uOpacity); }`,
       }),
-    [color],
+    [color, opacity],
   )
   const hist = useRef<THREE.Vector3[]>([])
   const tmp = useMemo(() => new THREE.Vector3(), [])

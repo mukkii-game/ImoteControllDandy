@@ -42,6 +42,7 @@ canvas { display: block; }
 @keyframes combo-pop { 0% { transform: translateX(-50%) scale(.4); opacity: 0 } 60% { transform: translateX(-50%) scale(1.15); opacity: 1 } 100% { transform: translateX(-50%) scale(1) } }
 .reticle-layer { position: absolute; inset: 0; pointer-events: none; }
 .reticle-layer.hidden { display: none; }
+.reticle-sight { position: absolute; inset: 0; will-change: transform; }
 .reticle-ring { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); border: 2px solid rgba(255,255,255,.55); border-radius: 50%; transition: border-color .15s; }
 .reticle-layer.charging .reticle-ring { border-color: #ff4d7a; box-shadow: 0 0 12px rgba(255,77,122,.6), inset 0 0 12px rgba(255,77,122,.3); }
 .reticle-dot { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: #fff; }
