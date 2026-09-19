@@ -5,6 +5,7 @@ const R = 50
 
 /** スマホ用：左に仮想スティック、右に A/B。ステップ8で仕上げる。今は動作確認用の最小版 */
 export function VirtualPad() {
+  const coarse = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
   const base = useRef<HTMLDivElement>(null)
   const knob = useRef<HTMLDivElement>(null)
   const activeId = useRef<number | null>(null)
@@ -30,6 +31,7 @@ export function VirtualPad() {
   }
 
   const set = useInput((s) => s.set)
+  if (!coarse) return null
   return (
     <>
       <div
@@ -56,7 +58,7 @@ export function VirtualPad() {
           onPointerUp={() => set('b', false)}
           onPointerCancel={() => set('b', false)}
         >
-          B
+          乗降
         </button>
         <button
           className="btn btn-a"
@@ -67,7 +69,7 @@ export function VirtualPad() {
           onPointerUp={() => set('a', false)}
           onPointerCancel={() => set('a', false)}
         >
-          A
+          投げ
         </button>
       </div>
     </>

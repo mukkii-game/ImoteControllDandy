@@ -13,7 +13,7 @@ canvas { display: block; }
 .stick { position: absolute; left: 24px; bottom: 24px; width: 130px; height: 130px; border-radius: 50%; background: rgba(255,255,255,.12); border: 2px solid rgba(255,255,255,.35); pointer-events: auto; display: flex; align-items: center; justify-content: center; }
 .knob { width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,.7); }
 .buttons { position: absolute; right: 24px; bottom: 24px; display: flex; gap: 14px; align-items: flex-end; pointer-events: auto; }
-.btn { width: 70px; height: 70px; border-radius: 50%; border: 2px solid rgba(255,255,255,.5); color: #fff; font-weight: 800; font-size: 22px; touch-action: none; }
+.btn { width: 70px; height: 70px; border-radius: 50%; border: 2px solid rgba(255,255,255,.5); color: #fff; font-weight: 800; font-size: 15px; touch-action: none; }
 .btn-a { background: rgba(230,70,70,.75); width: 84px; height: 84px; }
 .btn-b { background: rgba(60,120,230,.75); }
 
@@ -83,3 +83,6 @@ canvas { display: block; }
 .hud-top.hidden { display: none; }
 .overlay .story { font-size: min(2.6vw, 20px); font-weight: 800; line-height: 1.6; text-shadow: 0 2px 0 #000; margin-top: 10px; }
 .app, .app canvas { cursor: default; }
+
+@media (pointer: coarse) { .skill-hint { display: none; } .skillbar { right: 200px; } }
+@media (pointer: fine) { .skillbar { right: 24px; } }
