@@ -241,6 +241,9 @@ export const HIT = {
   explosionRadius: 5,
   puffs: 7,
   puffSize: 2.2,
+  /** 少し遅れて出る灰色の煙の数と遅れ（秒） */
+  grayPuffs: 5,
+  grayDelaySec: 0.12,
   /** 驚き顔の秒数 */
   faceSec: 0.4,
   /** 命中判定の半径（m、妹の胴体中心から） */

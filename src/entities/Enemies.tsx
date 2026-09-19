@@ -12,6 +12,8 @@ const PUFF_MAX = 96
 const SMOKE_FIRE = new THREE.Color('#ff8a3a')
 const SMOKE_DARK = new THREE.Color('#2a2a2a')
 const SMOKE_LIGHT = new THREE.Color('#b0b0b0')
+const SMOKE_RED = new THREE.Color('#e0452a')
+const SMOKE_RED_DARK = new THREE.Color('#4a1810')
 
 /**
  * テスト用の的：妹の周りを周回する球。ステップ4で戦闘機に置き換える。
@@ -80,6 +82,8 @@ interface Puff {
   vel: THREE.Vector3
   t: number
   size: number
+  /** 赤っぽい煙（火の煙）。無ければ黒→灰色の煙 */
+  fire?: boolean
 }
 
 /** 着弾の爆発（膨らむ球＋リング）、黒煙、砂煙。イベント駆動 */
@@ -136,12 +140,23 @@ export function Explosions() {
     const off3 = on('imouto.hit', ({ x, y, z }) => {
       // 妹の体への着弾：兄と同じくらいの小さな爆発（着弾点は体の表面）＋火の玉から黒煙になる粒
       list.current.push({ pos: new THREE.Vector3(x, y, z), t: 0, dust: false, radius: HIT.explosionRadius })
+      // 赤っぽい煙（爆発の主役）：すぐ出て赤→暗い赤で消える
       for (let i = 0; i < HIT.puffs; i++) {
         puffs.current.push({
           pos: new THREE.Vector3(x + (Math.random() - 0.5) * 2, y + (Math.random() - 0.5) * 2, z + (Math.random() - 0.5) * 2),
           vel: new THREE.Vector3((Math.random() - 0.5) * 14, 4 + Math.random() * 10, (Math.random() - 0.5) * 14),
           t: -i * 0.03,
           size: HIT.puffSize * (0.7 + Math.random() * 0.6),
+          fire: true,
+        })
+      }
+      // 灰色の煙：少し遅れて、少し上から広がる
+      for (let i = 0; i < HIT.grayPuffs; i++) {
+        puffs.current.push({
+          pos: new THREE.Vector3(x + (Math.random() - 0.5) * 3, y + 1 + (Math.random() - 0.5) * 3, z + (Math.random() - 0.5) * 3),
+          vel: new THREE.Vector3((Math.random() - 0.5) * 10, 5 + Math.random() * 8, (Math.random() - 0.5) * 10),
+          t: -HIT.grayDelaySec - i * 0.04,
+          size: HIT.puffSize * 1.2 * (0.7 + Math.random() * 0.6),
         })
       }
       while (puffs.current.length > PUFF_MAX) puffs.current.shift()
@@ -181,8 +196,9 @@ export function Explosions() {
       puffM4.makeScale(r, r, r)
       puffM4.setPosition(p.pos)
       pm.setMatrixAt(i, puffM4)
-      // 最初は明るいオレンジ寄り、すぐ黒煙、最後は薄い灰色に
-      pm.setColorAt(i, k < 0.15 ? puffColor.copy(SMOKE_FIRE).lerp(SMOKE_DARK, k / 0.15) : puffColor.copy(SMOKE_DARK).lerp(SMOKE_LIGHT, (k - 0.15) / 0.85))
+      // 火の煙：明るいオレンジ→赤→暗い赤。それ以外：最初は明るいオレンジ寄り、すぐ黒煙、最後は薄い灰色に
+      if (p.fire) pm.setColorAt(i, k < 0.4 ? puffColor.copy(SMOKE_FIRE).lerp(SMOKE_RED, k / 0.4) : puffColor.copy(SMOKE_RED).lerp(SMOKE_RED_DARK, (k - 0.4) / 0.6))
+      else pm.setColorAt(i, k < 0.15 ? puffColor.copy(SMOKE_FIRE).lerp(SMOKE_DARK, k / 0.15) : puffColor.copy(SMOKE_DARK).lerp(SMOKE_LIGHT, (k - 0.15) / 0.85))
     })
     pm.instanceMatrix.needsUpdate = true
     if (pm.instanceColor) pm.instanceColor.needsUpdate = true
