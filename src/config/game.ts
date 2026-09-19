@@ -69,7 +69,7 @@ export const BRO = {
   punchRange: 60,
   /** 地上の高速タックル：カーソル（カメラ）の向きへ突進。敵で止まらず、当たった敵は全部倒す */
   tackle: {
-    speed: 240,
+    speed: 120,
     distance: 180,
     /** 当たり判定の半径（m）と、この高さ以下の敵にだけ当たる */
     radius: 16,
@@ -86,7 +86,7 @@ export const BRO = {
    * fireAlways=false なら敵を捉えている時だけ撃つ。タックルと違って一撃死ではなく hitsToKill 発で倒す
    */
   vulcan: {
-    fireAlways: true,
+    fireAlways: false,
     /**
      * 連射：3 発ずつ「ダダダッ」のリズム。burst=1 回に撃つ発数、interval=その中の間隔（秒）、burstGap=次の 3 発までの間（秒）。
      * 弾速（m/s。ほぼ一瞬で届く）、弾の寿命（秒）、当たり判定の半径（m）
@@ -94,8 +94,8 @@ export const BRO = {
     burst: 3,
     interval: 0.05,
     burstGap: 0.24,
-    speed: 7200,
-    lifeSec: 0.3,
+    speed: 3600,
+    lifeSec: 0.5,
     hitRadius: 10,
     hitsToKill: 2,
     /** エネミービルのロック点は硬い（1 点あたりの必要発数） */
@@ -105,8 +105,8 @@ export const BRO = {
     spread: 0.012,
     /** 銃口の高さ（m、兄の足元から）。曳光弾の長さ・太さ（m）と色。発射時はサイトの円と同じくらいの大きさに見える太さ */
     muzzleHeight: 2.6,
-    tracerLen: 40,
-    tracerWidth: 2.4,
+    tracerLen: 60,
+    tracerWidth: 48,
     color: '#ffd166',
     /** 1 発当てた時と倒した時のスコア */
     hitScore: 10,
@@ -230,11 +230,14 @@ export const LOCKON = {
   grab: {
     sec: 0.3,
     returnSec: 0.5,
-    handOffset: 1.2,
-    hold: { upper: [-0.35, 0.1, 1.1], lower: [0, 1.75, 0.15] },
-    windBack: { upper: [1.0, 0.25, 0.85], lower: [0, 2.1, 0.1] },
-    release: { upper: [-2.4, 0, 0.45], lower: [0, 0.25, 0] },
+    handOffset: 2.0,
+    hold: { upper: [-0.15, 0.1, 1.15], lower: [0, -1.45, 0.15] },
+    windBack: { upper: [1.0, 0.25, 0.85], lower: [0, -2.1, 0.1] },
+    release: { upper: [-2.4, 0, 0.45], lower: [0, -0.25, 0] },
     windRatio: 0.35,
+    /** 兄の位置：手首から中指の付け根へ向かってこの割合の所（手のひらの中）。fingerCurl=握る指の曲げ（rad、0 で開いたまま） */
+    palmRatio: 0.7,
+    fingerCurl: 1.1,
   },
   /** 着弾ごとの停止（秒） */
   hitPauseSec: 0.02,

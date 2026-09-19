@@ -14,6 +14,14 @@ import { HIT } from '../config/waves'
 import { applyWalk, applyFace, applySkillPose, applySkillFace, applySitPose, armSign as armSignOf } from '../systems/procAnim'
 
 const smooth = (t: number) => { const k = THREE.MathUtils.clamp(t, 0, 1); return k * k * (3 - 2 * k) }
+/** 右手の指の骨（握る用） */
+const RIGHT_FINGERS = [
+  'rightIndexProximal', 'rightIndexIntermediate', 'rightIndexDistal',
+  'rightMiddleProximal', 'rightMiddleIntermediate', 'rightMiddleDistal',
+  'rightRingProximal', 'rightRingIntermediate', 'rightRingDistal',
+  'rightLittleProximal', 'rightLittleIntermediate', 'rightLittleDistal',
+  'rightThumbProximal', 'rightThumbDistal',
+] as const
 import { GAME } from '../config/game'
 import { SkillRunner } from '../systems/skills'
 import { SKILLS, type SkillId } from '../config/skills'
@@ -100,6 +108,8 @@ export function Imouto() {
     anchorTarget.current = null
     refs.head = vrm.humanoid.getNormalizedBoneNode('head')
     refs.rightHand = vrm.humanoid.getRawBoneNode('rightHand')
+    refs.rightFinger = vrm.humanoid.getRawBoneNode('rightMiddleProximal')
+    refs.palmRatio = LOCKON.grab.palmRatio
     // 肩レイキャストは髪を除いた体だけ（髪は高ポリで重い）
     const targets: THREE.Object3D[] = []
     vrm.scene.traverse((o) => {
@@ -310,6 +320,13 @@ export function Imouto() {
         const la = vrm.humanoid.getNormalizedBoneNode('rightLowerArm')
         if (ua) ua.rotation.set(THREE.MathUtils.lerp(ua.rotation.x, upper[0] * g2, w), THREE.MathUtils.lerp(ua.rotation.y, upper[1], w), THREE.MathUtils.lerp(ua.rotation.z, upper[2] * g2, w))
         if (la) la.rotation.set(THREE.MathUtils.lerp(la.rotation.x, lower[0], w), THREE.MathUtils.lerp(la.rotation.y, lower[1] * g2, w), THREE.MathUtils.lerp(la.rotation.z, lower[2] * g2, w))
+        // 指を曲げて兄を握る（投げ切った瞬間は開く）
+        const open = throwK.current >= gr.windRatio ? smooth((throwK.current - gr.windRatio) / (1 - gr.windRatio)) : 0
+        const curl = gr.fingerCurl * w * (1 - open)
+        for (const f of RIGHT_FINGERS) {
+          const n = vrm.humanoid.getNormalizedBoneNode(f)
+          if (n) n.rotation.z = curl * g2 * (f.startsWith('rightThumb') ? 0.4 : 1)
+        }
       }
     }
 

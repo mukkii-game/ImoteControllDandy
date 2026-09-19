@@ -65,7 +65,8 @@ npm run build    # dist/ に出力（itch.io 用）
 - 右上の「地上／肩上」の下に fps 表示（ui/HUD.tsx の Fps）。カクつきの切り分け用：fps が低ければ描画の重さ、60 なのにカクつくなら動きの作り方
 - 毎フレームの new THREE.Vector3 / Quaternion を減らした（Fighters の right、BroGlow の粒）。GC による周期的なカクつき対策
 - 地上の上下の見回しは肩上より広め（CAMERA.ground.pitchMin/pitchMax。上 77° まで。頭上の敵をバルカンで狙える）
-- 地上のバルカン（entities/Vulcan.tsx、BRO.vulcan）：兄はサイトの方向へ自動で連射。サイトが敵（空中でも）を捉えると（refs.aimTarget、サイトが赤く光る）その敵へ吸い付く。弾速 7200（ほぼ一瞬）、3 発ずつ「ダダダッ」のリズム（burst / interval / burstGap）、曳光弾は発射時にサイトの円くらいの太さ。2 発で倒す（hitsToKill）。タックルと違って一撃死ではない。何も捉えていない時も撃つ（fireAlways=false で「捉えている時だけ」に変えられる）。音は audio/se/vulcan.mp3（気弾1）
+- 地上のバルカン（entities/Vulcan.tsx、BRO.vulcan）：兄はサイトの方向へ自動で連射。サイトが敵（空中でも）を捉えると（refs.aimTarget、サイトが赤く光る）その敵へ吸い付く。弾速 3600、3 発ずつ「ダダダッ」のリズム（burst / interval / burstGap）、曳光弾は太さ 48m・長さ 60m の巨大な光の塊。2 発で倒す（hitsToKill）。タックルと違って一撃死ではない。サイトが敵を捉えている時だけ撃つ（fireAlways=false）。音は audio/se/vulcan.mp3（雷魔法4）
+- タックルの速さは 120 m/s（BRO.tackle.speed）
 - 爆撃（FIGHTERS.bomb）：黒い爆弾が黄色い光をまとって、妹の胴体へゆっくり曲がりながら飛んでくる（speed / homing / gravity）。当たると被弾エフェクト＋減速。上空集合の旋回は半径 135m・高さ 210m（loiter.kinds.overhead）
 - 吹っ飛び：地上の敵は上へ 160m/s、空中の敵は上へ 75m/s で勢いよく散ってから半分の重力で落ちる（DEBRIS.knockback / DEBRIS.air）
 - 空の敵：戦闘機は 2 編隊（FIGHTERS.squadrons、各 7 機）が同時に別方向から。ヘリは 2 編隊 × 4 機（HELIS.groups / perGroup / formation）でまとまって妹の周りを回る。全体的に前より遠め（loiter.kinds の center、HELIS.keepDist 260）。戦闘機の速度は 220 m/s
@@ -85,7 +86,7 @@ npm run build    # dist/ に出力（itch.io 用）
 - 揺れは停止中（CAMERA.shakeAmp = 0）。後で調整する
 - 音：public/audio/se/ に効果音ラボの SE（出典は public/audio/se/SOURCES.md）。無ければ合成音。ロックオン＝決定ボタンを押す26、玉の発射（肩上）＝雷魔法4、建物が壊れた＝2 種類をランダム（一歩で何軒も潰れるので SOUND.building.minGapSec より短い間隔では鳴らさない）。ゲーム中 BGM は public/audio/bgm/play.mp3（GiantLOLO。知人からもらった仮の曲で、公開時に差し替え必須）。音量は SOUND（game.ts）
 - 射撃モードで妹と兄を消す処理は今はオフ（CAMERA.aim.vanish=false。true に戻すと短いフェードで消える：fadeSec / showFadeSec、systems/silhouette.ts の blend）。代わりに X 線輪郭（CAMERA.aim.xray、systems/xray.tsx）：溜め中・攻撃中は、妹の体や建物の向こうに隠れている敵の「隠れた部分の縁」だけが緑に光る。仕組みは敵メッシュの複製を深度テスト逆（GreaterDepth）＋リムライトで描く。対象は XrayRoot で包んだまとまり（戦闘機・ヘリ・パトカー/戦車。エネミービルは大きすぎて縁が変に見えるので対象外）。見せるのは「カメラ→敵の線が妹の体（半径 occluderRadius・高さ occluderHeight の円柱）を通る敵」だけ。建物に隠れた敵や隠れていない敵には出ない
-- 掴んで投げる（LOCKON.grab / windupSec）：ロックオンのボタンを押すと妹が右手で兄を掴む（肘をへそ辺りで曲げた構え、兄は手のひらの上：refs.rightHand）。離して発射すると振りかぶり→振り抜きの投げモーション（windupSec 0.45 秒）の間は手に握られたままで、終わった瞬間に手から発射。腕は returnSec で歩きに戻る。ポーズの数値は grab.hold / windBack / release
+- 掴んで投げる（LOCKON.grab / windupSec）：ロックオンのボタンを押すと妹が右手で兄を掴む（肘をへそ辺りで曲げた構え、兄は手のひらの上：refs.rightHand）。離して発射すると振りかぶり→振り抜きの投げモーション（windupSec 0.45 秒）の間は手に握られたままで、終わった瞬間に手から発射。腕は returnSec で歩きに戻る。ポーズの数値は grab.hold / windBack / release（lower の y はマイナスで肘が体の前に曲がる）。兄は手首と中指の付け根の間（palmRatio）＝手のひらの上に乗り、指は fingerCurl で握る（投げ切る瞬間に開く）
 - モデル：妹は VRoid Hub のショート（public/models/custom/imouto.vrm、クレジット必要・作者名は未記入）。兄は Seed-san（ロボアーム非表示・服を黒く）。models/custom/bro.vrm を置けば差し替え
 - 街と車：Kenney（CC0）の City Kit Suburban / Commercial / Car Kit を public/models/kit/ に置き、家・ビル（STAGE.kit）とパトカー（manifest.json）に使用。戦車・戦闘機はまだプリミティブ（manifest.json に glb を書けば差し替わる）
 - 破壊表現：家は屋根が飛び壁の破片が散る、ビルはブロックに砕ける、敵は部品が飛び散り黒煙（DEBRIS）
