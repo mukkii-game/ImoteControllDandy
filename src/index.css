@@ -114,6 +114,21 @@ canvas { display: block; }
 .logo .subtitle { margin-top: 3vh; font-size: min(7vw, 6.4vh); color: #fff; letter-spacing: .06em;
   text-shadow: 3px 3px 0 #ff4d7a, -3px 3px 0 #ff4d7a, 3px -3px 0 #ff4d7a, -3px -3px 0 #ff4d7a, 0 7px 0 #7a1040, 0 0 24px rgba(255,80,140,.6); }
 .hud-top.hidden { display: none; }
+/* スマホ・低い画面：タイトルを詰めて、スクロールもできるように */
+.overlay.title-screen { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+@media (pointer: coarse) { .overlay.title-screen .howto { display: none; } .overlay.title-screen .howto-touch { display: block; } }
+.howto-touch { display: none; font-size: 13px; line-height: 1.5; background: rgba(0,0,0,.45); padding: 8px 12px; border-radius: 8px; margin: 6px 0 4px; }
+@media (max-height: 520px) {
+  .overlay.title-screen { padding-top: 2vh; gap: 6px; }
+  .logo span:first-child { font-size: min(8vw, 12.5vh); }
+  .logo span:nth-child(2) { font-size: min(6.8vw, 10.5vh); }
+  .logo .subtitle { font-size: min(4vw, 6.5vh); margin-top: 0.6vh; }
+  .overlay .story { font-size: 13px; line-height: 1.4; margin-top: 4px; }
+  .overlay.title-screen .howto { font-size: 11px; padding: 6px 10px; }
+  .quality-pick { margin: 6px 0 8px; }
+  .quality-pick button { padding: 6px 10px; font-size: 13px; }
+  .overlay .start { padding: 8px 22px; font-size: 16px; }
+}
 /* タイトルの「重さ」切り替え */
 .quality-pick { display: flex; align-items: center; gap: 8px; margin: 8px 0 12px; pointer-events: auto; font-size: 14px; font-weight: 700; flex-wrap: wrap; }
 .quality-pick button { min-width: 52px; padding: 8px 14px; border-radius: 8px; border: 2px solid rgba(255,255,255,.5); background: rgba(0,0,0,.4); color: #fff; font-weight: 800; font-size: 15px; cursor: pointer; touch-action: manipulation; }

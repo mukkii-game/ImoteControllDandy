@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 import { useInput } from '../systems/input'
+import { useGame } from '../systems/store'
 
 const R = 50
 
@@ -31,7 +32,9 @@ export function VirtualPad() {
   }
 
   const set = useInput((s) => s.set)
-  if (!coarse) return null
+  const phase = useGame((s) => s.phase)
+  // タイトル中はパッドを出さない（タイトルの文字やボタンに被る）
+  if (!coarse || phase === 'title') return null
   return (
     <>
       <div

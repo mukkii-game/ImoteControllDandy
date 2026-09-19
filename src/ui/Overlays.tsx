@@ -86,6 +86,7 @@ export function Overlays() {
             <div>1 / 2 / 3（テンキー可）：スキップ・靴飛ばし・泣く　ホイールで選択・ホイールクリックで発動</div>
             <div>制限時間 {fmt(GAME.timeLimitSec)}。校門をまたげばクリア</div>
           </div>
+          <div className="howto-touch">左スティックで移動　乗降ボタンで妹の肩へ　投げボタン長押しで敵をロック→離すと投擲　技ボタンは右下</div>
           {/* 重さ（品質）の切り替え：スマホは Esc が無いのでここで選ぶ */}
           <div className="quality-pick">
             <span>重さ：</span>
