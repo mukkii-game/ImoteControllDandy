@@ -25,7 +25,7 @@ export function bindMouse(el: HTMLElement): () => void {
     else if (dragging) apply(e.movementX, e.movementY, CAMERA.mouseSensitivity)
   }
   const onMouseDown = (e: MouseEvent) => {
-    if ((e.target as HTMLElement).closest('.stick, .buttons, .tune')) return
+    if ((e.target as HTMLElement).closest('.stick, .buttons, .tune, .overlay, .skillbar')) return
     if (useGame.getState().tuneOpen) return
     dragging = true
     if (document.pointerLockElement !== el) el.requestPointerLock?.()

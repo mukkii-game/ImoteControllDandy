@@ -49,11 +49,9 @@ export function applyLogo(vrm: VRM) {
     const cx = cfg.u * w
     const cy = cfg.v * h
     ctx.save()
-    if (cfg.flipY) {
-      ctx.translate(cx, cy)
-      ctx.scale(1, -1)
-      ctx.translate(-cx, -cy)
-    }
+    ctx.translate(cx, cy)
+    ctx.scale(cfg.stretchX ?? 1, cfg.flipY ? -1 : 1)
+    ctx.translate(-cx, -cy)
     ctx.font = cfg.font.replace('{px}', String(Math.round(px)))
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'

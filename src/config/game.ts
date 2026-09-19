@@ -97,9 +97,11 @@ export const IMOUTO = {
     text: 'ロロ',
     vertical: true,
     u: 0.5,
-    v: 0.25,
+    v: 0.285,
     /** テクスチャ幅に対する1文字の大きさ */
-    size: 0.26,
+    size: 0.25,
+    /** 横方向の伸ばし（1 = そのまま） */
+    stretchX: 1.3,
     lineGap: 1.08,
     color: '#ff2d8a',
     outline: '#7a1040',
