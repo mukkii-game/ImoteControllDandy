@@ -5,7 +5,7 @@ import { enemies, lock } from './enemies'
 import { useGame } from './store'
 import { useInput } from './input'
 import { refs } from './refs'
-import { seLock } from './audio'
+import { playVoice, seLock } from './audio'
 
 // デバッグ用（Playwright から狙いを付ける）
 ;(window as unknown as { __dbg: unknown }).__dbg = { refs, lock, enemies }
@@ -41,7 +41,10 @@ export function LockonSystem() {
       const dy = (sy - size.height / 2) / size.height
       if (Math.hypot(dx, dy) < LOCKON.reticleRadius) {
         lock.ids.push(e.id)
-        seLock(lock.ids.length - 1)
+        const index = lock.ids.length - 1
+        playVoice('se.lock').then((ok) => {
+          if (!ok) seLock(index)
+        })
       }
     }
     // ロック中の敵が死んだら外す

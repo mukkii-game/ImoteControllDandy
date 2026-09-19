@@ -271,18 +271,33 @@ export function bindAudio(): () => void {
       })
     }),
     on('bro.throw', () => {
-      seWhoosh(1)
+      playVoice('se.throw').then((ok) => {
+        if (!ok) seWhoosh(1)
+      })
       playVoice('bro.throw')
     }),
     on('bro.mount', () => {
-      seWhoosh(1.4)
+      playVoice('se.jump').then((ok) => {
+        if (!ok) seWhoosh(1.4)
+      })
       playVoice('bro.mount')
     }),
-    on('bro.jump', () => seWhoosh(1.6)),
+    on('bro.dismount', () => {
+      playVoice('se.land').then((ok) => {
+        if (!ok) seWhoosh(0.8)
+      })
+    }),
+    on('bro.jump', () => {
+      playVoice('se.jump').then((ok) => {
+        if (!ok) seWhoosh(1.6)
+      })
+    }),
     on('imouto.hit', () => playVoice('imouto.hit')),
     on('imouto.skill', ({ id }) => playVoice(`imouto.skill.${id}`)),
     on('game.clear', () => {
-      seChime()
+      playVoice('se.chime').then((ok) => {
+        if (!ok) seChime()
+      })
       playVoice('game.clear')
       playBgm('bgm.ed')
     }),

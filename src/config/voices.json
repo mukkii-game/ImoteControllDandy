@@ -12,6 +12,10 @@
   "se.step": "audio/se/stomp.mp3",
   "se.boom": "audio/se/boom.mp3",
   "se.throw": "audio/se/whoosh.mp3",
+  "se.jump": "audio/se/jump.mp3",
+  "se.land": "audio/se/land.mp3",
+  "se.lock": "audio/se/lock.mp3",
+  "se.chime": "audio/se/chime.mp3",
   "bgm.title": "audio/bgm/title.mp3",
   "bgm.play": "audio/bgm/play.mp3",
   "bgm.ed": "audio/bgm/ed.mp3"
