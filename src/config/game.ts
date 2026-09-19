@@ -164,7 +164,7 @@ export const IMOUTO = {
 
 export const LOCKON = {
   /** 同時ロック最大数 */
-  maxLocks: 8,
+  maxLocks: 16,
   /** サイト中心からこの半径（画面高さ比）に入った敵をロック */
   reticleRadius: 0.12,
   /** ロック可能距離（m） */
@@ -295,10 +295,15 @@ export const CAMERA = {
     fov: 50,
     /** 寄る／戻るのなめらかさ（秒） */
     blendSec: 0.25,
-    /** 消えるまでの秒数、シルエットの色と最初の濃さ */
-    fadeSec: 0.18,
+    /**
+     * 消えるまでの秒数（fadeSec）と、戻るときの秒数（showFadeSec）。
+     * 消え方：前半はモデルの上にシルエット色が重なって染まり、後半はシルエットだけになって薄れて消える。戻るときは逆順
+     */
+    fadeSec: 0.22,
+    showFadeSec: 0.3,
     silhouetteColor: '#9fd8ff',
-    silhouetteOpacity: 0.55,
+    /** 染まりきった瞬間（モデル→シルエットに切り替わる点）のシルエットの濃さ。1 に近いほど切り替えが目立たない */
+    silhouetteOpacity: 0.9,
     /** 暫定：肩上から玉を発射したあと、兄が戻ってくるまで妹を消したままにする（妹の体で玉が見えなくなるのを防ぐ） */
     hideDuringThrow: true,
   },
@@ -479,4 +484,16 @@ export const RADAR = {
 
 export const DEBUG = {
   showStats: false,
+}
+
+/** 音量とタイミング（ファイルの対応は config/voices.json） */
+export const SOUND = {
+  /** ゲーム中 BGM の音量（0..1） */
+  bgmVolume: 0.45,
+  /** 兄の玉の発射音（雷）の音量 */
+  fireVolume: 0.9,
+  /** 建物が壊れた音：音量と、連続で鳴らすときの最短間隔（秒。妹の一歩で何軒も潰れるので鳴りすぎ防止） */
+  building: { volume: 0.7, minGapSec: 0.35 },
+  /** ロックオン音の音量 */
+  lockVolume: 0.8,
 }

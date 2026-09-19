@@ -486,13 +486,10 @@ export function Bro() {
     if (vrm) {
       // 射撃モード（肩上で溜め中）：妹と同じく一瞬で消える
       {
-        const want = st.charging && st.mode === 'shoulder' ? 1 : 0
-        fadeK.current = want ? Math.min(1, fadeK.current + dt / CAMERA.aim.fadeSec) : 0
+        const want = st.charging && st.mode === 'shoulder'
+        fadeK.current = THREE.MathUtils.clamp(fadeK.current + (want ? dt / CAMERA.aim.fadeSec : -dt / CAMERA.aim.showFadeSec), 0, 1)
         if (!silhouette.current) silhouette.current = makeSilhouette(vrm.scene, CAMERA.aim.silhouetteColor)
-        const sil = silhouette.current
-        if (fadeK.current <= 0) sil.set(0)
-        else if (fadeK.current >= 1) sil.hide()
-        else sil.set(CAMERA.aim.silhouetteOpacity * (1 - fadeK.current))
+        silhouette.current.blend(fadeK.current, CAMERA.aim.silhouetteOpacity)
       }
       const seq = throwSeq.current
       const onShoulder = st.mode === 'shoulder' || (st.mode === 'thrown' && seq.phase === 'windup' && seq.origin === 'shoulder')

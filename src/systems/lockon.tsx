@@ -1,6 +1,6 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import { LOCKON, CAMERA, GAME } from '../config/game'
+import { LOCKON, CAMERA, GAME, SOUND } from '../config/game'
 import { enemies, lock } from './enemies'
 import { useGame } from './store'
 import { useInput } from './input'
@@ -76,7 +76,7 @@ export function LockonSystem() {
       const dy = (lock.destScreen[1] - cy) / size.height
       if (Math.hypot(dx, dy) < LOCKON.reticleRadius) {
         lock.dest = true
-        playVoice('se.lock').then((ok) => {
+        playVoice('se.lock', SOUND.lockVolume).then((ok) => {
           if (!ok) seLock(0)
         })
       }
@@ -99,7 +99,7 @@ export function LockonSystem() {
       if (Math.hypot(dx, dy) < LOCKON.reticleRadius) {
         lock.ids.push(e.id)
         const index = lock.ids.length - 1
-        playVoice('se.lock').then((ok) => {
+        playVoice('se.lock', SOUND.lockVolume).then((ok) => {
           if (!ok) seLock(index)
         })
       }

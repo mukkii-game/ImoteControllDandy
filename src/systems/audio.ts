@@ -1,4 +1,5 @@
 import voices from '../config/voices.json'
+import { SOUND } from '../config/game'
 import { on } from './events'
 import { useGame } from './store'
 
@@ -257,6 +258,18 @@ export function seChime() {
   })
 }
 
+let lastBuildingAt = -1
+/** 建物が壊れた音。SOUND.building.minGapSec より短い間隔では鳴らさない（合成音のフォールバックあり） */
+function playBuilding() {
+  const now = performance.now() / 1000
+  if (now - lastBuildingAt < SOUND.building.minGapSec) return
+  lastBuildingAt = now
+  const key = Math.random() < 0.5 ? 'se.building1' : 'se.building2'
+  playVoice(key, SOUND.building.volume).then((ok) => {
+    if (!ok) seBoom()
+  })
+}
+
 /** イベントに音を紐付ける。App で一度呼ぶ */
 export function bindAudio(): () => void {
   const offs = [
@@ -265,13 +278,20 @@ export function bindAudio(): () => void {
         if (!ok) seStomp(Math.min(1, strength) * 0.5)
       })
     }),
-    on('enemy.hit', () => {
+    on('enemy.hit', ({ id }) => {
+      // id -1 は建物（音は building.* 側で鳴らす）
+      if (id === -1) return
       playVoice('se.boom').then((ok) => {
         if (!ok) seBoom()
       })
     }),
-    on('bro.throw', () => {
-      playVoice('se.throw').then((ok) => {
+    // 建物が壊れた音（2 種類をランダム）。妹の一歩で何軒も潰れるので、短い間隔では鳴らさない
+    on('building.crush', () => playBuilding()),
+    on('building.break', () => playBuilding()),
+    on('bro.throw', ({ from }) => {
+      // 肩上からの発射は雷、地上からは風切り
+      const key = from === 'shoulder' ? 'se.fire' : 'se.throw'
+      playVoice(key, from === 'shoulder' ? SOUND.fireVolume : 1).then((ok) => {
         if (!ok) seWhoosh(1)
       })
       playVoice('bro.throw')
@@ -322,7 +342,7 @@ export function bindAudio(): () => void {
       if (s.phase === 'play') {
         ac()?.resume()
         playVoice('game.start')
-        playBgm('bgm.play')
+        playBgm('bgm.play', SOUND.bgmVolume)
       }
     }
   })

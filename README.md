@@ -57,7 +57,7 @@ npm run build    # dist/ に出力（itch.io 用）
 - 遊べる URL：https://mukkii-game.github.io/ImoteControllDandy/ （push で自動デプロイ）
 - 操作：右クリック/Shift=乗降、肩上は左クリック長押し=サイトで敵をロックオン→離して投擲、地上は左クリック=サイトの向きへ高速タックル、1/2/3（テンキー可）=技、ホイール=技選択・ホイールクリック=発動、Esc/Tab=ポーズ＋調整パネル
 - Esc/Tab はポーズ（フレームループ停止）＋調整パネル
-- 攻撃中の兄は光弾（オーラ半径 12m＋加算合成の太い光の軌跡、LOCKON.glow）。最大ロック 8、飛行速度 900
+- 攻撃中の兄は光弾（オーラ半径 12m＋加算合成の太い光の軌跡、LOCKON.glow）。最大ロック 16、飛行速度 900
 - 敵：戦闘機は 7 機の横に連なった編隊（FIGHTERS.formation）。並びは「ロロから見て画面の横」（視線に直交する向き）に付けるので、どの方向へ飛んでいても横一列に見える。方向別パスで来て、正面で「ロロの前を斜めに大きく横切る」動き（リサージュ、FIGHTERS.loiter.kinds の center/amp/speed）でしばらく滞在。まとめてサイトでなぞる想定。ヘリ 3 機は開始直後から妹の周りを一定距離で回って待機し撃つ（HELIS）。パトカーは妹に近づいて撃ち、近づかれると離れる（POLICE.keepDist/fleeDist）
 - エネミービル（config/waves.ts の BOSSES：ぎょうざの満洲・山田うどん、顔画像は public/textures/）：出発地点の少し先の道に立ち、妹が近づくとにじり寄る。通り抜け不可。ロック点 4 つ（ビルの中に散らばる）を全部当てるか技で倒す。画像は仮（権利は要確認）
 - 行き先は ▼（GAME.dest、今は校門）。妹は A D を触っていない間、自動で校門へ旋回する。▼ のロック指示はオフ。兄のセリフは吹き出し（SPEECH.lines：右へまわれ／左へ回れ／ロロップだ／蹴れ／泣け／オレを投げろ／あそこへ行け）
@@ -67,7 +67,8 @@ npm run build    # dist/ に出力（itch.io 用）
 - 敵セット（仮）：戦闘機は config/waves.ts の FIGHTERS.passes（前から→左から→右後ろから）を順に回り、次の方向へ抜けていく。編隊は FIGHTERS.formation で上下前後にばらす。戦車は 1 グループごとに左右を入れ替える。本格的なエネセットは別途計画
 - 妹は自動で歩く（W 加速・S 減速・A D 旋回）。歩幅・速度は半分ずつ落とした状態。制限時間 11:00
 - 揺れは停止中（CAMERA.shakeAmp = 0）。後で調整する
-- 音：public/audio/se/ に効果音ラボの SE（出典は SOURCES.md）。無ければ合成音。VOICEVOX 音声と BGM は voices.json の名前で置けば鳴る
+- 音：public/audio/se/ に効果音ラボの SE（出典は public/audio/se/SOURCES.md）。無ければ合成音。ロックオン＝決定ボタンを押す26、玉の発射（肩上）＝雷魔法4、建物が壊れた＝2 種類をランダム（一歩で何軒も潰れるので SOUND.building.minGapSec より短い間隔では鳴らさない）。ゲーム中 BGM は public/audio/bgm/play.mp3（GiantLOLO、作者提供）。音量は SOUND（game.ts）
+- 射撃モードの消え方／戻り方は短いフェード（CAMERA.aim.fadeSec / showFadeSec）：前半はモデルがシルエット色に染まり、後半はシルエットが薄れて消える。戻るときは逆順（systems/silhouette.ts の blend）
 - モデル：妹は VRoid Hub のショート（public/models/custom/imouto.vrm、クレジット必要・作者名は未記入）。兄は Seed-san（ロボアーム非表示・服を黒く）。models/custom/bro.vrm を置けば差し替え
 - 街と車：Kenney（CC0）の City Kit Suburban / Commercial / Car Kit を public/models/kit/ に置き、家・ビル（STAGE.kit）とパトカー（manifest.json）に使用。戦車・戦闘機はまだプリミティブ（manifest.json に glb を書けば差し替わる）
 - 破壊表現：家は屋根が飛び壁の破片が散る、ビルはブロックに砕ける、敵は部品が飛び散り黒煙（DEBRIS）

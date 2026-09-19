@@ -9,6 +9,11 @@ import * as THREE from 'three'
 export interface Silhouette {
   set: (alpha: number) => void
   hide: () => void
+  /**
+   * 消え具合 k（0=元のモデル … 1=完全に消えた）で段階的に描く。
+   * 前半（k<0.5）はモデルの上にシルエット色を重ねて染めていき（peak の濃さまで）、後半はシルエットだけを peak から 0 へ薄めて消す
+   */
+  blend: (k: number, peak: number) => void
   dispose: () => void
 }
 
@@ -35,13 +40,14 @@ export function makeSilhouette(root: THREE.Object3D, color: string): Silhouette 
     depthMeshes.push(d)
     colorMeshes.push(c)
   }
-  let mode: 'normal' | 'sil' | 'hidden' = 'normal'
+  // overlay：元のモデルを表示したまま、その上（同じ深度の面だけ）にシルエット色を重ねる（染める）
+  let mode: 'normal' | 'overlay' | 'sil' | 'hidden' = 'normal'
   const apply = (next: typeof mode) => {
     if (next === mode) return
     mode = next
-    for (const m of originals) m.visible = next === 'normal'
+    for (const m of originals) m.visible = next === 'normal' || next === 'overlay'
     for (const m of depthMeshes) m.visible = next === 'sil'
-    for (const m of colorMeshes) m.visible = next === 'sil'
+    for (const m of colorMeshes) m.visible = next === 'sil' || next === 'overlay'
   }
   return {
     set: (alpha) => {
@@ -52,6 +58,17 @@ export function makeSilhouette(root: THREE.Object3D, color: string): Silhouette 
       }
     },
     hide: () => apply('hidden'),
+    blend: (k, peak) => {
+      if (k <= 0) apply('normal')
+      else if (k >= 1) apply('hidden')
+      else if (k < 0.5) {
+        colorMat.opacity = Math.min(1, peak * (k / 0.5))
+        apply('overlay')
+      } else {
+        colorMat.opacity = Math.min(1, peak * (1 - (k - 0.5) / 0.5))
+        apply('sil')
+      }
+    },
     dispose: () => {
       apply('normal')
       for (const m of [...depthMeshes, ...colorMeshes]) m.parent?.remove(m)
