@@ -7,7 +7,9 @@ import * as THREE from 'three'
 import { STAGE, GAME } from '../config/game'
 import { toonGradient } from '../systems/toon'
 
-type Building = { x: number; z: number; w: number; h: number; d: number; color: string }
+const HOUSE_PALETTE = ['#e8dcc8', '#f0e6d2', '#dcd0b8', '#e6d8c0', '#f2ead8']
+const ROOF_COLORS = ['#b5432f', '#4a5d8a', '#6b7a4a', '#8a5a3a']
+type Building = { x: number; z: number; w: number; h: number; d: number; color: string; roof?: boolean }
 
 /**
  * 格子状のレトロな街。道路の格子＋ブロックごとにビル群。妹はどこでも歩ける。
@@ -43,16 +45,37 @@ export function Stage() {
             // 公園と学校の敷地には建てない
             if (Math.abs(cx) < GAME.park.halfWidth && cz > GAME.park.from && cz < GAME.park.to) continue
             if (Math.abs(cx) < GAME.school.width / 2 + 60 && cz > GAME.gateZ - 40 && cz < GAME.school.z + 150) continue
+            // 区間で見た目を変える：住宅街（z < -500）は屋根付きの低い家、ビル街は高層
+            const section = GAME.sections.find((sc) => cz >= sc.from && cz < sc.to)?.name
+            if (section === '住宅街') {
+              // 1 区画を 2×2 の家に分ける
+              for (let hi = 0; hi < 2; hi++)
+                for (let hj = 0; hj < 2; hj++) {
+                  if (rnd() < 0.2) continue
+                  const hw = cw * 0.32
+                  const hd = cd * 0.32
+                  buildings.push({
+                    x: cx + (hi - 0.5) * cw * 0.5,
+                    z: cz + (hj - 0.5) * cd * 0.5,
+                    w: hw,
+                    d: hd,
+                    h: 6 + rnd() * 5,
+                    color: HOUSE_PALETTE[Math.floor(rnd() * HOUSE_PALETTE.length)],
+                    roof: true,
+                  })
+                }
+              continue
+            }
             const w = cw * (0.55 + rnd() * 0.3)
             const d = cd * (0.55 + rnd() * 0.3)
-            const dist = Math.hypot(ox + cw * (i + 0.5), oz + cd * (j + 0.5)) / half
-            const tall = rnd() < STAGE.towerChance * (1.5 - dist)
+            const cityBoost = section === 'ビル街' ? 1.6 : 1
+            const tall = rnd() < STAGE.towerChance * cityBoost * 2
             const h = tall
               ? STAGE.buildingMax + rnd() * (STAGE.towerMax - STAGE.buildingMax)
-              : STAGE.buildingMin + rnd() * (STAGE.buildingMax - STAGE.buildingMin) * (1.2 - dist * 0.8)
+              : (STAGE.buildingMin + rnd() * (STAGE.buildingMax - STAGE.buildingMin)) * cityBoost
             buildings.push({
-              x: ox + cw * (i + 0.5),
-              z: oz + cd * (j + 0.5),
+              x: cx,
+              z: cz,
               w,
               d,
               h,
@@ -99,6 +122,7 @@ export function Stage() {
         )),
       )}
       <Buildings list={buildings} />
+      <Roofs list={buildings} />
       <School />
     </group>
   )
@@ -224,4 +248,30 @@ function School() {
       </mesh>
     </group>
   )
+}
+
+/** 住宅街の屋根（四角錐）。家が潰れたら屋根も一緒に沈む簡略化のため、潰れ判定は Buildings 側だけで行い、屋根は静的 */
+function Roofs({ list }: { list: Building[] }) {
+  const mesh = useMemo(() => {
+    const houses = list.filter((b) => b.roof)
+    const geo = new THREE.ConeGeometry(1, 1, 4)
+    const mat = new THREE.MeshToonMaterial({ gradientMap: toonGradient() })
+    const m = new THREE.InstancedMesh(geo, mat, Math.max(1, houses.length))
+    const o = new THREE.Object3D()
+    const c = new THREE.Color()
+    houses.forEach((b, i) => {
+      o.position.set(b.x, b.h + b.w * 0.22, b.z)
+      o.rotation.set(0, Math.PI / 4, 0)
+      o.scale.set(b.w * 0.78, b.w * 0.45, b.d * 0.78)
+      o.updateMatrix()
+      m.setMatrixAt(i, o.matrix)
+      m.setColorAt(i, c.set(ROOF_COLORS[i % ROOF_COLORS.length]))
+    })
+    m.count = houses.length
+    m.castShadow = true
+    m.instanceMatrix.needsUpdate = true
+    if (m.instanceColor) m.instanceColor.needsUpdate = true
+    return m
+  }, [list])
+  return <primitive object={mesh} />
 }

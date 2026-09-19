@@ -7,6 +7,7 @@ import { refs } from '../systems/refs'
 import { emit, on } from '../systems/events'
 import { SmokeRibbon } from '../systems/smoke'
 import { toonGradient } from '../systems/toon'
+import { useKitModel } from '../systems/kit'
 
 const up = new THREE.Vector3(0, 1, 0)
 const tangent = new THREE.Vector3()
@@ -28,6 +29,8 @@ function buildCurve(origin: THREE.Vector3, yaw: number): THREE.CatmullRomCurve3 
 function JetMesh() {
   const s = FIGHTERS.size
   const grad = toonGradient()
+  const kit = useKitModel('jet')
+  if (kit) return <primitive object={kit.scene.clone()} />
   return (
     <group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} castShadow>

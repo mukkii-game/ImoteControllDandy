@@ -8,6 +8,7 @@ import { refs } from '../systems/refs'
 import { emit, on } from '../systems/events'
 import { toonGradient } from '../systems/toon'
 import { useGame } from '../systems/store'
+import { useKitModel } from '../systems/kit'
 
 const m4 = new THREE.Matrix4()
 const tmpV = new THREE.Vector3()
@@ -37,6 +38,10 @@ export function GroundEnemies() {
   const shellTimer = useRef(TANKS.shellInterval)
   const lastSpawnDist = useRef(0)
   const grad = useMemo(() => toonGradient(), [])
+  const policeKit = useKitModel('police')
+  const tankKit = useKitModel('tank')
+  const policeGroups = useRef<THREE.Group[]>([])
+  const tankGroups = useRef<THREE.Group[]>([])
 
   // 踏み潰し：妹の一歩で足元のパトカーを潰す
   useEffect(
@@ -131,9 +136,36 @@ export function GroundEnemies() {
       mesh.count = n
       mesh.instanceMatrix.needsUpdate = true
     }
-    write(policeMesh.current, police.current, POLICE.size.h / 2, (e) => (snapToRoad(e.pos.x, e.pos.z).alongX ? Math.PI / 2 : 0))
-    write(lightMesh.current, police.current, POLICE.size.h + 0.6)
-    write(tankMesh.current, tanks.current, TANKS.size.h / 2, () => yaw + Math.PI)
+    if (policeKit) {
+      policeMesh.current.count = 0
+      lightMesh.current.count = 0
+      const alive = police.current.filter((e) => e.alive)
+      policeGroups.current.forEach((g, i) => {
+        const e = alive[i]
+        g.visible = !!e
+        if (e) {
+          g.position.set(e.pos.x, 0, e.pos.z)
+          g.rotation.y = snapToRoad(e.pos.x, e.pos.z).alongX ? Math.PI / 2 : 0
+        }
+      })
+    } else {
+      write(policeMesh.current, police.current, POLICE.size.h / 2, (e) => (snapToRoad(e.pos.x, e.pos.z).alongX ? Math.PI / 2 : 0))
+      write(lightMesh.current, police.current, POLICE.size.h + 0.6)
+    }
+    if (tankKit) {
+      tankMesh.current.count = 0
+      const alive = tanks.current.filter((e) => e.alive)
+      tankGroups.current.forEach((g, i) => {
+        const e = alive[i]
+        g.visible = !!e
+        if (e) {
+          g.position.set(e.pos.x, 0, e.pos.z)
+          g.rotation.y = yaw + Math.PI
+        }
+      })
+    } else {
+      write(tankMesh.current, tanks.current, TANKS.size.h / 2, () => yaw + Math.PI)
+    }
     shellMesh.current.count = shells.current.length
     shells.current.forEach((s, i) => {
       m4.identity()
@@ -145,6 +177,18 @@ export function GroundEnemies() {
 
   return (
     <group>
+      {policeKit &&
+        Array.from({ length: POLICE.max }, (_, i) => (
+          <group key={`pk${i}`} ref={(el) => el && (policeGroups.current[i] = el)} visible={false}>
+            <primitive object={policeKit.scene.clone()} />
+          </group>
+        ))}
+      {tankKit &&
+        Array.from({ length: TANKS.max }, (_, i) => (
+          <group key={`tk${i}`} ref={(el) => el && (tankGroups.current[i] = el)} visible={false}>
+            <primitive object={tankKit.scene.clone()} />
+          </group>
+        ))}
       <instancedMesh ref={policeMesh} args={[undefined, undefined, 32]} castShadow>
         <boxGeometry args={[POLICE.size.w, POLICE.size.h, POLICE.size.d]} />
         <meshToonMaterial color="#f5f5f5" gradientMap={grad} />
