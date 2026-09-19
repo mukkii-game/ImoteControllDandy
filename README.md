@@ -31,7 +31,7 @@ npm run build    # dist/ に出力（itch.io 用）
 - 妹（ショート）：VRoid Hub のモデル（作者名：要記入。利用条件：クレジット表記必要・個人の商用利用は非営利のみ）
 - 妹（ロング）：VRM1_Constraint_Twist_Sample (c) pixiv Inc.（VRM Public License 1.0）
 - 兄：Seed-san by VirtualCast, Inc.（VRM Public License 1.0）
-- 音声：VOICEVOX:青山龍星（兄）、VOICEVOX:四国めたん（妹）。Web 版 VOICEVOX API で生成（詳細は SOURCES.md）
+- 音声：VOICEVOX:青山龍星（兄・熱血スタイル）、VOICEVOX:満別花丸（妹・元気スタイル）。Web 版 VOICEVOX API で生成（詳細は SOURCES.md）
 - 街（家・ビル）とパトカー：Kenney（www.kenney.nl）の City Kit Suburban / City Kit Commercial / Car Kit（CC0、表記任意）
 
 モデルは Esc の調整パネル「モデル」で切り替えられます。追加は `public/models/` に置いて `src/config/game.ts` の MODEL_CHOICES に1行足すだけです。
@@ -40,6 +40,8 @@ npm run build    # dist/ に出力（itch.io 用）
 - ロックオン攻撃（サイト→投擲）を肩上（上空）専用にするかどうか。今は肩上のみ。地上は高速タックル
 - 打撃（タックル）と遠隔（投擲）の効果の差をどう付けるか（案は会話ログ参照：戦車は打撃のみ、遠隔はまとめ倍率、打撃で技ゲージ、など）
 - 満洲・山田うどんの画像の権利（公開前に確認）
+- ▼ をロックして「あそこへ行け」で行き先を指示する仕組み（製品版で入れるかも。今はオフ：GAME.dest.lockEnabled）。プロトは妹が自動で学校へ向かう（GAME.dest.autoNavigate）
+- 肩上から玉（兄）を発射したあと、妹の体で玉が隠れる問題。暫定は「兄が戻るまで妹を消したまま」（CAMERA.aim.hideDuringThrow）。別案：地上のダッシュと同じく、カメラが兄を遅れて追いかける（CAMERA.thrown.enabled と dashFollowLerp 相当の値で試せる）
 
 ## 引き継ぎメモ（2026-09-19 時点）
 - 重さ対策：建物は 3 ブロック四方の区画 × 種類ごとに InstancedMesh を分け、画面外はカリング、1100m より遠い区画は非表示、影は 260m 以内の区画だけ（STAGE.chunkBlocks/drawDist/shadowDist）。開始 5 秒の平均 fps が 32 未満なら影を切って解像度 1 倍（STAGE.autoLiteFps）。当たり判定は区画索引（systems/colliders.ts）で近くだけ調べる
@@ -56,9 +58,9 @@ npm run build    # dist/ に出力（itch.io 用）
 - 操作：右クリック/Shift=乗降、肩上は左クリック長押し=サイトで敵をロックオン→離して投擲、地上は左クリック=サイトの向きへ高速タックル、1/2/3（テンキー可）=技、ホイール=技選択・ホイールクリック=発動、Esc/Tab=ポーズ＋調整パネル
 - Esc/Tab はポーズ（フレームループ停止）＋調整パネル
 - 攻撃中の兄は光弾（オーラ半径 12m＋加算合成の太い光の軌跡、LOCKON.glow）。最大ロック 8、飛行速度 900
-- 敵：戦闘機は最初から出て方向別パスで来て正面付近でしばらく旋回滞在（FIGHTERS.loiter）。ヘリ 3 機は開始直後から妹の周りを一定距離で回って待機し撃つ（HELIS）。パトカーは妹に近づいて撃ち、近づかれると離れる（POLICE.keepDist/fleeDist）
+- 敵：戦闘機は 7 機の横に連なった編隊（FIGHTERS.formation）。並びは「ロロから見て画面の横」（視線に直交する向き）に付けるので、どの方向へ飛んでいても横一列に見える。方向別パスで来て、正面で「ロロの前を斜めに大きく横切る」動き（リサージュ、FIGHTERS.loiter.kinds の center/amp/speed）でしばらく滞在。まとめてサイトでなぞる想定。ヘリ 3 機は開始直後から妹の周りを一定距離で回って待機し撃つ（HELIS）。パトカーは妹に近づいて撃ち、近づかれると離れる（POLICE.keepDist/fleeDist）
 - エネミービル（config/waves.ts の BOSSES：ぎょうざの満洲・山田うどん、顔画像は public/textures/）：出発地点の少し先の道に立ち、妹が近づくとにじり寄る。通り抜け不可。ロック点 4 つ（ビルの中に散らばる）を全部当てるか技で倒す。画像は仮（権利は要確認）
-- 行き先は ▼（GAME.dest、今は校門）。溜め中に ▼ をサイトに入れて離すと「あそこへ行け！」で妹がそちらへ旋回（A D を触ると上書き）。兄のセリフは吹き出し（SPEECH.lines：右へまわれ／左へ回れ／ロロップだ／蹴れ／泣け／オレを投げろ／あそこへ行け）
+- 行き先は ▼（GAME.dest、今は校門）。妹は A D を触っていない間、自動で校門へ旋回する。▼ のロック指示はオフ。兄のセリフは吹き出し（SPEECH.lines：右へまわれ／左へ回れ／ロロップだ／蹴れ／泣け／オレを投げろ／あそこへ行け）
 - 肩に乗った瞬間は妹の左側から見るカメラ（CAMERA.mountViewYaw）。妹の踏み潰し半径は横幅より少し大きい程度（GAME.crushRadius 8 / bodyRadius 7 / POLICE.stompRadius 9）
 - URL に `?lite` を付けると街の外部モデルと影を切る（低スペック機・自動テスト用。ヘッドレス Chromium は通常モードだと 1fps 未満）
 - サイトはパンツァードラグーン式：溜め中はマウスでサイト自体が動き、画面端に寄るとカメラがその方向へ回る（LOCKON.reticle）。攻撃中はカメラを変えない（CAMERA.thrown.enabled = false）。1 体目まではベジェ曲線で回り込む（LOCKON.curve）

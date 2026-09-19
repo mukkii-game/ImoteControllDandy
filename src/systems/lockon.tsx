@@ -71,7 +71,7 @@ export function LockonSystem() {
     const far = (camera as THREE.PerspectiveCamera).far * 0.8
     if (tmpV.length() > far) tmpV.setLength(far)
     lock.destScreen = toScreen(tmpV.add(camera.position))
-    if (charging && !lock.dest && lock.destScreen[2]) {
+    if (GAME.dest.lockEnabled && charging && !lock.dest && lock.destScreen[2]) {
       const dx = (lock.destScreen[0] - cx) / size.height
       const dy = (lock.destScreen[1] - cy) / size.height
       if (Math.hypot(dx, dy) < LOCKON.reticleRadius) {

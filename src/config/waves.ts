@@ -5,14 +5,19 @@ export const FIGHTERS = {
   /** 妹の z がこれ以上で出現（最初から） */
   fromZ: -99999,
   /** 編隊の機数 */
-  count: 5,
-  /** 編隊の並び（機体ごと）：[横 m, 高さ m, 後ろへ m]。前後・上下にばらして、プレイヤーから見て重ならないように（多重ロックしやすく） */
+  count: 7,
+  /**
+   * 編隊の並び（機体ごと）：[横 m, 高さ m, 後ろへ m]。横に連なって少し斜め（画面上で線になる）。
+   * まとめてサイトでなぞりやすいように、横の間隔は広め・前後はほぼ揃える
+   */
   formation: [
-    [0, 0, 0],
-    [-40, 16, -30],
-    [44, -14, -28],
-    [-84, 34, -62],
-    [88, -26, -58],
+    [-108, -20, 0],
+    [-72, -13, -5],
+    [-36, -6, -10],
+    [0, 0, -14],
+    [36, 6, -10],
+    [72, 13, -5],
+    [108, 20, 0],
   ] as [number, number, number][],
   /** 巡航速度 m/s */
   speed: 110,
@@ -102,10 +107,14 @@ export const FIGHTERS = {
     blendSec: 1.2,
     turnSpeed: 0.55,
     heightWobble: 25,
+    /**
+     * 種類ごとの滞在。near/far は「ロロの前を斜めに大きく横切る」動き（リサージュ：center を中心に amp の振幅で往復）。
+     * overhead はロロの上空を旋回（radius）。速さ speed（rad/s）
+     */
     kinds: {
-      near: { secMin: 6, secMax: 11, radius: 110, height: 0 },
-      far: { secMin: 6, secMax: 10, radius: 280, height: 40 },
-      overhead: { secMin: 12, secMax: 18, radius: 70, height: 0 },
+      near: { secMin: 8, secMax: 13, center: [0, 95, 170], amp: [200, 45, 40], speed: 0.62, radius: 0, height: 0 },
+      far: { secMin: 7, secMax: 11, center: [0, 130, 320], amp: [320, 70, 60], speed: 0.45, radius: 0, height: 0 },
+      overhead: { secMin: 12, secMax: 18, center: [0, 150, 20], amp: [0, 0, 0], speed: 0.55, radius: 70, height: 0 },
     },
     /** 上空集合の中心（妹ローカル：x=右, y=高さ, z=前） */
     overheadCenter: [0, 150, 20] as [number, number, number],
@@ -121,7 +130,7 @@ export const FIGHTERS = {
 export const HELIS = {
   count: 3,
   /** 妹からの距離（m）と高さ（m）。高さは機体ごとに少しずらす */
-  keepDist: 210,
+  keepDist: 170,
   height: 55,
   heightSpread: 18,
   /** 妹の周りを回る角速度（rad/s）と機体の移動速度（m/s） */

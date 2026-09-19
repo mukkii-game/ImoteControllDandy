@@ -152,7 +152,8 @@ export function Imouto() {
     const m = mode === 'shoulder' && playing ? readMove() : { x: 0, y: 0 }
     // 射撃モード（肩上で溜め中）：一瞬で同じ色のシルエットになりながら消える。離すと元に戻る
     {
-      const want = game.charging && mode === 'shoulder' ? 1 : 0
+      const throwing = CAMERA.aim.hideDuringThrow && mode === 'thrown' && game.attackFrom === 'shoulder'
+      const want = (game.charging && mode === 'shoulder') || throwing ? 1 : 0
       fadeK.current = want ? Math.min(1, fadeK.current + dt / CAMERA.aim.fadeSec) : 0
       if (!silhouette.current) silhouette.current = makeSilhouette(vrm.scene, CAMERA.aim.silhouetteColor)
       const sil = silhouette.current
@@ -200,12 +201,14 @@ export function Imouto() {
 
     g.rotation.y -= m.x * IMOUTO.turnSpeed * dt
     // 兄の行き先指示：A D を触っていない間はそちらへ旋回。近づいたら解除
-    const wp = game.waypoint
+    // プロト：指示が無くても自動で学校（GAME.dest）へ向かう
+    const wp = game.waypoint ?? (GAME.dest.autoNavigate ? GAME.dest : null)
     if (wp && playing) {
       const dx = wp.x - g.position.x
       const dz = wp.z - g.position.z
-      if (Math.hypot(dx, dz) < GAME.dest.arriveDist) game.setWaypoint(null)
-      else if (Math.abs(m.x) < 0.2) {
+      if (Math.hypot(dx, dz) < GAME.dest.arriveDist) {
+        if (game.waypoint) game.setWaypoint(null)
+      } else if (Math.abs(m.x) < 0.2) {
         let diff = Math.atan2(dx, dz) - g.rotation.y
         diff = Math.atan2(Math.sin(diff), Math.cos(diff))
         const step = IMOUTO.turnSpeed * dt

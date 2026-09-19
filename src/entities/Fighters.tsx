@@ -28,6 +28,22 @@ const localP = new THREE.Vector3()
 const localN = new THREE.Vector3()
 const loiterP = new THREE.Vector3()
 const loiterN = new THREE.Vector3()
+const sweepL = new THREE.Vector3()
+const viewR = new THREE.Vector3()
+
+/**
+ * 編隊の「横」方向：ロロから見て画面の横になる向き（ロロ→機体の視線に直交する水平ベクトル）。
+ * 進行方向の右にすると、横切って飛ぶときに一列縦隊に見えてしまうので、常にロロから見て横一列になるようにする
+ */
+function viewRight(base: THREE.Vector3, fallback: THREE.Vector3, out: THREE.Vector3) {
+  const im = refs.imouto
+  if (!im) return out.copy(fallback)
+  const dx = base.x - im.position.x
+  const dz = base.z - im.position.z
+  const l = Math.hypot(dx, dz)
+  if (l < 1) return out.copy(fallback)
+  return out.set(dz / l, 0, -dx / l)
+}
 function toWorld(local: THREE.Vector3, out: THREE.Vector3) {
   const im = refs.imouto
   const yaw = im?.rotation.y ?? 0
@@ -166,12 +182,12 @@ export function Fighters() {
       L.active = true
       L.t = 0
       L.dur = kind.secMin + Math.random() * (kind.secMax - kind.secMin)
-      if (overhead) L.center.set(...lo.overheadCenter)
-      else L.center.copy(localP).setY(localP.y + kind.height)
+      L.center.set(...(overhead ? lo.overheadCenter : (kind.center as [number, number, number])))
+      L.angle = Math.random() < 0.5 ? 0 : Math.PI // 横切る向きをランダムに
     }
     if (L.active) {
       L.t += dt
-      L.angle += lo.turnSpeed * (stunned ? 0.2 : 1) * dt
+      L.angle += kind.speed * (stunned ? 0.2 : 1) * dt
       if (L.t >= L.dur) {
         L.active = false
         L.done = true
@@ -196,22 +212,35 @@ export function Fighters() {
       toWorld(localN, nextT)
       tangent.subVectors(nextT, e.pos).normalize()
       const right = new THREE.Vector3().crossVectors(tangent, up).normalize()
-      e.pos.addScaledVector(right, fx)
+      viewRight(e.pos, right, viewR)
+      e.pos.addScaledVector(viewR, fx)
       e.pos.y += fy
-      nextT.addScaledVector(right, fx)
+      nextT.addScaledVector(viewR, fx)
       nextT.y += fy
       if (L.k > 0.001) {
-        // 滞在中：中心の周りを回る位置へ寄せる（機体ごとに位相と半径を変える）
-        const ph = (i / FIGHTERS.count) * Math.PI * 2
-        const R = kind.radius + fx * 0.6
-        const orbitAt = (a: number, out: THREE.Vector3) => {
-          toWorld(L.center, out)
-          out.x += Math.cos(a + ph) * R
-          out.z += Math.sin(a + ph) * R
-          out.y += fy + Math.sin((a + ph) * 1.3) * lo.heightWobble
+        // 滞在中の位置（機体ごとの並びは、ロロから見た横方向と高さに沿って付ける）
+        const posAt = (a: number, out: THREE.Vector3) => {
+          if (overhead) {
+            // 上空：中心の周りを回る（機体ごとに位相をずらす）
+            const ph = (i / FIGHTERS.count) * Math.PI * 2
+            const R = kind.radius + fx * 0.6
+            toWorld(L.center, out)
+            out.x += Math.cos(a + ph) * R
+            out.z += Math.sin(a + ph) * R
+            out.y += fy + Math.sin((a + ph) * 1.3) * lo.heightWobble
+          } else {
+            // 近く／遠く：ロロの前を斜めに大きく横切る（リサージュ）。横に連なった線がそのまま動く
+            const [cx, cy, cz] = kind.center
+            const [ax, ay, az] = kind.amp
+            sweepL.set(cx + ax * Math.sin(a), cy + ay * Math.sin(2 * a + 0.8), cz + az * Math.cos(a))
+            toWorld(sweepL, out)
+            viewRight(out, right, viewR)
+            out.addScaledVector(viewR, fx)
+            out.y += fy
+          }
         }
-        orbitAt(L.angle, loiterP)
-        orbitAt(L.angle + 0.06, loiterN)
+        posAt(L.angle, loiterP)
+        posAt(L.angle + 0.06, loiterN)
         e.pos.lerp(loiterP, L.k)
         nextT.lerp(loiterN, L.k)
       }

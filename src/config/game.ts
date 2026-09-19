@@ -299,6 +299,8 @@ export const CAMERA = {
     fadeSec: 0.18,
     silhouetteColor: '#9fd8ff',
     silhouetteOpacity: 0.55,
+    /** 暫定：肩上から玉を発射したあと、兄が戻ってくるまで妹を消したままにする（妹の体で玉が見えなくなるのを防ぐ） */
+    hideDuringThrow: true,
   },
   followLerp: 7,
   /** シェイク減衰 */
@@ -370,7 +372,8 @@ export const GAME = {
   /** 公園：この範囲は建物を置かない（|x| < halfWidth, z in [from, to]） */
   park: { halfWidth: 320, from: 560, to: 1250 },
   /** 行き先（▼ で示す）。今は校門。ロックオンすると妹がそこへ向かう。arriveDist 以内で到着扱い */
-  dest: { label: '学校', x: 0, z: 1400, height: 60, arriveDist: 80 },
+  /** autoNavigate：A D を触っていない間、妹は自動で行き先へ向かう（プロト）。lockEnabled：▼ をロックして指示する仕組み（製品版候補、今はオフ） */
+  dest: { label: '学校', x: 0, z: 1400, height: 60, arriveDist: 80, autoNavigate: true, lockEnabled: false },
 }
 
 /** セリフ（吹き出し）。文言はここで変える。音声は config/voices.json の line.bro.* / line.imouto.* */
