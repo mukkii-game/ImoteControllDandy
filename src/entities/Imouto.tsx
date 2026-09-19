@@ -10,7 +10,7 @@ import { useGame } from '../systems/store'
 import { readMove } from '../systems/input'
 import { emit, on } from '../systems/events'
 import { HIT } from '../config/waves'
-import { applyWalk, applyFace, applySkillPose, applySkillFace, applyThrowArm, applySitPose } from '../systems/procAnim'
+import { applyWalk, applyFace, applySkillPose, applySkillFace, applyThrowArm, applySitPose, armSign as armSignOf } from '../systems/procAnim'
 import { GAME } from '../config/game'
 import { SkillRunner } from '../systems/skills'
 import { SKILLS, type SkillId } from '../config/skills'
@@ -150,6 +150,10 @@ export function Imouto() {
         const action = (`skill${key}`) as 'skill1' | 'skill2' | 'skill3'
         if (inp.consume(action)) skills.current.start(id, g.position, g.rotation.y)
       }
+      if (inp.consume('skillFire')) {
+        const id = (['skip', 'shoe', 'cry'] as SkillId[])[inp.skillSel]
+        skills.current.start(id, g.position, g.rotation.y)
+      }
     }
     skills.current.tick(dt, g.position)
     const sk = skills.current.active
@@ -171,7 +175,22 @@ export function Imouto() {
     if (walkRatio > 0.02) phase.current += (dt / IMOUTO.stepPeriod) * Math.PI * 2 * Math.max(0.4, walkRatio)
     applyWalk(vrm, phase.current, walkRatio, IMOUTO.walk, modelHeight)
     clock.current += dt
-    if (game.phase === 'clear') {
+    if (game.phase === 'title') {
+      // タイトル：眠そうに目を閉じてあくび（4 秒周期）。頭を少し後ろへ
+      const cyc = (clock.current % 4.5) / 4.5
+      const yawn = cyc < 0.3 ? cyc / 0.3 : cyc < 0.6 ? 1 : cyc < 0.8 ? 1 - (cyc - 0.6) / 0.2 : 0
+      const em = vrm.expressionManager
+      em?.setValue('happy', 0)
+      em?.setValue('sad', 0)
+      em?.setValue('blink', 1)
+      em?.setValue('aa', 0.15 + 0.75 * yawn)
+      vrm.humanoid.getNormalizedBoneNode('head')?.rotation.set(-0.35 * yawn, 0, 0.08)
+      vrm.humanoid.getNormalizedBoneNode('neck')?.rotation.set(-0.15 * yawn, 0, 0)
+      // 片手を口元へ
+      const g2 = armSignOf(vrm)
+      vrm.humanoid.getNormalizedBoneNode('rightUpperArm')?.rotation.set(-1.7 * yawn * g2, -0.5 * yawn, 0.9 * g2)
+      vrm.humanoid.getNormalizedBoneNode('rightLowerArm')?.rotation.set(0, 2.4 * yawn * g2, 0.3 * g2)
+    } else if (game.phase === 'clear') {
       // ED：校庭で体育座り、にっこり
       sitK.current = Math.min(1, sitK.current + dt / 1.2)
       applySitPose(vrm, sitK.current, modelHeight)

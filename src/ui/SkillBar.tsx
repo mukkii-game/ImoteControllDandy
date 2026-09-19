@@ -7,19 +7,21 @@ export function SkillBar() {
   const mode = useGame((s) => s.mode)
   const cds = useGame((s) => s.cooldowns)
   const active = useGame((s) => s.activeSkill)
+  const sel = useInput((s) => s.skillSel)
   const phase = useGame((s) => s.phase)
   if (phase !== 'play' || (mode !== 'shoulder' && mode !== 'thrown')) return null
   const ids = Object.keys(SKILLS) as SkillId[]
   return (
     <div className="skillbar">
-      {ids.map((id) => {
+      <div className="skill-hint">ホイールで選択・ホイールクリックで発動</div>
+      {ids.map((id, i) => {
         const cfg = SKILLS[id]
         const cd = cds[id] ?? 0
         const ratio = cd / cfg.cooldown
         return (
           <button
             key={id}
-            className={`skill ${cd > 0 ? 'cd' : ''} ${active === id ? 'active' : ''}`}
+            className={`skill ${cd > 0 ? 'cd' : ''} ${active === id ? 'active' : ''} ${sel === i ? 'selected' : ''}`}
             onPointerDown={(e) => {
               e.preventDefault()
               useInput.getState().press(`skill${cfg.key}` as 'skill1')

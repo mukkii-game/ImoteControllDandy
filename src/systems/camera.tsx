@@ -177,6 +177,25 @@ export function CameraRig() {
       }
     }
 
+    if (st.phase === 'title' && refs.imouto && refs.bro) {
+      // タイトル：画面下に兄、画面上にロロの顔（あくび）。妹の正面やや下から見上げる
+      const im = refs.imouto.position
+      const yaw = refs.imouto.rotation.y
+      const fx = Math.sin(yaw)
+      const fz = Math.cos(yaw)
+      const c = CAMERA.title
+      const want = new THREE.Vector3(im.x + fx * c.ahead + Math.cos(yaw) * c.side, c.height, im.z + fz * c.ahead - Math.sin(yaw) * c.side)
+      const tgt = tmp.set(im.x + fx * c.lookAhead, c.lookHeight, im.z + fz * c.lookAhead)
+      camera.position.lerp(want, Math.min(1, 3 * dt))
+      smoothedLook.current.lerp(tgt, Math.min(1, 3 * dt))
+      camera.lookAt(smoothedLook.current)
+      if (Math.abs(cam.fov - c.fov) > 0.1) {
+        cam.fov = THREE.MathUtils.lerp(cam.fov, c.fov, Math.min(1, 3 * dt))
+        cam.updateProjectionMatrix()
+      }
+      init.current = false
+      return
+    }
     if ((st.phase === 'clear' || st.phase === 'late') && refs.imouto) {
       // ED：校庭の引き。妹の頭が校舎より上に見える構図
       // 妹の斜め前から、頭が校舎の屋根より上に見える引き

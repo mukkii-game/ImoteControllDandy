@@ -59,7 +59,7 @@ export const useGame = create<GameState>((set) => ({
   activeSkill: null,
   setActiveSkill: (activeSkill) => set({ activeSkill }),
   phase: 'title',
-  setPhase: (phase) => set({ phase }),
+  setPhase: (phase) => set(phase === 'play' ? { phase, score: 0 } : { phase }),
   timeLeft: 0,
   setTimeLeft: (timeLeft) => set({ timeLeft }),
   clearTime: 0,

@@ -49,7 +49,9 @@ canvas { display: block; }
 @keyframes lock-in { from { transform: scale(2.2); opacity: 0 } }
 .lock-count { position: absolute; left: 50%; top: 50%; transform: translate(-50%, 60px); color: #ff4d7a; font-weight: 900; font-size: 15px; letter-spacing: .1em; }
 
-.skillbar { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); display: flex; gap: 10px; pointer-events: auto; }
+.skillbar { position: absolute; right: 120px; bottom: 26px; display: flex; gap: 10px; pointer-events: auto; align-items: flex-end; }
+.skill-hint { position: absolute; right: 0; top: -20px; font-size: 11px; opacity: .7; white-space: nowrap; }
+.skill.selected { border-color: #ffd166; box-shadow: 0 0 0 3px rgba(255,209,102,.45); transform: translateY(-6px); }
 .skill { position: relative; width: 74px; height: 74px; border-radius: 12px; border: 2px solid rgba(255,255,255,.6); background: rgba(20,22,30,.65); color: #fff; font-weight: 800; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer; overflow: hidden; touch-action: none; }
 .skill .key { font-size: 18px; color: #ffd166; }
 .skill .label { font-size: 11px; }
@@ -64,6 +66,8 @@ canvas { display: block; }
 .timer.urgent .t { color: #ff5c7a; animation: blink 1s steps(2) infinite; }
 @keyframes blink { 50% { opacity: .4 } }
 .overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: rgba(10,12,20,.55); pointer-events: auto; text-align: center; padding: 20px; }
+.overlay.title-screen { align-items: flex-start; text-align: left; padding-left: 5%; background: linear-gradient(90deg, rgba(10,12,20,.75) 0%, rgba(10,12,20,.55) 45%, rgba(10,12,20,0) 75%); }
+.overlay.title-screen .big { font-size: 40px; }
 .overlay .big { font-size: 44px; font-weight: 900; color: #ffd166; text-shadow: 0 3px 0 #7a1040, 0 0 24px rgba(255,120,60,.6); }
 .overlay .sub { font-size: 16px; opacity: .9; }
 .overlay .howto { font-size: 13px; line-height: 1.8; background: rgba(0,0,0,.35); padding: 10px 18px; border-radius: 10px; }

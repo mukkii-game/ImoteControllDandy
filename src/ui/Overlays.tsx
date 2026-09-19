@@ -49,10 +49,10 @@ export function Overlays() {
           <div className="big">いもーとコントロールダンディ</div>
           <div className="sub">巨大な妹「{IMOUTO.name}」を遅刻させずに学校へ</div>
           <div className="howto">
-            <div>WASD：兄の移動 / 肩の上では妹を歩かせる（W 前進・A D 旋回）</div>
-            <div>マウス：カメラ　　Shift / E：肩に飛び乗る・飛び降りる</div>
-            <div>左クリック長押し：サイトで敵をロック → 離すと妹が兄を投げる</div>
-            <div>1 / 2 / 3：スキップ・靴飛ばし・泣く（妹の技）</div>
+            <div>WASD：兄の移動 / 肩の上では妹の方向指示（A D 旋回・W 加速・S 減速）</div>
+            <div>マウス：カメラ　　左クリック / Shift：肩に飛び乗る・飛び降りる</div>
+            <div>右クリック長押し：サイトで敵をロック → 離すと妹が兄を投げる</div>
+            <div>1 / 2 / 3（テンキー可）：スキップ・靴飛ばし・泣く　ホイールで選択・ホイールクリックで発動</div>
             <div>制限時間 {fmt(GAME.timeLimitSec)}。校門をまたげばクリア</div>
           </div>
           <button className="start" disabled={!ready} onClick={() => setPhase('play')}>

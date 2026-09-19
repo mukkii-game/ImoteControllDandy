@@ -87,7 +87,7 @@ export const BRO = {
 
 export const IMOUTO = {
   name: 'ロロ',
-  spawn: { x: 0, y: 0, z: -1500 },
+  spawn: { x: 0, y: 0, z: -1540 },
   /**
    * 服のロゴ。Tops テクスチャに Canvas で描く（VRM ファイルは触らない）。
    * u/v は 0..1 のテクスチャ座標（胸の前面 UV の中心）。
@@ -199,6 +199,8 @@ export const CAMERA = {
     targetHeight: 1.3,
     defaultPitch: 0.12,
   },
+  /** タイトル画面：妹の正面から見上げ、下に兄・上にロロの顔 */
+  title: { fov: 56, ahead: 69, side: 12, height: 1.5, lookAhead: 10, lookHeight: 26, broAhead: 57, broSide: 6 },
   /** 投擲中：兄と妹の両方を画面に。center は兄寄りの重み */
   thrown: {
     fov: 70,

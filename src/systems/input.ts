@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { KEYS, type Action } from '../config/controls'
 
 type Pressed = Record<Action, boolean>
-const empty = (): Pressed => ({ up: false, down: false, left: false, right: false, a: false, b: false, skill1: false, skill2: false, skill3: false, debugCam: false })
+const empty = (): Pressed => ({ up: false, down: false, left: false, right: false, a: false, b: false, skill1: false, skill2: false, skill3: false, skillFire: false, debugCam: false })
 
 interface InputState {
   keys: Pressed
@@ -22,6 +22,9 @@ interface InputState {
   consume: (a: Action) => boolean
   /** 画面ボタンなどから「押した」を注入 */
   press: (a: Action) => void
+  /** ホイールで選択中の技（0..2） */
+  skillSel: number
+  setSkillSel: (n: number) => void
 }
 
 export const useInput = create<InputState>((set, get) => ({
@@ -51,6 +54,8 @@ export const useInput = create<InputState>((set, get) => ({
     return e
   },
   press: (a) => set((s) => ({ _edges: { ...s._edges, [a]: true } })),
+  skillSel: 0,
+  setSkillSel: (skillSel) => set({ skillSel }),
   consumeA: () => {
     const e = get()._aEdge
     if (e) set({ _aEdge: false })

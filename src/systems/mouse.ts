@@ -28,16 +28,30 @@ export function bindMouse(el: HTMLElement): () => void {
     if ((e.target as HTMLElement).closest('.stick, .buttons, .tune')) return
     if (useGame.getState().tuneOpen) return
     dragging = true
-    // 左クリック＝A（溜め）。ロック中でなければまずロックを取る
-    if (e.button === 0) {
-      if (document.pointerLockElement !== el) el.requestPointerLock?.()
-      useInput.getState().set('a', true)
+    if (document.pointerLockElement !== el) el.requestPointerLock?.()
+    const inp = useInput.getState()
+    // 左＝B（飛び乗る／飛び降りる）、右＝A（溜め→ロック→投擲）、中＝選択中の技
+    if (e.button === 0) inp.set('b', true)
+    if (e.button === 2) inp.set('a', true)
+    if (e.button === 1) {
+      e.preventDefault()
+      inp.press('skillFire')
     }
   }
   const onMouseUp = (e: MouseEvent) => {
     dragging = false
-    if (e.button === 0) useInput.getState().set('a', false)
+    const inp = useInput.getState()
+    if (e.button === 0) inp.set('b', false)
+    if (e.button === 2) inp.set('a', false)
   }
+  const onWheel = (e: WheelEvent) => {
+    if (useGame.getState().tuneOpen) return
+    e.preventDefault()
+    const inp = useInput.getState()
+    const n = (inp.skillSel + (e.deltaY > 0 ? 1 : -1) + 3) % 3
+    inp.setSkillSel(n)
+  }
+  const onContext = (e: Event) => e.preventDefault()
   const onTouchStart = (e: TouchEvent) => {
     for (const t of Array.from(e.changedTouches)) {
       const target = document.elementFromPoint(t.clientX, t.clientY)
@@ -62,6 +76,8 @@ export function bindMouse(el: HTMLElement): () => void {
   }
 
   el.addEventListener('mousedown', onMouseDown)
+  el.addEventListener('wheel', onWheel, { passive: false })
+  el.addEventListener('contextmenu', onContext)
   window.addEventListener('mousemove', onMouseMove)
   window.addEventListener('mouseup', onMouseUp)
   el.addEventListener('touchstart', onTouchStart, { passive: true })
@@ -70,6 +86,8 @@ export function bindMouse(el: HTMLElement): () => void {
   el.addEventListener('touchcancel', onTouchEnd)
   return () => {
     el.removeEventListener('mousedown', onMouseDown)
+    el.removeEventListener('wheel', onWheel)
+    el.removeEventListener('contextmenu', onContext)
     window.removeEventListener('mousemove', onMouseMove)
     window.removeEventListener('mouseup', onMouseUp)
     el.removeEventListener('touchstart', onTouchStart)

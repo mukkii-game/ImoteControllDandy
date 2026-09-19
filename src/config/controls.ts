@@ -9,9 +9,11 @@ export const KEYS = {
   /** ボタンB：乗る / 降りる */
   b: ['ShiftLeft', 'ShiftRight', 'KeyE'],
   /** 妹の技 */
-  skill1: ['Digit1'],
-  skill2: ['Digit2'],
-  skill3: ['Digit3'],
+  skill1: ['Digit1', 'Numpad1'],
+  skill2: ['Digit2', 'Numpad2'],
+  skill3: ['Digit3', 'Numpad3'],
+  /** ホイールで選んだ技を発動（ホイールクリック） */
+  skillFire: [],
   /** デバッグ：俯瞰カメラ切替 */
   debugCam: ['KeyP'],
 } as const

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { BRO, SCALE, LOCKON, IMOUTO } from '../config/game'
+import { BRO, SCALE, LOCKON, IMOUTO, CAMERA } from '../config/game'
 import { enemies, killEnemy, lock, clearLocks } from '../systems/enemies'
 import { DUMMY_ENEMIES } from '../config/game'
 import { useModels, candidates } from '../systems/models'
@@ -95,6 +95,16 @@ export function Bro() {
     const pressedA = playing && input.consumeA()
     let moving = 0
 
+    if (st.phase === 'title' && refs.imouto && st.mode === 'ground') {
+      // タイトル：画面下に立って妹を見上げる位置に固定
+      const im = refs.imouto
+      const yaw = im.rotation.y
+      const c = CAMERA.title
+      g.position.set(im.position.x + Math.sin(yaw) * c.broAhead + Math.cos(yaw) * c.broSide, 0, im.position.z + Math.cos(yaw) * c.broAhead - Math.sin(yaw) * c.broSide)
+      yawRef.current = yaw + Math.PI
+      g.rotation.y = yawRef.current
+      vrm?.humanoid.getNormalizedBoneNode('head')?.rotation.set(-0.6, 0, 0)
+    }
     switch (st.mode) {
       case 'ground': {
         const m = readMove()
