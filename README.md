@@ -40,6 +40,7 @@ npm run build    # dist/ に出力（itch.io 用）
 - ロックオン攻撃（サイト→投擲）を肩上（上空）専用にするかどうか。今は肩上のみ。地上は高速タックル
 - 打撃（タックル）と遠隔（投擲）の効果の差をどう付けるか（案は会話ログ参照：戦車は打撃のみ、遠隔はまとめ倍率、打撃で技ゲージ、など）
 - 満洲・山田うどんの画像の権利（公開前に確認）
+- ゲーム中 BGM（GiantLOLO）は仮。公開前に必ず差し替える（public/audio/bgm/play.mp3）
 - ▼ をロックして「あそこへ行け」で行き先を指示する仕組み（製品版で入れるかも。今はオフ：GAME.dest.lockEnabled）。プロトは妹が自動で学校へ向かう（GAME.dest.autoNavigate）
 - 肩上から玉（兄）を発射したあと、妹の体で玉が隠れる問題。暫定は「兄が戻るまで妹を消したまま」（CAMERA.aim.hideDuringThrow）。別案：地上のダッシュと同じく、カメラが兄を遅れて追いかける（CAMERA.thrown.enabled と dashFollowLerp 相当の値で試せる）
 
@@ -67,7 +68,7 @@ npm run build    # dist/ に出力（itch.io 用）
 - 敵セット（仮）：戦闘機は config/waves.ts の FIGHTERS.passes（前から→左から→右後ろから）を順に回り、次の方向へ抜けていく。編隊は FIGHTERS.formation で上下前後にばらす。戦車は 1 グループごとに左右を入れ替える。本格的なエネセットは別途計画
 - 妹は自動で歩く（W 加速・S 減速・A D 旋回）。歩幅・速度は半分ずつ落とした状態。制限時間 11:00
 - 揺れは停止中（CAMERA.shakeAmp = 0）。後で調整する
-- 音：public/audio/se/ に効果音ラボの SE（出典は public/audio/se/SOURCES.md）。無ければ合成音。ロックオン＝決定ボタンを押す26、玉の発射（肩上）＝雷魔法4、建物が壊れた＝2 種類をランダム（一歩で何軒も潰れるので SOUND.building.minGapSec より短い間隔では鳴らさない）。ゲーム中 BGM は public/audio/bgm/play.mp3（GiantLOLO、作者提供）。音量は SOUND（game.ts）
+- 音：public/audio/se/ に効果音ラボの SE（出典は public/audio/se/SOURCES.md）。無ければ合成音。ロックオン＝決定ボタンを押す26、玉の発射（肩上）＝雷魔法4、建物が壊れた＝2 種類をランダム（一歩で何軒も潰れるので SOUND.building.minGapSec より短い間隔では鳴らさない）。ゲーム中 BGM は public/audio/bgm/play.mp3（GiantLOLO。知人からもらった仮の曲で、公開時に差し替え必須）。音量は SOUND（game.ts）
 - 射撃モードの消え方／戻り方は短いフェード（CAMERA.aim.fadeSec / showFadeSec）：前半はモデルがシルエット色に染まり、後半はシルエットが薄れて消える。戻るときは逆順（systems/silhouette.ts の blend）
 - モデル：妹は VRoid Hub のショート（public/models/custom/imouto.vrm、クレジット必要・作者名は未記入）。兄は Seed-san（ロボアーム非表示・服を黒く）。models/custom/bro.vrm を置けば差し替え
 - 街と車：Kenney（CC0）の City Kit Suburban / Commercial / Car Kit を public/models/kit/ に置き、家・ビル（STAGE.kit）とパトカー（manifest.json）に使用。戦車・戦闘機はまだプリミティブ（manifest.json に glb を書けば差し替わる）

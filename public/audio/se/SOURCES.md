@@ -10,9 +10,13 @@
 | jump.mp3 | ジャンプ | 風を切る音（約 1.2 秒） | https://soundeffect-lab.info/sound/battle/ | https://soundeffect-lab.info/sound/battle/mp3/jump1.mp3 |
 | land.mp3 | ジャンプの着地 | スタッ（約 0.4 秒） | https://soundeffect-lab.info/sound/battle/ | https://soundeffect-lab.info/sound/battle/mp3/landing1.mp3 |
 | whoosh.mp3 | ナイフを投げる | ヒュッ（約 0.4 秒） | https://soundeffect-lab.info/sound/battle/battle2.html | https://soundeffect-lab.info/sound/battle/mp3/knife-throw1.mp3 |
-| lock.mp3 | 決定ボタンを押す26 | ロックオン音（作者から受け取ったファイル。効果音ラボの同名素材） | https://soundeffect-lab.info/sound/button/ | - |
-| fire.mp3 | 雷魔法4 | 兄の玉の発射音（作者から受け取ったファイル） | https://soundeffect-lab.info/sound/battle/ | - |
-| building1.mp3 / building2.mp3 | 建物が壊れる音 ×2 | 建物が潰れた・砕けたときにランダムで片方（作者から受け取ったファイル） | https://soundeffect-lab.info/sound/battle/ | - |
+| lock.mp3 | 決定ボタンを押す26 | ロックオン音 | https://soundeffect-lab.info/sound/button/ | - |
+| fire.mp3 | 雷魔法4 | 兄の玉の発射音（肩上から） | https://soundeffect-lab.info/sound/battle/ | - |
+| building1.mp3 / building2.mp3 | 建物が壊れる音 ×2 | 建物が潰れた・砕けたときにランダムで片方 | https://soundeffect-lab.info/sound/battle/ | - |
+
+## BGM（public/audio/bgm/play.mp3）
+
+GiantLOLO は知人からもらった仮の曲。**そのままでは公開できないので、公開時に差し替える**（voices.json の bgm.play を差し替え先のファイルに向ける）。
 | chime.mp3 | 学校のチャイム | キンコンカンコン（約 26 秒） | https://soundeffect-lab.info/sound/anime/ | https://soundeffect-lab.info/sound/anime/mp3/school-chime1.mp3 |
 
 ## 差し替え候補（同サイト）
