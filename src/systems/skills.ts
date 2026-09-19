@@ -16,23 +16,32 @@ export class SkillRunner {
     return this.active === null && this.cooldown[id] <= 0
   }
 
+  private shoeLaunched = false
+
   start(id: SkillId, pos: THREE.Vector3, yaw: number) {
     if (!this.canUse(id)) return false
     this.active = id
     this.t = 0
     this.hitClock = 0
+    this.shoeLaunched = false
     this.cooldown[id] = SKILLS[id].cooldown
     useGame.getState().setActiveSkill(id)
     emit('imouto.skill', { id })
     if (id === 'cry') stunAll(SKILLS.cry.stunSec)
-    if (id === 'shoe') emit('shoe.launch', { x: pos.x, y: pos.y + 8, z: pos.z, yaw })
+    void pos
+    void yaw
     return true
   }
 
-  tick(dt: number, pos: THREE.Vector3) {
+  tick(dt: number, pos: THREE.Vector3, yaw = 0) {
     for (const k of Object.keys(this.cooldown) as SkillId[]) this.cooldown[k] = Math.max(0, this.cooldown[k] - dt)
     if (this.active) {
       this.t += dt
+      // 靴飛ばし：脚を後ろへ振って前へ蹴り出し切った瞬間に靴が飛ぶ
+      if (this.active === 'shoe' && !this.shoeLaunched && this.t >= SKILLS.shoe.windBackSec + SKILLS.shoe.kickSec) {
+        this.shoeLaunched = true
+        emit('shoe.launch', { x: pos.x + Math.sin(yaw) * 6, y: pos.y + 8, z: pos.z + Math.cos(yaw) * 6, yaw })
+      }
       if (this.active === 'skip') {
         this.hitClock += dt
         if (this.hitClock >= SKILLS.skip.hitEvery) {

@@ -74,6 +74,7 @@ npm run build    # dist/ に出力（itch.io 用）
 - 被弾：SPEC 通り 0.5 秒減速（HIT.slowSec / slowFactor）＋驚き顔＋「いたっ」の声（line_imouto_hit、SOUND.hitVoiceMinGapSec で連呼を抑える）。ダメージは無い
 - 敵の弾はミサイル型（灰色の胴体＋赤い先端、PROJECTILE.bodyRadius 0.9m）で黄色い光をまとい、速さは 28〜30 m/s。爆弾は黒い玉（FIGHTERS.bomb）。見た目は entities/Projectiles.tsx が登録簿（systems/projectiles.ts）からまとめて描く。妹の体への着弾は体の表面の点（imoutoImpact）で、爆発は兄と同じくらい（HIT.explosionRadius 5m）＋赤っぽい煙（HIT.puffs、オレンジ→赤→暗い赤）と、少し遅れて出る灰色の煙（HIT.grayPuffs / grayDelaySec）の 2 段。「痛っ」は効果音ラボの SE 5 種からランダム、鳴ったら 3 秒は鳴らさない（SOUND.hitVoiceMinGapSec）。タックル音は 2 種を順繰り（SOUND.tackleSounds）
 - 敵の弾（爆弾・ミサイル・砲弾）は systems/projectiles.ts に登録され、地上のバルカンで撃ち落とせる（サイトに入れば自動照準の対象、敵より優先。撃ち落とすと爆発＋BRO.vulcan.projectileScore）
+- 「なぎ払え」（靴飛ばし、SKILLS.shoe）：右脚を後ろへ振りかぶって（windBackSec）から前へ蹴り出し（kickSec）、蹴り切った瞬間に靴が飛ぶ（skills.ts の tick で発射）。靴の真下には一定距離ごとに地面から火柱（pillar：高さ 85m、加算合成の円柱 2 重）。通り道の敵と建物（breakRadius）を壊し、破片と本体は通常の 2 倍の高さへ（power。enemy.hit / building.* の power で Debris が上向き速度を倍にする）
 - 「泣け」（TEARS、entities/Tears.tsx）：「うえーんうえーん」の声と吹き出し、目から水色の涙の玉 70 個が四方へ一度に飛び散り、当たった敵は一撃（従来の全敵スタンもそのまま）
 - 学校は超巨大（GAME.school：幅 900・高さ 220・時計塔 180）でフォグを受けない（fog={false}）。カメラ far 3400
 - 軽量化その 3：260m より遠い区画は箱（STAGE.lodDist）、720m より遠い区画は描かない（drawDist）、フォグは 240〜720m（fogNear/fogFar）で drawDist と揃えて区画の出入りを隠す

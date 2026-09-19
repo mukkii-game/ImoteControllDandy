@@ -9,8 +9,10 @@ export interface GameEvents {
   'bro.jump': void
   /** ロックオン攻撃開始。from: 肩上（妹が掴んで投げる）か地上（兄が自力で跳ぶ）か */
   'bro.throw': { count: number; from: 'shoulder' | 'ground' }
-  /** 兄が敵に着弾。dir があれば兄の攻撃（その方向へノックバックして吹っ飛ぶ） */
-  'enemy.hit': { id: number; x: number; y: number; z: number; dir?: [number, number, number] }
+  /** 兄が敵に着弾。dir があれば兄の攻撃（その方向へノックバックして吹っ飛ぶ）。power=吹っ飛ぶ高さの倍率（省略で 1） */
+  'enemy.hit': { id: number; x: number; y: number; z: number; dir?: [number, number, number]; power?: number }
+  /** この点の周りの建物を壊す（靴飛ばしなど）。power=破片の飛ぶ高さの倍率 */
+  'building.hitAt': { x: number; z: number; r: number; power?: number }
   /** 地上の高速タックル開始 */
   'bro.tackle': void
   /** 地上のバルカン：1 発撃った／敵に当たった（まだ倒れていない） */
@@ -36,9 +38,9 @@ export interface GameEvents {
   'game.clear': void
   'game.late': void
   /** 建物が砕ける（ブロック破片を出す） */
-  'building.break': { x: number; z: number; w: number; h: number; d: number; color: string }
+  'building.break': { x: number; z: number; w: number; h: number; d: number; color: string; power?: number }
   /** 低い家が踏み潰される（屋根が飛び、壁の破片が散る） */
-  'building.crush': { x: number; z: number; w: number; h: number; d: number; color: string; roofColor?: string }
+  'building.crush': { x: number; z: number; w: number; h: number; d: number; color: string; roofColor?: string; power?: number }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

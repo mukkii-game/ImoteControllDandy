@@ -267,7 +267,7 @@ function Buildings({ list, kit }: { list: Building[]; kit: KitType[] }) {
   const cullClock = useRef(1)
 
   /** 足元円内の建物を潰す／砕く。低い建物はぺちゃんこ、高い建物はブロックに砕ける（近くの区画だけ調べる） */
-  const hitBuildings = (x: number, z: number, r: number) => {
+  const hitBuildings = (x: number, z: number, r: number, power = 1) => {
     let n = 0
     for (const i of nearbyBuildings(x, z)) {
       const b = list[i]
@@ -281,7 +281,7 @@ function Buildings({ list, kit }: { list: Building[]; kit: KitType[] }) {
         crushed.current.set(i, 0)
         // 音用（id -1 は建物）。見た目は building.crush 側（屋根が飛ぶ・壁の破片・砂煙）
         emit('enemy.hit', { id: -1, x: b.x, y: 4, z: b.z })
-        emit('building.crush', { x: b.x, z: b.z, w: b.w, h: b.h, d: b.d, color: b.color, roofColor: b.roofColor })
+        emit('building.crush', { x: b.x, z: b.z, w: b.w, h: b.h, d: b.d, color: b.color, roofColor: b.roofColor, power })
       } else {
         broken.current.add(i)
         const s = slot.get(i)
@@ -297,13 +297,15 @@ function Buildings({ list, kit }: { list: Building[]; kit: KitType[] }) {
             s[2].instanceMatrix.needsUpdate = true
           }
         }
-        emit('building.break', { x: b.x, z: b.z, w: b.w, h: b.h, d: b.d, color: b.color })
+        emit('building.break', { x: b.x, z: b.z, w: b.w, h: b.h, d: b.d, color: b.color, power })
       }
     }
     if (n > 0) useGame.getState().addScore(-GAME.crushPenalty * n)
   }
 
   useEffect(() => on('imouto.step', ({ x, z }) => hitBuildings(x, z, GAME.crushRadius)), [list]) // eslint-disable-line react-hooks/exhaustive-deps
+  // 靴飛ばしなど：任意の点の周りの建物を壊す
+  useEffect(() => on('building.hitAt', ({ x, z, r, power }) => hitBuildings(x, z, r, power)), [list]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useFrame((_, dt) => {
     // 遠い区画は描かない・影は近い区画だけ（0.25 秒ごと）

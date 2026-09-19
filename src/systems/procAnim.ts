@@ -1,6 +1,7 @@
 import type { VRM } from '@pixiv/three-vrm'
 import type { VRMHumanBoneName } from '@pixiv/three-vrm'
 import * as THREE from 'three'
+import { SKILLS } from '../config/skills'
 
 export interface WalkParams {
   legSwing: number
@@ -188,17 +189,38 @@ export function applySkillPose(vrm: VRM, id: 'skip' | 'shoe' | 'cry', t: number,
     return
   }
   if (id === 'shoe') {
-    const k = Math.min(1, t / 0.35)
-    const kick = Math.sin(k * Math.PI * 0.5)
+    // 右脚を後ろへ振りかぶり（windBackSec）→ 一気に前へ蹴り出す（kickSec）→ 蹴り上げた形で少し止まる
+    const wb = SKILLS.shoe.windBackSec
+    const ks = SKILLS.shoe.kickSec
+    let leg: number // 上腿の角度（+ が後ろ、- が前上）
+    let knee: number
+    let lean: number
+    if (t < wb) {
+      const k = Math.sin(Math.min(1, t / wb) * Math.PI * 0.5)
+      leg = 1.1 * k
+      knee = 1.3 * k
+      lean = -0.25 * k // 上体は少し前かがみ
+    } else if (t < wb + ks) {
+      const k = Math.min(1, (t - wb) / ks)
+      const e = k * k // 加速して振り抜く
+      leg = THREE.MathUtils.lerp(1.1, -2.0, e)
+      knee = THREE.MathUtils.lerp(1.3, 0.1, e)
+      lean = THREE.MathUtils.lerp(-0.25, 0.4, e)
+    } else {
+      const k = Math.min(1, (t - wb - ks) / 0.5)
+      leg = THREE.MathUtils.lerp(-2.0, -1.2, k)
+      knee = 0.1
+      lean = THREE.MathUtils.lerp(0.4, 0.2, k)
+    }
     if (hips) hips.position.y = base
-    b('rightUpperLeg')?.rotation.set(-2.0 * kick, 0, 0)
-    b('rightLowerLeg')?.rotation.set(0.2 * (1 - kick), 0, 0)
-    b('leftUpperLeg')?.rotation.set(0.15 * kick, 0, 0)
+    b('rightUpperLeg')?.rotation.set(leg, 0, 0)
+    b('rightLowerLeg')?.rotation.set(knee, 0, 0)
+    b('leftUpperLeg')?.rotation.set(0.15, 0, 0)
     b('leftLowerLeg')?.rotation.set(0, 0, 0)
-    b('spine')?.rotation.set(0.35 * kick, 0, 0)
-    // 腕でバランス（後ろへ）
-    b('leftUpperArm')?.rotation.set(0.9 * kick * g, 0, -1.2 * g)
-    b('rightUpperArm')?.rotation.set(0.9 * kick * g, 0, 1.2 * g)
+    b('spine')?.rotation.set(lean, 0, 0)
+    // 腕でバランス（脚と逆に振る）
+    b('leftUpperArm')?.rotation.set(-leg * 0.5 * g, 0, -1.2 * g)
+    b('rightUpperArm')?.rotation.set(-leg * 0.5 * g, 0, 1.2 * g)
     return
   }
   // cry

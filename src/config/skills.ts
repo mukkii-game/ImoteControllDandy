@@ -17,14 +17,22 @@ export const SKILLS = {
   shoe: {
     key: '2',
     label: '靴飛ばし',
-    duration: 1.0,
+    duration: 1.4,
     cooldown: 12,
+    /** モーション：脚を後ろへ振る秒数（windBackSec）→ 前へ蹴り出す秒数（kickSec）。蹴り出し切った瞬間に靴が飛ぶ */
+    windBackSec: 0.35,
+    kickSec: 0.2,
     /** 靴の速度（m/s）・飛距離（m）・当たり幅（m） */
     speed: 220,
     range: 700,
     width: 40,
     /** 靴の大きさ（m） */
     size: 14,
+    /** 靴が通った道の建物を砕く半径（m）と、当たった敵・建物の吹っ飛ぶ高さの倍率（通常の何倍か） */
+    breakRadius: 30,
+    power: 2,
+    /** 靴の後ろに続く火柱：何 m ごとに 1 本、高さ・半径（m）、消えるまでの秒数、色 */
+    pillar: { every: 22, height: 85, radius: 9, lifeSec: 0.9, color: '#ff7a1a', coreColor: '#fff0a0' },
   },
   cry: {
     key: '3',

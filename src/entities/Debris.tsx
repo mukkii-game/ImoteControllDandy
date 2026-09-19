@@ -55,7 +55,7 @@ export function Debris() {
       life,
       g: 1,
     })
-    const offBreak = on('building.break', ({ x, z, w, h, d, color }) => {
+    const offBreak = on('building.break', ({ x, z, w, h, d, color, power = 1 }) => {
       const n = GAME.debrisPerBuilding
       const cols = 2
       const rows = Math.max(2, Math.round(n / 2))
@@ -63,41 +63,41 @@ export function Debris() {
         const cx = x + ((i % cols) - 0.5) * (w / 2)
         const cy = (Math.floor(i / cols) + 0.5) * (h / rows)
         const cz = z + rnd(d * 0.25)
-        push(boxes.current, MAX_BOX, piece(new THREE.Vector3(cx, cy, cz), new THREE.Vector3(rnd(15), 8 + Math.random() * 18, rnd(15)), new THREE.Vector3(w / cols, h / rows, d * 0.6), color))
+        push(boxes.current, MAX_BOX, piece(new THREE.Vector3(cx, cy, cz), new THREE.Vector3(rnd(15), (8 + Math.random() * 18) * power, rnd(15)), new THREE.Vector3(w / cols, h / rows, d * 0.6), color))
       }
     })
-    const offCrush = on('building.crush', ({ x, z, w, h, d, color, roofColor }) => {
+    const offCrush = on('building.crush', ({ x, z, w, h, d, color, roofColor, power = 1 }) => {
       const c = DEBRIS.house
       // 屋根：丸ごと飛び上がって回転しながら落ちる
       if (roofColor) {
-        const r = piece(new THREE.Vector3(x, h + w * 0.22, z), new THREE.Vector3(rnd(c.spread * 0.5), c.roofUp, rnd(c.spread * 0.5)), new THREE.Vector3(w * 0.78, w * 0.45, d * 0.78), roofColor, GAME.debrisSec + 1, 3)
+        const r = piece(new THREE.Vector3(x, h + w * 0.22, z), new THREE.Vector3(rnd(c.spread * 0.5), c.roofUp * power, rnd(c.spread * 0.5)), new THREE.Vector3(w * 0.78, w * 0.45, d * 0.78), roofColor, GAME.debrisSec + 1, 3)
         r.rot.set(0, Math.PI / 4, 0)
         push(roofs.current, MAX_ROOF, r)
       }
       // 壁：四方へ散る
       for (let i = 0; i < c.wallPieces; i++) {
         const a = (i / c.wallPieces) * Math.PI * 2
-        const vel = new THREE.Vector3(Math.cos(a) * c.spread * (0.6 + Math.random() * 0.6), 6 + Math.random() * 10, Math.sin(a) * c.spread * (0.6 + Math.random() * 0.6))
+        const vel = new THREE.Vector3(Math.cos(a) * c.spread * (0.6 + Math.random() * 0.6), (6 + Math.random() * 10) * power, Math.sin(a) * c.spread * (0.6 + Math.random() * 0.6))
         const size = new THREE.Vector3(w * (0.2 + Math.random() * 0.2), h * (0.3 + Math.random() * 0.4), d * 0.15)
         push(boxes.current, MAX_BOX, piece(new THREE.Vector3(x + Math.cos(a) * w * 0.4, h * 0.5, z + Math.sin(a) * d * 0.4), vel, size, color))
       }
     })
-    const offHit = on('enemy.hit', ({ id, x, y, z, dir }) => {
+    const offHit = on('enemy.hit', ({ id, x, y, z, dir, power = 1 }) => {
       if (id < 0) return
       const kind = getEnemy(id)?.kind ?? 'dummy'
       const parts = DEBRIS.parts[kind] ?? DEBRIS.parts.dummy
       const b = DEBRIS.burst
       const air = DEBRIS.air.kinds.includes(kind)
-      // 兄の攻撃（地上の敵）：本体が食らった方向へノックバックして上へも派手に吹っ飛ぶ
+      // 兄の攻撃（地上の敵）：本体が食らった方向へノックバックして上へも派手に吹っ飛ぶ（power で高さの倍率）
       const body = dir && !air && DEBRIS.knockback.body[kind]
       if (body && dir) {
         const kb = DEBRIS.knockback
-        const vel = new THREE.Vector3(dir[0] * kb.speed, kb.up + Math.max(0, dir[1]) * kb.speed, dir[2] * kb.speed)
+        const vel = new THREE.Vector3(dir[0] * kb.speed, (kb.up + Math.max(0, dir[1]) * kb.speed) * power, dir[2] * kb.speed)
         push(boxes.current, MAX_BOX, piece(new THREE.Vector3(x, Math.max(2, y), z), vel, new THREE.Vector3(...body.size), body.color, GAME.debrisSec + 1, 7))
       }
       // 空中の敵：その場で爆発して離散、半分の重力でパラパラ落ちる（やっつけた手応え）
       const spread = air ? DEBRIS.air.spread : b.spread
-      const up = air ? DEBRIS.air.up : b.up
+      const up = (air ? DEBRIS.air.up : b.up) * power
       for (const part of parts) {
         for (let i = 0; i < part.n; i++) {
           const vel = new THREE.Vector3(rnd(spread), up * (air ? rnd(1) : 0.5 + Math.random()), rnd(spread))

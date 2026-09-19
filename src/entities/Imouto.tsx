@@ -209,7 +209,7 @@ export function Imouto() {
         emit('imouto.say', { text: lines[i], key: i === 0 ? 'yawn' : 'sleepy' })
       }
     } else titleSayT.current = 0.5
-    skills.current.tick(dt, g.position)
+    skills.current.tick(dt, g.position, g.rotation.y)
     const sk = skills.current.active
     const skT = skills.current.t
 
