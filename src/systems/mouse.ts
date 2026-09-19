@@ -30,9 +30,9 @@ export function bindMouse(el: HTMLElement): () => void {
     dragging = true
     if (document.pointerLockElement !== el) el.requestPointerLock?.()
     const inp = useInput.getState()
-    // 左＝B（飛び乗る／飛び降りる）、右＝A（溜め→ロック→投擲）、中＝選択中の技
-    if (e.button === 0) inp.set('b', true)
-    if (e.button === 2) inp.set('a', true)
+    // 左＝A（押している間サイトを動かしてロック→離して投擲）、右＝B（飛び乗る／飛び降りる）、中＝選択中の技
+    if (e.button === 0) inp.set('a', true)
+    if (e.button === 2) inp.set('b', true)
     if (e.button === 1) {
       e.preventDefault()
       inp.press('skillFire')
@@ -41,8 +41,8 @@ export function bindMouse(el: HTMLElement): () => void {
   const onMouseUp = (e: MouseEvent) => {
     dragging = false
     const inp = useInput.getState()
-    if (e.button === 0) inp.set('b', false)
-    if (e.button === 2) inp.set('a', false)
+    if (e.button === 0) inp.set('a', false)
+    if (e.button === 2) inp.set('b', false)
   }
   const onWheel = (e: WheelEvent) => {
     if (useGame.getState().tuneOpen) return

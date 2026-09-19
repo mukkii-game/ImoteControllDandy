@@ -57,8 +57,8 @@ export function Overlays() {
           </div>
           <div className="howto">
             <div>WASD：兄の移動 / 肩の上では妹の方向指示（A D 旋回・W 加速・S 減速）</div>
-            <div>マウス：カメラ　　左クリック / Shift：肩に飛び乗る・飛び降りる</div>
-            <div>右クリック長押し：サイトで敵をロック → 離すと妹が兄を投げる</div>
+            <div>マウス：カメラ　　右クリック / Shift：肩に飛び乗る・飛び降りる</div>
+            <div>左クリック長押し：サイトを動かして敵をロック → 離すと妹が兄を投げる</div>
             <div>1 / 2 / 3（テンキー可）：スキップ・靴飛ばし・泣く　ホイールで選択・ホイールクリックで発動</div>
             <div>制限時間 {fmt(GAME.timeLimitSec)}。校門をまたげばクリア</div>
           </div>
