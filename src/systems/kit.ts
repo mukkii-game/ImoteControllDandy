@@ -6,6 +6,8 @@ export interface KitEntry {
   url: string
   scale?: number
   yaw?: number
+  /** 上下の補正（m）。タイヤが地面に埋まる時などに */
+  y?: number
 }
 export type KitManifest = Partial<Record<'police' | 'tank' | 'jet', KitEntry>>
 
@@ -35,6 +37,7 @@ export function useKitModel(key: keyof KitManifest): { scene: THREE.Object3D; en
         const s = entry.scale ?? 1
         scene.scale.setScalar(s)
         scene.rotation.y = entry.yaw ?? 0
+        scene.position.y = entry.y ?? 0
         scene.traverse((o) => {
           if ((o as THREE.Mesh).isMesh) o.castShadow = true
         })
