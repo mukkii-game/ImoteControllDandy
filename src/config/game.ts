@@ -596,6 +596,8 @@ export const DEBUG = {
 
 /** 音量とタイミング（ファイルの対応は config/voices.json） */
 export const SOUND = {
+  /** 全体の音量（0..1）。声・効果音・BGM すべてに掛かる */
+  masterVolume: 0.5,
   /** ゲーム中 BGM の音量（0..1） */
   bgmVolume: 0.45,
   /** 兄の玉の発射音（雷）の音量 */

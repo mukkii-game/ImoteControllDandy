@@ -24,6 +24,17 @@ function ac(): AudioContext | null {
   return ctx
 }
 
+/** 全部の音がここを通る（全体音量 SOUND.masterVolume） */
+let masterGain: GainNode | null = null
+function dest(c: AudioContext): GainNode {
+  if (!masterGain) {
+    masterGain = c.createGain()
+    masterGain.connect(c.destination)
+  }
+  masterGain.gain.value = SOUND.masterVolume
+  return masterGain
+}
+
 async function load(url: string): Promise<AudioBuffer | null> {
   const c = ac()
   if (!c) return null
@@ -56,7 +67,7 @@ export async function playVoice(name: string, volume = 1): Promise<boolean> {
   src.buffer = buf
   const g = c.createGain()
   g.gain.value = volume
-  src.connect(g).connect(c.destination)
+  src.connect(g).connect(dest(c))
   src.start()
   return true
 }
@@ -74,7 +85,7 @@ export async function playBgm(name: string, volume = 0.5) {
   bgm.loop = true
   bgmGain = c.createGain()
   bgmGain.gain.value = volume
-  bgm.connect(bgmGain).connect(c.destination)
+  bgm.connect(bgmGain).connect(dest(c))
   bgm.start()
 }
 
@@ -103,7 +114,7 @@ export function seStomp(strength = 1) {
   const t = c.currentTime
   const master = c.createGain()
   master.gain.value = 1.2 * strength
-  master.connect(c.destination)
+  master.connect(dest(c))
   // 1) 衝撃：ピッチが急落するサブ
   const o = c.createOscillator()
   o.type = 'sine'
@@ -162,7 +173,7 @@ export function seBoom() {
   const t = c.currentTime
   const master = c.createGain()
   master.gain.value = 0.9
-  master.connect(c.destination)
+  master.connect(dest(c))
   // 炸裂
   const n = c.createBufferSource()
   n.buffer = noise(c, 0.9)
@@ -219,7 +230,7 @@ export function seWhoosh(pitch = 1) {
   g.gain.setValueAtTime(0.0001, t)
   g.gain.exponentialRampToValueAtTime(0.4, t + 0.08)
   g.gain.exponentialRampToValueAtTime(0.001, t + 0.4)
-  n.connect(f).connect(g).connect(c.destination)
+  n.connect(f).connect(g).connect(dest(c))
   n.start(t)
 }
 
@@ -237,7 +248,7 @@ export function seVulcan() {
   const g = c.createGain()
   g.gain.setValueAtTime(0.16, t)
   g.gain.exponentialRampToValueAtTime(0.001, t + 0.05)
-  n.connect(f).connect(g).connect(c.destination)
+  n.connect(f).connect(g).connect(dest(c))
   n.start(t)
   const o = c.createOscillator()
   o.type = 'square'
@@ -246,7 +257,7 @@ export function seVulcan() {
   const og = c.createGain()
   og.gain.setValueAtTime(0.08, t)
   og.gain.exponentialRampToValueAtTime(0.001, t + 0.045)
-  o.connect(og).connect(c.destination)
+  o.connect(og).connect(dest(c))
   o.start(t)
   o.stop(t + 0.05)
 }
@@ -262,7 +273,7 @@ export function seLock(index = 0) {
   const g = c.createGain()
   g.gain.setValueAtTime(0.12, t)
   g.gain.exponentialRampToValueAtTime(0.001, t + 0.09)
-  o.connect(g).connect(c.destination)
+  o.connect(g).connect(dest(c))
   o.start(t)
   o.stop(t + 0.1)
 }
@@ -280,7 +291,7 @@ export function seChime() {
     const g = c.createGain()
     g.gain.setValueAtTime(0.25, t)
     g.gain.exponentialRampToValueAtTime(0.001, t + 1.2)
-    o.connect(g).connect(c.destination)
+    o.connect(g).connect(dest(c))
     o.start(t)
     o.stop(t + 1.25)
   })
