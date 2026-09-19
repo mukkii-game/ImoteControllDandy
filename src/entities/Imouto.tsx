@@ -125,7 +125,7 @@ export function Imouto() {
     }
   }, [vrm, choice, setLoaded, setResolved, scale])
 
-  useEffect(() => on('imouto.hit', () => { hitTimer.current = HIT.slowSec }), [])
+  useEffect(() => on('imouto.hit', () => { hitTimer.current = HIT.faceSec }), [])
   useEffect(() => on('bro.throw', () => { throwK.current = 0 }), [])
 
   useFrame((_, dt) => {
@@ -161,7 +161,7 @@ export function Imouto() {
 
     g.rotation.y -= m.x * IMOUTO.turnSpeed * dt
     hitTimer.current = Math.max(0, hitTimer.current - dt)
-    let speedMul = hitTimer.current > 0 ? HIT.slowFactor : 1
+    let speedMul = 1
     if (sk === 'skip') speedMul = SKILLS.skip.speedMul
     if (sk === 'shoe' || sk === 'cry') speedMul = 0
     // 自動歩行：常に前進。W で加速、S で減速。兄は方向だけ変える

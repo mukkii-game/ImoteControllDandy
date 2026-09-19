@@ -15,14 +15,20 @@ const nextT = new THREE.Vector3()
 const m4 = new THREE.Matrix4()
 const q = new THREE.Quaternion()
 
-/** 妹ローカルの点列 → ワールド（出現時の妹の位置・向きで固定） */
-function buildCurve(origin: THREE.Vector3, yaw: number): THREE.CatmullRomCurve3 {
-  const pts = FIGHTERS.path.map(([x, y, z]) => {
-    const wx = origin.x + Math.cos(yaw) * x + Math.sin(yaw) * z
-    const wz = origin.z - Math.sin(yaw) * x + Math.cos(yaw) * z
-    return new THREE.Vector3(wx, y, wz)
-  })
+/** 妹ローカルの点列（x=右, z=前）。ワールドへは毎フレーム妹の位置・向きで変換するので、編隊は妹に付いて回る */
+function buildCurve(): THREE.CatmullRomCurve3 {
+  const pts = FIGHTERS.path.map(([x, y, z]) => new THREE.Vector3(x, y, z))
   return new THREE.CatmullRomCurve3(pts, true, 'catmullrom', 0.5)
+}
+const localP = new THREE.Vector3()
+const localN = new THREE.Vector3()
+function toWorld(local: THREE.Vector3, out: THREE.Vector3) {
+  const im = refs.imouto
+  const yaw = im?.rotation.y ?? 0
+  const ox = im?.position.x ?? 0
+  const oz = im?.position.z ?? 0
+  out.set(ox + Math.cos(yaw) * local.x + Math.sin(yaw) * local.z, local.y, oz - Math.sin(yaw) * local.x + Math.cos(yaw) * local.z)
+  return out
 }
 
 /** 機体（プリミティブ。ブルーインパルス風の白×青） */
@@ -35,15 +41,15 @@ function JetMesh() {
     <group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} castShadow>
         <coneGeometry args={[s * 0.09, s, 10]} />
-        <meshToonMaterial color="#f4f6ff" gradientMap={grad} />
+        <meshToonMaterial color="#1f3fbf" gradientMap={grad} />
       </mesh>
       <mesh position={[0, 0, -s * 0.1]} castShadow>
-        <boxGeometry args={[s * 0.8, s * 0.03, s * 0.28]} />
-        <meshToonMaterial color="#2a5bd7" gradientMap={grad} />
+        <boxGeometry args={[s * 0.8, s * 0.04, s * 0.28]} />
+        <meshToonMaterial color="#f4f6ff" gradientMap={grad} />
       </mesh>
       <mesh position={[0, s * 0.09, -s * 0.4]} castShadow>
-        <boxGeometry args={[s * 0.03, s * 0.2, s * 0.16]} />
-        <meshToonMaterial color="#2a5bd7" gradientMap={grad} />
+        <boxGeometry args={[s * 0.04, s * 0.2, s * 0.16]} />
+        <meshToonMaterial color="#e63946" gradientMap={grad} />
       </mesh>
       <mesh position={[0, s * 0.05, s * 0.15]}>
         <sphereGeometry args={[s * 0.07, 8, 8]} />
@@ -70,10 +76,7 @@ interface Pilot {
 export function Fighters() {
   const [gen, setGen] = useState(0)
   const [mounted, setMounted] = useState(0)
-  const curve = useMemo(() => {
-    const im = refs.imouto
-    return buildCurve(im?.position ?? new THREE.Vector3(), im?.rotation.y ?? 0)
-  }, [gen])
+  const curve = useMemo(() => buildCurve(), [gen])
   const groups = useRef<THREE.Group[]>([])
   const ents = useRef<Enemy[]>([])
   const u = useRef(0)
@@ -132,7 +135,13 @@ export function Fighters() {
     }
     // 編隊の位置
     const stunned = isStunned()
-    u.current = (u.current + ((stunned ? FIGHTERS.speed * 0.15 : FIGHTERS.speed) * dt) / len) % 1
+    // 妹の正面付近では減速してホバリング気味に（ロックオンしやすく、大きく見える）
+    curve.getPointAt(u.current, localP)
+    const ang = Math.abs(Math.atan2(localP.x, localP.z)) * (180 / Math.PI)
+    const inFront = localP.z > 0 && ang < FIGHTERS.hoverAngleDeg && Math.hypot(localP.x, localP.z) < FIGHTERS.hoverDist
+    let spd = FIGHTERS.speed * (inFront ? FIGHTERS.hoverSpeedMul : 1)
+    if (stunned) spd *= 0.15
+    u.current = (u.current + (spd * dt) / len) % 1
     const alive = ents.current.filter((e) => e.alive)
     ents.current.forEach((e, i) => {
       const g = groups.current[i]
@@ -142,13 +151,16 @@ export function Fighters() {
       const side = i === 0 ? 0 : i % 2 ? -1 : 1
       const du = (row * FIGHTERS.spacing * 1.2) / len
       const uu = (u.current - du + 1) % 1
-      curve.getPointAt(uu, e.pos)
-      curve.getTangentAt(uu, tangent)
+      curve.getPointAt(uu, localP)
+      toWorld(localP, e.pos)
+      curve.getPointAt((uu + 0.01) % 1, localN)
+      toWorld(localN, nextT)
+      tangent.subVectors(nextT, e.pos).normalize()
       const right = new THREE.Vector3().crossVectors(tangent, up).normalize()
       e.pos.addScaledVector(right, side * row * FIGHTERS.spacing)
+      nextT.addScaledVector(right, side * row * FIGHTERS.spacing)
       g.position.copy(e.pos)
       // 向きとバンク
-      curve.getPointAt((uu + 0.01) % 1, nextT)
       m4.lookAt(nextT, e.pos, up)
       q.setFromRotationMatrix(m4)
       g.quaternion.copy(q)
@@ -162,7 +174,7 @@ export function Fighters() {
     if (im && alive.length > 0 && fireTimer.current <= 0 && !stunned) {
       fireTimer.current = FIGHTERS.missileInterval
       const shooter = alive[Math.floor(Math.random() * alive.length)]
-      const target = new THREE.Vector3(im.position.x, im.position.y + 35, im.position.z)
+      const target = new THREE.Vector3(im.position.x + (Math.random() - 0.5) * 10, im.position.y + 6 + Math.random() * 48, im.position.z + (Math.random() - 0.5) * 8)
       const vel = target.sub(shooter.pos).normalize().multiplyScalar(FIGHTERS.missileSpeed)
       missiles.current.push({ pos: shooter.pos.clone(), vel, t: 0 })
     }
@@ -170,7 +182,7 @@ export function Fighters() {
       const ms = missiles.current[i]
       ms.t += dt
       ms.pos.addScaledVector(ms.vel, dt)
-      const hit = im && Math.hypot(ms.pos.x - im.position.x, ms.pos.y - (im.position.y + 35), ms.pos.z - im.position.z) < HIT.radius
+      const hit = im && Math.hypot(ms.pos.x - im.position.x, ms.pos.z - im.position.z) < HIT.radius * 0.5 && ms.pos.y > 0 && ms.pos.y < 60
       if (hit) emit('imouto.hit', { x: ms.pos.x, y: ms.pos.y, z: ms.pos.z })
       if (hit || ms.t > 6 || ms.pos.y < 0) missiles.current.splice(i, 1)
     }

@@ -261,8 +261,8 @@ export function seChime() {
 export function bindAudio(): () => void {
   const offs = [
     on('imouto.step', ({ strength }) => {
-      playVoice('se.step', Math.min(1, 0.5 + strength)).then((ok) => {
-        if (!ok) seStomp(Math.min(1, strength))
+      playVoice('se.step', Math.min(1, 0.5 + strength) * 0.5).then((ok) => {
+        if (!ok) seStomp(Math.min(1, strength) * 0.5)
       })
     }),
     on('enemy.hit', () => {

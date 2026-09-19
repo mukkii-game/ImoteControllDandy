@@ -46,8 +46,15 @@ export function Overlays() {
       )}
       {phase === 'title' && (
         <div className="overlay title-screen">
-          <div className="big">いもーとコントロールダンディ</div>
-          <div className="sub">巨大な妹「{IMOUTO.name}」を遅刻させずに学校へ</div>
+          <div className="logo">
+            <span>いもーと</span>
+            <span>コントロールダンディ</span>
+          </div>
+          <div className="sub story">
+            巨大妹「{IMOUTO.name}」を学校に送り届けるんだ
+            <br />
+            なぜならオレはお兄ちゃんだからな
+          </div>
           <div className="howto">
             <div>WASD：兄の移動 / 肩の上では妹の方向指示（A D 旋回・W 加速・S 減速）</div>
             <div>マウス：カメラ　　左クリック / Shift：肩に飛び乗る・飛び降りる</div>
@@ -56,7 +63,7 @@ export function Overlays() {
             <div>制限時間 {fmt(GAME.timeLimitSec)}。校門をまたげばクリア</div>
           </div>
           <button className="start" disabled={!ready} onClick={() => setPhase('play')}>
-            {ready ? 'いってきまーす（スタート）' : 'モデル読み込み中…'}
+            {ready ? 'いってきまーす' : 'モデル読み込み中…'}
           </button>
         </div>
       )}

@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react'
 
 export function HUD() {
   const mode = useGame((s) => s.mode)
+  const phase = useGame((s) => s.phase)
   const loaded = useGame((s) => s.loaded)
   const ready = loaded.imouto && loaded.bro
   const resolved = useModels((s) => s.resolved)
@@ -25,7 +26,7 @@ export function HUD() {
 
   return (
     <div className="hud">
-      <div className="hud-top">
+      <div className={`hud-top ${phase === 'title' ? 'hidden' : ''}`}>
         <div className="title">いもーとコントロールダンディ <span className="step">prototype</span></div>
         <div className="mode">{mode === 'shoulder' ? '肩上' : mode === 'ground' ? '地上' : mode === 'thrown' ? '投擲' : '…'}</div>
       </div>

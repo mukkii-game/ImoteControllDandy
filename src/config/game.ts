@@ -109,7 +109,7 @@ export const IMOUTO = {
     flipY: false,
   },
   /** 歩行速度（m/s）。1歩で車数台分。妹は自動で歩き続ける */
-  walkSpeed: 11,
+  walkSpeed: 5.5,
   /** W で加速、S で減速（倍率） */
   boostMul: 1.4,
   slowMul: 0.5,
@@ -121,7 +121,7 @@ export const IMOUTO = {
   accel: 1.4,
   /** 手続きアニメ（ズシーン歩き） */
   /** 子どもの横断歩道歩き：腕をピンと伸ばして大きく前後、大股 */
-  walk: { legSwing: 0.85, kneeBend: 0.35, armSwing: 1.0, armDown: 1.35, bodyBob: 0.02, lean: 0.04, straightArms: true },
+  walk: { legSwing: 0.42, kneeBend: 0.3, armSwing: 0.5, armDown: 1.35, bodyBob: 0.02, lean: 0.04, straightArms: true },
   /** 表情：口を大きく開けた笑顔（happy＋aa）。歩行中は少し強める */
   face: { happy: 0.4, mouthOpen: 0.35, mouthOpenWalk: 0.35, blinkPeriod: 3.5 },
   /** 肩の表面をレイキャストで探す（身長比）。肩関節から頭方向へ inward、真上 up の点から下向きに撃つ */
@@ -227,7 +227,7 @@ export const CAMERA = {
   followLerp: 7,
   /** シェイク減衰 */
   shakeDecay: 9,
-  shakeAmp: 0.3,
+  shakeAmp: 0, // 一旦停止（後で調整）
 }
 
 export const STAGE = {
@@ -248,7 +248,7 @@ export const STAGE = {
 /** ゲーム進行（区間・校門・制限時間） */
 export const GAME = {
   /** 制限時間（秒） */
-  timeLimitSec: 390,
+  timeLimitSec: 660,
   /** 残りこの秒数で妹が「こわがる」 */
   scaredSec: 60,
   /** 校門の z（妹は +Z へ進む）。スタートは IMOUTO.spawn */

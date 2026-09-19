@@ -91,6 +91,10 @@ export function Explosions() {
       list.current.push({ pos: new THREE.Vector3(x, y, z), t: 0, dust: false })
       if (list.current.length > pool.length) list.current.shift()
     })
+    const off3 = on('imouto.hit', ({ x, y, z }) => {
+      list.current.push({ pos: new THREE.Vector3(x, y, z), t: 0, dust: false })
+      if (list.current.length > pool.length) list.current.shift()
+    })
     const off2 = on('imouto.step', ({ x, z, strength }) => {
       if (strength < 0.3) return
       list.current.push({ pos: new THREE.Vector3(x, 1, z), t: 0, dust: true })
@@ -99,6 +103,7 @@ export function Explosions() {
     return () => {
       off1()
       off2()
+      off3()
     }
   }, [pool])
 

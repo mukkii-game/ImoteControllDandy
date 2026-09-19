@@ -112,7 +112,7 @@ export function GroundEnemies() {
     if (aliveTanks.length > 0 && shellTimer.current <= 0 && !isStunned()) {
       shellTimer.current = TANKS.shellInterval
       const t = aliveTanks[Math.floor(Math.random() * aliveTanks.length)]
-      const target = tmpV.set(im.position.x, im.position.y + 30, im.position.z)
+      const target = tmpV.set(im.position.x + (Math.random() - 0.5) * 10, 4 + Math.random() * 40, im.position.z + (Math.random() - 0.5) * 8)
       const vel = target.clone().sub(t.pos).normalize().multiplyScalar(TANKS.shellSpeed)
       shells.current.push({ pos: t.pos.clone().setY(8), vel, t: 0 })
     }
@@ -120,7 +120,7 @@ export function GroundEnemies() {
       const s = shells.current[i]
       s.t += dt
       s.pos.addScaledVector(s.vel, dt)
-      const hit = Math.hypot(s.pos.x - im.position.x, s.pos.y - (im.position.y + 30), s.pos.z - im.position.z) < HIT.radius
+      const hit = Math.hypot(s.pos.x - im.position.x, s.pos.z - im.position.z) < HIT.radius * 0.5 && s.pos.y > 0 && s.pos.y < 60
       if (hit) emit('imouto.hit', { x: s.pos.x, y: s.pos.y, z: s.pos.z })
       if (hit || s.t > 8 || s.pos.y < 0) shells.current.splice(i, 1)
     }
