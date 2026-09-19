@@ -5,7 +5,6 @@ import { DUMMY_ENEMIES, LOCKON, DEBRIS } from '../config/game'
 import { addEnemy, enemies } from '../systems/enemies'
 import { refs } from '../systems/refs'
 import { on } from '../systems/events'
-import { useGame } from '../systems/store'
 
 const tmpColor = new THREE.Color()
 const PUFF_MAX = 96
@@ -206,50 +205,5 @@ export function Explosions() {
         <meshBasicMaterial transparent depthWrite={false} />
       </instancedMesh>
     </group>
-  )
-}
-
-const TRAIL_N = 40
-/** 投擲中の兄の軌跡（リボン状のライン） */
-export function BroTrail() {
-  const line = useRef<THREE.Line>(null!)
-  const pts = useMemo(() => new Float32Array(TRAIL_N * 3), [])
-  const head = useRef(0)
-  const filled = useRef(0)
-  const geom = useMemo(() => {
-    const g = new THREE.BufferGeometry()
-    g.setAttribute('position', new THREE.BufferAttribute(pts, 3))
-    return g
-  }, [pts])
-  useFrame(() => {
-    const st = useGame.getState()
-    const b = refs.bro
-    if (!b) return
-    if (st.mode !== 'thrown') {
-      filled.current = 0
-      line.current.visible = false
-      return
-    }
-    line.current.visible = true
-    const i = head.current
-    pts[i * 3] = b.position.x
-    pts[i * 3 + 1] = b.position.y + 1.5
-    pts[i * 3 + 2] = b.position.z
-    head.current = (i + 1) % TRAIL_N
-    filled.current = Math.min(TRAIL_N, filled.current + 1)
-    // 古い順に並べ替えて描画範囲を設定
-    const ordered = new Float32Array(TRAIL_N * 3)
-    for (let k = 0; k < filled.current; k++) {
-      const src = (head.current - filled.current + k + TRAIL_N) % TRAIL_N
-      ordered[k * 3] = pts[src * 3]
-      ordered[k * 3 + 1] = pts[src * 3 + 1]
-      ordered[k * 3 + 2] = pts[src * 3 + 2]
-    }
-    ;(geom.attributes.position as THREE.BufferAttribute).set(ordered)
-    geom.attributes.position.needsUpdate = true
-    geom.setDrawRange(0, filled.current)
-  })
-  return (
-    <primitive object={new THREE.Line(geom, new THREE.LineBasicMaterial({ color: '#ffe066', transparent: true, opacity: 0.9 }))} ref={line} />
   )
 }

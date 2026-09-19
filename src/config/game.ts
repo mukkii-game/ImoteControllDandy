@@ -149,13 +149,15 @@ export const IMOUTO = {
 
 export const LOCKON = {
   /** 同時ロック最大数 */
-  maxLocks: 6,
+  maxLocks: 8,
   /** サイト中心からこの半径（画面高さ比）に入った敵をロック */
   reticleRadius: 0.12,
   /** ロック可能距離（m） */
   maxRange: 700,
   /** 投げの飛行速度（m/s） */
-  flySpeed: 260,
+  flySpeed: 520,
+  /** 光弾化：兄を包む光（芯・ハロの半径 m、色）と光の軌跡（幅 m・点数） */
+  glow: { color: '#7fe9ff', coreColor: '#ffffff', coreRadius: 2.2, haloRadius: 6, trailWidth: 3.5, trailPoints: 70, trailOpacity: 0.9 },
   /** 妹が掴んで振りかぶる時間（秒） */
   windupSec: 0.35,
   /** 着弾ごとの停止（秒） */
@@ -256,6 +258,19 @@ export const CAMERA = {
   transitionSideBulge: 30,
   /** 肩に乗った時のカメラの向き（妹の向きからの角度、rad）。-π/2 = 妹の左側から見る */
   mountViewYaw: -Math.PI / 2,
+  /** 溜め中（左クリック）：兄の近くへ寄る照準カメラ。妹は半透明に */
+  aim: {
+    /** 肩上：兄からの距離（m）と注視の高さ（m） */
+    distance: 7,
+    height: 1.3,
+    /** 地上：兄からの距離（m） */
+    groundDistance: 2.6,
+    fov: 50,
+    /** 寄る／戻るのなめらかさ（秒） */
+    blendSec: 0.25,
+    /** 妹の不透明度（0..1） */
+    imoutoOpacity: 0.45,
+  },
   followLerp: 7,
   /** シェイク減衰 */
   shakeDecay: 9,
@@ -267,6 +282,9 @@ export const STAGE = {
   blocks: 24,
   blockSize: 140,
   roadWidth: 34,
+  /** 空（背景）と霞の色。最初は青空 */
+  skyColor: '#7fc4ff',
+  fogColor: '#bfe0ff',
   groundColor: '#8aa06a',
   roadColor: '#4a4a52',
   sidewalkColor: '#9c9a90',
@@ -360,6 +378,16 @@ export const DEBRIS = {
       { color: '#e63946', size: [1.6, 0.6, 1.6], n: 1 },
     ],
     dummy: [{ color: '#ff8fa3', size: [2, 2, 2], n: 6 }],
+    heli: [
+      { color: '#3d6b3a', size: [3, 2, 4], n: 5 },
+      { color: '#222222', size: [12, 0.3, 1], n: 2 },
+      { color: '#9ad0ff', size: [1.6, 1.2, 1.6], n: 2 },
+    ],
+    /** エネミービル（1 発当たるごとに壁の破片） */
+    boss: [
+      { color: '#ffe066', size: [4, 3, 3], n: 4 },
+      { color: '#e5322d', size: [2.5, 2.5, 2.5], n: 3 },
+    ],
   } as Record<string, { color: string; size: [number, number, number]; n: number }[]>,
   /** 黒煙：個数、上昇速度、寿命秒、大きさ m */
   smoke: { n: 6, rise: 8, sec: 1.5, size: 6 },

@@ -3,10 +3,29 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
 /**
- * 交差リボンのスモーク。source の位置を毎フレーム先頭に追加し、後ろへ行くほど透明に。
+ * 交差リボンのスモーク／光の軌跡。source の位置を毎フレーム先頭に追加し、後ろへ行くほど透明に。
  * 水平と垂直の2枚を交差させて、どの角度からも太く見せる。
+ * additive=true で光る（加算合成）。active=false の間は履歴を捨てて描かない。
  */
-export function SmokeRibbon({ source, color, points, width, opacity = 0.75 }: { source: THREE.Object3D; color: string; points: number; width: number; opacity?: number }) {
+export function SmokeRibbon({
+  source,
+  color,
+  points,
+  width,
+  opacity = 0.75,
+  additive = false,
+  active = true,
+  offsetY = 0,
+}: {
+  source: THREE.Object3D
+  color: string
+  points: number
+  width: number
+  opacity?: number
+  additive?: boolean
+  active?: boolean
+  offsetY?: number
+}) {
   const N = points
   const geom = useMemo(() => {
     const g = new THREE.BufferGeometry()
@@ -32,18 +51,26 @@ export function SmokeRibbon({ source, color, points, width, opacity = 0.75 }: { 
         transparent: true,
         depthWrite: false,
         side: THREE.DoubleSide,
+        blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending,
         uniforms: { uColor: { value: new THREE.Color(color) }, uOpacity: { value: opacity } },
         vertexShader: `attribute float alpha; varying float vA; void main(){ vA = alpha; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
         fragmentShader: `uniform vec3 uColor; uniform float uOpacity; varying float vA; void main(){ gl_FragColor = vec4(uColor, vA * uOpacity); }`,
       }),
-    [color, opacity],
+    [color, opacity, additive],
   )
   const hist = useRef<THREE.Vector3[]>([])
   const tmp = useMemo(() => new THREE.Vector3(), [])
 
   useFrame(() => {
-    const p = source.getWorldPosition(tmp).clone()
     const h = hist.current
+    if (!active) {
+      if (h.length) h.length = 0
+      geom.setDrawRange(0, 0)
+      return
+    }
+    geom.setDrawRange(0, Infinity)
+    const p = source.getWorldPosition(tmp).clone()
+    p.y += offsetY
     if (h.length === 0 || h[0].distanceToSquared(p) > 1) h.unshift(p)
     if (h.length > N) h.length = N
     const pos = geom.attributes.position as THREE.BufferAttribute

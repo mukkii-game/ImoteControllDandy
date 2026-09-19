@@ -17,6 +17,8 @@ const tmp = new THREE.Vector3()
 const thrownPos = new THREE.Vector3()
 const thrownLook = new THREE.Vector3()
 const headW = new THREE.Vector3()
+const aimPos = new THREE.Vector3()
+const aimLook = new THREE.Vector3()
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2)
 
 /** 注視点を中心に、camYaw/camPitch のオービット位置を求める */
@@ -90,6 +92,8 @@ export function CameraRig() {
   const blendUntil = useRef(0)
   /** 地上発の攻撃中にカメラを留めておく位置 */
   const holdPos = useRef(new THREE.Vector3())
+  /** 照準カメラへの寄り具合 0..1 */
+  const aimK = useRef(0)
 
   useEffect(
     () =>
@@ -151,6 +155,10 @@ export function CameraRig() {
     }
     computeGround(groundPos, groundLook)
     computeShoulder(shoulderPos, shoulderLook)
+    // 溜め中（左クリック）は兄の近くへ寄る照準カメラ
+    const aimWant = st.charging && (st.mode === 'shoulder' || st.mode === 'ground') ? 1 : 0
+    aimK.current += (aimWant - aimK.current) * Math.min(1, dt / CAMERA.aim.blendSec)
+    const ak = aimK.current
 
     let fov: number = CAMERA.ground.fov
     let snap = false
@@ -158,11 +166,26 @@ export function CameraRig() {
       case 'ground':
         desiredPos.copy(groundPos)
         desiredLook.copy(groundLook)
+        if (ak > 0.001 && refs.bro) {
+          aimLook.set(refs.bro.position.x, refs.bro.position.y + CAMERA.aim.height, refs.bro.position.z)
+          orbit(aimLook, CAMERA.aim.groundDistance, aimPos)
+          if (aimPos.y < 0.6) aimPos.y = 0.6
+          desiredPos.lerp(aimPos, ak)
+          desiredLook.lerp(aimLook, ak)
+          fov = THREE.MathUtils.lerp(CAMERA.ground.fov, CAMERA.aim.fov, ak)
+        }
         break
       case 'shoulder':
         desiredPos.copy(shoulderPos)
         desiredLook.copy(shoulderLook)
         fov = CAMERA.shoulder.fov
+        if (ak > 0.001 && refs.bro) {
+          aimLook.set(refs.bro.position.x, refs.bro.position.y + CAMERA.aim.height, refs.bro.position.z)
+          orbit(aimLook, CAMERA.aim.distance, aimPos)
+          desiredPos.lerp(aimPos, ak)
+          desiredLook.lerp(aimLook, ak)
+          fov = THREE.MathUtils.lerp(CAMERA.shoulder.fov, CAMERA.aim.fov, ak)
+        }
         break
       case 'thrown':
         if (CAMERA.thrown.enabled) {

@@ -40,6 +40,9 @@ export function GroundEnemies() {
   /** 戦車グループの出る側（+1 右 / -1 左）と、そのグループで出した数 */
   const tankSide = useRef(1)
   const tankGroupCount = useRef(0)
+  /** パトカーの向き（id → yaw）と射撃タイマー */
+  const policeYaw = useRef<Map<number, number>>(new Map())
+  const policeShot = useRef(POLICE.shotInterval)
   const grad = useMemo(() => toonGradient(), [])
   const policeKit = useKitModel('police')
   const tankKit = useKitModel('tank')
@@ -109,6 +112,33 @@ export function GroundEnemies() {
         dead.alive = true
       } else tanks.current.push(addEnemy('tank', new THREE.Vector3(px, 3.5, pz)))
     }
+    // パトカー AI：妹に keepDist まで近づいて撃つ。fleeDist より近づかれたら離れる
+    const stunned = isStunned()
+    for (const e of alivePolice) {
+      const dx = im.position.x - e.pos.x
+      const dz = im.position.z - e.pos.z
+      const d = Math.hypot(dx, dz)
+      if (d < 1) continue
+      const mv = d > POLICE.keepDist + 20 ? 1 : d < POLICE.fleeDist ? -1 : 0
+      if (mv !== 0 && !stunned) {
+        const nx = (dx / d) * mv
+        const nz = (dz / d) * mv
+        e.pos.x += nx * POLICE.speed * dt
+        e.pos.z += nz * POLICE.speed * dt
+        policeYaw.current.set(e.id, Math.atan2(nx, nz))
+      }
+    }
+    policeShot.current -= dt
+    if (alivePolice.length > 0 && policeShot.current <= 0 && !stunned) {
+      policeShot.current = POLICE.shotInterval
+      const near = alivePolice.filter((e) => Math.hypot(e.pos.x - im.position.x, e.pos.z - im.position.z) < POLICE.keepDist + 80)
+      if (near.length) {
+        const s = near[Math.floor(Math.random() * near.length)]
+        const target = tmpV.set(im.position.x + (Math.random() - 0.5) * 10, 8 + Math.random() * 40, im.position.z + (Math.random() - 0.5) * 8)
+        const vel = target.clone().sub(s.pos).normalize().multiplyScalar(POLICE.shotSpeed)
+        shells.current.push({ pos: s.pos.clone().setY(3), vel, t: 0 })
+      }
+    }
     // 後ろに置き去りになった敵は消す
     for (const e of [...police.current, ...tanks.current]) {
       if (!e.alive) continue
@@ -154,11 +184,11 @@ export function GroundEnemies() {
         g.visible = !!e
         if (e) {
           g.position.set(e.pos.x, 0, e.pos.z)
-          g.rotation.y = snapToRoad(e.pos.x, e.pos.z).alongX ? Math.PI / 2 : 0
+          g.rotation.y = policeYaw.current.get(e.id) ?? (snapToRoad(e.pos.x, e.pos.z).alongX ? Math.PI / 2 : 0)
         }
       })
     } else {
-      write(policeMesh.current, police.current, POLICE.size.h / 2, (e) => (snapToRoad(e.pos.x, e.pos.z).alongX ? Math.PI / 2 : 0))
+      write(policeMesh.current, police.current, POLICE.size.h / 2, (e) => policeYaw.current.get(e.id) ?? (snapToRoad(e.pos.x, e.pos.z).alongX ? Math.PI / 2 : 0))
       write(lightMesh.current, police.current, POLICE.size.h + 0.6)
     }
     if (tankKit) {

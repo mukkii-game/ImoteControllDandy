@@ -26,6 +26,8 @@ function buildCurve(gen: number): THREE.CatmullRomCurve3 {
 }
 const localP = new THREE.Vector3()
 const localN = new THREE.Vector3()
+const loiterP = new THREE.Vector3()
+const loiterN = new THREE.Vector3()
 function toWorld(local: THREE.Vector3, out: THREE.Vector3) {
   const im = refs.imouto
   const yaw = im?.rotation.y ?? 0
@@ -91,11 +93,14 @@ export function Fighters() {
   const missileMesh = useRef<THREE.InstancedMesh>(null!)
   const pilotMesh = useRef<THREE.InstancedMesh>(null!)
   const len = useMemo(() => curve.getLength(), [curve])
+  /** 滞在（旋回）の状態。セットごとにリセット */
+  const loiter = useRef({ active: false, done: false, t: 0, dur: 0, angle: 0, k: 0, center: new THREE.Vector3() })
 
   useEffect(() => {
     const created = Array.from({ length: FIGHTERS.count }, () => addEnemy('fighter', new THREE.Vector3(0, -1000, 0)))
     ents.current = created
     u.current = 0
+    loiter.current = { active: false, done: false, t: 0, dur: 0, angle: Math.random() * Math.PI * 2, k: 0, center: new THREE.Vector3() }
     setMounted((m) => m + 1) // 機体 group が揃ってからスモークをマウントする
     return () => {
       for (const e of created) {
@@ -145,7 +150,26 @@ export function Fighters() {
     const inFront = localP.z > 0 && ang < FIGHTERS.hoverAngleDeg && Math.hypot(localP.x, localP.z) < FIGHTERS.hoverDist
     let spd = FIGHTERS.speed * (inFront ? FIGHTERS.hoverSpeedMul : 1)
     if (stunned) spd *= 0.15
-    u.current += (spd * dt) / len
+    // 滞在：正面付近に着いたら、しばらくプレイヤーの近くを旋回してから抜ける（1 セット 1 回）
+    const lo = FIGHTERS.loiter
+    const L = loiter.current
+    if (!L.done && !L.active && inFront) {
+      L.active = true
+      L.t = 0
+      L.dur = lo.secMin + Math.random() * (lo.secMax - lo.secMin)
+      L.center.copy(localP)
+    }
+    if (L.active) {
+      L.t += dt
+      L.angle += lo.turnSpeed * (stunned ? 0.2 : 1) * dt
+      if (L.t >= L.dur) {
+        L.active = false
+        L.done = true
+      }
+    }
+    const kWant = L.active ? Math.min(1, L.t / lo.blendSec, (L.dur - L.t) / lo.blendSec) : 0
+    L.k += (kWant - L.k) * Math.min(1, 3 * dt)
+    u.current += ((spd * dt) / len) * (1 - L.k)
     // 最後尾まで抜けたらこのセットは終わり（生き残りは次の方向へ飛び去った扱い）
     const maxBack = Math.max(...FIGHTERS.formation.map((f) => f[2] < 0 ? -f[2] : 0))
     if (u.current > 1 + maxBack / len + 0.02) ents.current.forEach((e) => (e.alive = false))
@@ -166,6 +190,21 @@ export function Fighters() {
       e.pos.y += fy
       nextT.addScaledVector(right, fx)
       nextT.y += fy
+      if (L.k > 0.001) {
+        // 滞在中：中心の周りを回る位置へ寄せる（機体ごとに位相と半径を変える）
+        const ph = (i / FIGHTERS.count) * Math.PI * 2
+        const R = lo.radius + fx * 0.6
+        const orbitAt = (a: number, out: THREE.Vector3) => {
+          toWorld(L.center, out)
+          out.x += Math.cos(a + ph) * R
+          out.z += Math.sin(a + ph) * R
+          out.y += fy + Math.sin((a + ph) * 1.3) * lo.heightWobble
+        }
+        orbitAt(L.angle, loiterP)
+        orbitAt(L.angle + 0.06, loiterN)
+        e.pos.lerp(loiterP, L.k)
+        nextT.lerp(loiterN, L.k)
+      }
       g.position.copy(e.pos)
       // 向き
       m4.lookAt(nextT, e.pos, up)

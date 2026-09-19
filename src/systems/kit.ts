@@ -9,7 +9,7 @@ export interface KitEntry {
   /** 上下の補正（m）。タイヤが地面に埋まる時などに */
   y?: number
 }
-export type KitManifest = Partial<Record<'police' | 'tank' | 'jet', KitEntry>>
+export type KitManifest = Partial<Record<'police' | 'tank' | 'jet' | 'heli', KitEntry>>
 
 let manifestPromise: Promise<KitManifest> | null = null
 

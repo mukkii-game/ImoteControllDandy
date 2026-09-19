@@ -2,8 +2,8 @@
 
 /** ブルーインパルス編隊 */
 export const FIGHTERS = {
-  /** 妹の z がこれ以上で出現（区間2から） */
-  fromZ: -500,
+  /** 妹の z がこれ以上で出現（最初から） */
+  fromZ: -99999,
   /** 編隊の機数 */
   count: 5,
   /** 編隊の並び（機体ごと）：[横 m, 高さ m, 後ろへ m]。前後・上下にばらして、プレイヤーから見て重ならないように（多重ロックしやすく） */
@@ -78,9 +78,31 @@ export const FIGHTERS = {
   missileSpeed: 140,
   /** 抜けた後（または全滅後）、次のセットが来るまで */
   respawnSec: 2.5,
+  /** 滞在：正面付近に着いたら、しばらくプレイヤーの近くを旋回してから抜ける。秒数は範囲からランダム */
+  loiter: { secMin: 6, secMax: 12, radius: 110, turnSpeed: 0.55, heightWobble: 25, blendSec: 1.2 },
   /** パラシュートで降りるパイロット */
   pilotFallSpeed: 6,
   pilotSec: 8,
+}
+
+/** ヘリ：開始直後から来て、妹から一定の距離を取りながら周りを回って待機し、時々撃つ */
+export const HELIS = {
+  count: 3,
+  /** 妹からの距離（m）と高さ（m）。高さは機体ごとに少しずらす */
+  keepDist: 210,
+  height: 55,
+  heightSpread: 18,
+  /** 妹の周りを回る角速度（rad/s）と機体の移動速度（m/s） */
+  orbitSpeed: 0.22,
+  speed: 45,
+  /** 機体の大きさ（m、全長） */
+  size: 16,
+  rotorSpeed: 28,
+  shotInterval: 2.8,
+  shotSpeed: 120,
+  /** やられてから戻ってくるまで（秒）。遠くから飛んでくる */
+  respawnSec: 6,
+  spawnDist: 700,
 }
 
 export const POLICE = {
@@ -93,7 +115,31 @@ export const POLICE = {
   /** 踏み潰し判定：妹の足元からの半径（m）。妹の横幅より少し大きい程度 */
   stompRadius: 9,
   size: { w: 7, h: 4, d: 14 },
+  /** 動き：妹にこの距離まで近づいて撃つ。妹が fleeDist より近づいたら離れる */
+  speed: 34,
+  keepDist: 230,
+  fleeDist: 130,
+  /** 何秒に 1 発撃つか（パトカー全体）と弾速 */
+  shotInterval: 2.2,
+  shotSpeed: 130,
 }
+
+/** エネミービル（ビルの形をした敵）。妹と同じくらい大きく、近づくとにじり寄ってくる。通り抜けられない */
+export const BOSS = {
+  /** 倒すのに必要なロックオン命中数（＝ロック点の数） */
+  hits: 4,
+  /** この距離まで妹が来たら寄ってくる（m）／これ以上は近づかない */
+  aggroDist: 450,
+  stopDist: 40,
+  creepSpeed: 4,
+  /** ロック点をビルの中に散らばらせる範囲（0..1、内側に寄せる） */
+  pointInset: 0.3,
+  score: 500,
+}
+export const BOSSES = [
+  { name: 'ぎょうざの満洲', image: 'textures/boss_manshu.png', imageAspect: 350 / 381, x: -22, z: -1260, w: 46, h: 62, d: 46, color: '#ffe873', signBg: '#e5322d', signColor: '#ffffff' },
+  { name: '山田うどん', image: 'textures/boss_yamada.png', imageAspect: 248 / 449, x: 26, z: -1040, w: 48, h: 58, d: 48, color: '#fff4dc', signBg: '#d0301f', signColor: '#ffffff' },
+]
 
 export const TANKS = {
   fromZ: -500,

@@ -2,7 +2,7 @@ import * as THREE from 'three'
 
 export interface Enemy {
   id: number
-  kind: 'dummy' | 'fighter' | 'police' | 'tank'
+  kind: 'dummy' | 'fighter' | 'police' | 'tank' | 'boss' | 'heli'
   pos: THREE.Vector3
   alive: boolean
   /** 破壊後の再出現までの残り秒（テスト用） */

@@ -17,6 +17,7 @@ export function Overlays() {
   const score = useGame((s) => s.score)
   const clearTime = useGame((s) => s.clearTime)
   const loaded = useGame((s) => s.loaded)
+  const paused = useGame((s) => s.tuneOpen)
   const ready = loaded.imouto && loaded.bro
   const [dist, setDist] = useState(0)
   const [section, setSection] = useState('')
@@ -44,6 +45,7 @@ export function Overlays() {
           </div>
         </div>
       )}
+      {phase === 'play' && paused && <div className="pause-badge">PAUSE</div>}
       {phase === 'title' && (
         <div className="overlay title-screen">
           <div className="logo">

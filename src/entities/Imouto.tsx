@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { IMOUTO, SCALE } from '../config/game'
+import { IMOUTO, SCALE, CAMERA } from '../config/game'
 import { useModels, candidates } from '../systems/models'
 import { useVRM } from '../systems/loaders'
 import { VRMSpringBoneCollider, VRMSpringBoneColliderShapeSphere } from '@pixiv/three-vrm'
@@ -39,6 +39,10 @@ export function Imouto() {
   const probeTimer = useRef(0)
   const clock = useRef(0)
   const hitTimer = useRef(0)
+  /** 溜め中の半透明（0=不透明）。対象マテリアルはロード時に集める */
+  const fadeK = useRef(0)
+  const fadeMats = useRef<THREE.Material[]>([])
+  const fadeOn = useRef(false)
   const skills = useRef(new SkillRunner())
   const throwK = useRef(-1)
   const sitK = useRef(0)
@@ -142,6 +146,34 @@ export function Imouto() {
     const mode = game.mode
     const playing = game.phase === 'play'
     const m = mode === 'shoulder' && playing ? readMove() : { x: 0, y: 0 }
+    // 溜め中（照準カメラ）は妹を半透明にして兄とサイトを見やすく
+    {
+      const want = game.charging ? 1 : 0
+      fadeK.current += (want - fadeK.current) * Math.min(1, dt / CAMERA.aim.blendSec)
+      const on = fadeK.current > 0.01
+      if (fadeMats.current.length === 0) {
+        vrm.scene.traverse((o) => {
+          const mesh = o as THREE.Mesh
+          if (!mesh.isMesh) return
+          for (const mat of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) fadeMats.current.push(mat)
+        })
+      }
+      if (on !== fadeOn.current) {
+        fadeOn.current = on
+        for (const mat of fadeMats.current) {
+          mat.transparent = on || mat.userData.wasTransparent === true
+          if (mat.userData.wasTransparent === undefined) mat.userData.wasTransparent = mat.transparent && !on
+          mat.depthWrite = !on
+          mat.needsUpdate = true
+        }
+      }
+      if (on) {
+        const op = 1 - fadeK.current * (1 - CAMERA.aim.imoutoOpacity)
+        for (const mat of fadeMats.current) mat.opacity = op
+      } else if (fadeMats.current.length && fadeMats.current[0].opacity !== 1) {
+        for (const mat of fadeMats.current) mat.opacity = 1
+      }
+    }
     // 技の入力（肩上のみ）
     const inp = useInput.getState()
     if (mode === 'shoulder' && playing) {

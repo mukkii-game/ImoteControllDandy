@@ -61,7 +61,7 @@ export function TunePanel() {
     <div className="tune" onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
       <div className="tune-head">
         <b>調整パネル</b>
-        <span className="tune-note">Esc / Tab で閉じる。値は自動保存</span>
+        <span className="tune-note">ポーズ中。Esc / Tab で再開。値は自動保存</span>
         <button onClick={copy}>{copied ? 'コピーした' : '変更をコピー'}</button>
         <button
           onClick={() => {
