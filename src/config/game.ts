@@ -79,6 +79,8 @@ export const BRO = {
   },
   /** 建物との当たり半径（m）。建物は貫通できない */
   bodyRadius: 1.2,
+  /** 残像と尾（タックル中・飛び乗り中）：残像を出す間隔（秒）・寿命・色・濃さ、尾の半幅（m）・点数 */
+  afterimage: { spawnEvery: 0.04, lifeSec: 0.35, color: '#bfe9ff', opacity: 0.45, trailWidth: 1.6, trailPoints: 40, trailOpacity: 0.7 },
   gravity: 28,
   /** 肩へ飛び乗る演出の秒数（距離に応じて min〜max） */
   mountSecMin: 0.9,
@@ -202,6 +204,8 @@ export const LOCKON = {
   reticle: {
     /** マウス 1px でサイトが動く px */
     sensitivity: 1.0,
+    /** 地上ではサイトは左右にしか動かない（上下はカメラ） */
+    groundHorizontalOnly: true,
     /** 画面の中心からこの割合（画面の半分の大きさ比）を越えるとカメラを押し始める */
     edge: 0.62,
     /** 端まで押し込んだ時のカメラ回転速度（rad/s） */
@@ -272,8 +276,12 @@ export const CAMERA = {
   transitionSideBulge: 30,
   /** 肩に乗った時のカメラの向き（妹の向きからの角度、rad）。-π/2 = 妹の左側から見る */
   mountViewYaw: -Math.PI / 2,
-  /** 溜め中（左クリック）：兄の近くへ寄る照準カメラ。妹は半透明に */
+  /**
+   * 射撃モード（肩上で溜め中）：妹も兄も一瞬で同じ色のシルエットになりながら消える。カメラはそのまま。
+   * cameraEnabled=true にすると兄の近くへ寄る照準カメラも使う（今はオフ）
+   */
   aim: {
+    cameraEnabled: false,
     /** 肩上：兄の上半身のすぐ後ろ。兄からの距離（m）と注視の高さ（m） */
     distance: 3.6,
     height: 1.6,
@@ -282,8 +290,10 @@ export const CAMERA = {
     fov: 50,
     /** 寄る／戻るのなめらかさ（秒） */
     blendSec: 0.25,
-    /** 妹の不透明度（0..1） */
-    imoutoOpacity: 0.45,
+    /** 消えるまでの秒数、シルエットの色と最初の濃さ */
+    fadeSec: 0.18,
+    silhouetteColor: '#9fd8ff',
+    silhouetteOpacity: 0.55,
   },
   followLerp: 7,
   /** シェイク減衰 */
@@ -311,6 +321,8 @@ export const STAGE = {
   chunkBlocks: 3,
   drawDist: 1100,
   shadowDist: 260,
+  /** これより遠い区画は外部モデルではなく箱で描く（LOD） */
+  lodDist: 520,
   /** 開始後 5 秒の平均 fps がこれ未満なら、影を切って解像度を 1 倍にする */
   autoLiteFps: 32,
   /** 外部モデル（Kenney、CC0）で家とビルを描く。false なら箱と屋根のまま。読めなかった時も箱に戻る */
@@ -411,20 +423,36 @@ export const DEBRIS = {
   } as Record<string, { color: string; size: [number, number, number]; n: number }[]>,
   /** 兄の攻撃でやられた敵はノックバックして上へも吹っ飛ぶ：飛ぶ速さ（進行方向・上、m/s）と、飛ぶ本体の大きさ・色 */
   knockback: {
-    speed: 90,
-    up: 60,
+    speed: 130,
+    up: 85,
+    /** 地上の敵だけ：本体が食らった方向へ派手に吹っ飛ぶ */
     body: {
       police: { size: [7, 4, 14], color: '#f5f5f5' },
       tank: { size: [12, 7, 20], color: '#6b7a4a' },
-      fighter: { size: [30, 3, 12], color: '#1f3fbf' },
-      heli: { size: [5, 4, 16], color: '#3d6b3a' },
       dummy: { size: [9, 9, 9], color: '#ff8fa3' },
     } as Record<string, { size: [number, number, number]; color: string }>,
   },
+  /** 空中の敵（戦闘機・ヘリ）：その場で爆発してモデルが離散し、通常の半分の重力でパラパラ落ちる */
+  air: { kinds: ['fighter', 'heli'], gravityScale: 0.5, spread: 34, up: 22, lifeSec: 6 },
   /** 黒煙：個数、上昇速度、寿命秒、大きさ m */
   smoke: { n: 6, rise: 8, sec: 1.5, size: 6 },
   /** 砂煙リング（家・ビルが壊れた時）の大きさ m */
   dustSize: 30,
+}
+
+/** レーダーマップ（右上）。中心はロロ、ロロの向きが上。range（m）の範囲だけ表示 */
+export const RADAR = {
+  size: 150,
+  range: 650,
+  opacity: 0.5,
+  dot: 2.2,
+  bossDot: 6,
+  broDot: 3.5,
+  enemyColor: '#ff6b6b',
+  airColor: '#ffd166',
+  bossColor: '#ff3b3b',
+  broColor: '#7fe9ff',
+  imoutoColor: '#ffffff',
 }
 
 export const DEBUG = {

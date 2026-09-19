@@ -15,6 +15,8 @@ interface Piece {
   color: THREE.Color
   t: number
   life: number
+  /** 重力の倍率（空中の敵の破片はゆっくり落ちる） */
+  g: number
 }
 
 const MAX_BOX = 320
@@ -51,6 +53,7 @@ export function Debris() {
       color: new THREE.Color(color),
       t: 0,
       life,
+      g: 1,
     })
     const offBreak = on('building.break', ({ x, z, w, h, d, color }) => {
       const n = GAME.debrisPerBuilding
@@ -84,18 +87,24 @@ export function Debris() {
       const kind = getEnemy(id)?.kind ?? 'dummy'
       const parts = DEBRIS.parts[kind] ?? DEBRIS.parts.dummy
       const b = DEBRIS.burst
-      // 兄の攻撃：本体がノックバックして上へも吹っ飛ぶ（気持ちよさ）
-      const body = dir && DEBRIS.knockback.body[kind]
+      const air = DEBRIS.air.kinds.includes(kind)
+      // 兄の攻撃（地上の敵）：本体が食らった方向へノックバックして上へも派手に吹っ飛ぶ
+      const body = dir && !air && DEBRIS.knockback.body[kind]
       if (body && dir) {
         const kb = DEBRIS.knockback
         const vel = new THREE.Vector3(dir[0] * kb.speed, kb.up + Math.max(0, dir[1]) * kb.speed, dir[2] * kb.speed)
-        push(boxes.current, MAX_BOX, piece(new THREE.Vector3(x, Math.max(2, y), z), vel, new THREE.Vector3(...body.size), body.color, GAME.debrisSec + 1, 5))
+        push(boxes.current, MAX_BOX, piece(new THREE.Vector3(x, Math.max(2, y), z), vel, new THREE.Vector3(...body.size), body.color, GAME.debrisSec + 1, 7))
       }
+      // 空中の敵：その場で爆発して離散、半分の重力でパラパラ落ちる（やっつけた手応え）
+      const spread = air ? DEBRIS.air.spread : b.spread
+      const up = air ? DEBRIS.air.up : b.up
       for (const part of parts) {
         for (let i = 0; i < part.n; i++) {
-          const vel = new THREE.Vector3(rnd(b.spread), b.up * (0.5 + Math.random()), rnd(b.spread))
+          const vel = new THREE.Vector3(rnd(spread), up * (air ? rnd(1) : 0.5 + Math.random()), rnd(spread))
           const pos = new THREE.Vector3(x + rnd(2), Math.max(1, y + rnd(2)), z + rnd(2))
-          push(boxes.current, MAX_BOX, piece(pos, vel, new THREE.Vector3(...part.size), part.color, GAME.debrisSec, 8))
+          const pc = piece(pos, vel, new THREE.Vector3(...part.size), part.color, air ? DEBRIS.air.lifeSec : GAME.debrisSec, 8)
+          if (air) pc.g = DEBRIS.air.gravityScale
+          push(boxes.current, MAX_BOX, pc)
         }
       }
     })
@@ -115,7 +124,7 @@ export function Debris() {
         list.splice(i, 1)
         continue
       }
-      p.vel.y -= g * dt
+      p.vel.y -= g * p.g * dt
       p.pos.addScaledVector(p.vel, dt)
       const floor = p.size.y / 2
       if (p.pos.y < floor) {

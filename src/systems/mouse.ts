@@ -13,10 +13,17 @@ import * as THREE from 'three'
 export function bindMouse(el: HTMLElement): () => void {
   const apply = (dx: number, dy: number, sens: number) => {
     if (dx !== 0 || dy !== 0) refs.lastLookInput = performance.now()
-    if (useGame.getState().charging) {
+    const g = useGame.getState()
+    if (g.charging) {
       const k = LOCKON.reticle.sensitivity
       refs.reticleX = THREE.MathUtils.clamp(refs.reticleX + dx * k, -window.innerWidth / 2, window.innerWidth / 2)
       refs.reticleY = THREE.MathUtils.clamp(refs.reticleY + dy * k, -window.innerHeight / 2, window.innerHeight / 2)
+      return
+    }
+    if (g.mode === 'ground' && g.phase === 'play' && LOCKON.reticle.groundHorizontalOnly) {
+      // 地上：サイトは左右にだけ動く（タックルの向き）。上下はカメラ
+      refs.reticleX = THREE.MathUtils.clamp(refs.reticleX + dx * LOCKON.reticle.sensitivity, -window.innerWidth / 2, window.innerWidth / 2)
+      refs.camPitch = THREE.MathUtils.clamp(refs.camPitch + dy * sens, CAMERA.pitchMin, CAMERA.pitchMax)
       return
     }
     refs.camYaw -= dx * sens

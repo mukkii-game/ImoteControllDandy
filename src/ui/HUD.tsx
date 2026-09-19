@@ -4,6 +4,7 @@ import { TunePanel } from './TunePanel'
 import { useModels } from '../systems/models'
 import { Reticle } from './Reticle'
 import { Speech } from './Speech'
+import { Radar } from './Radar'
 import { SkillBar } from './SkillBar'
 import { Overlays } from './Overlays'
 import { useEffect, useState } from 'react'
@@ -35,6 +36,7 @@ export function HUD() {
       {combo && comboVisible && <div className="combo">{combo.n}機まとめ！</div>}
       <Reticle />
       <Speech />
+      <Radar />
       <SkillBar />
       <Overlays />
       {!ready && <div className="loading">モデル読み込み中…</div>}

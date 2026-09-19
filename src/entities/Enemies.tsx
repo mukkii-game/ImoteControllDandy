@@ -125,6 +125,11 @@ export function Explosions() {
     }
     const off4 = on('building.crush', ({ x, z, w }) => pushDust(x, z, Math.max(0.5, w / DEBRIS.dustSize)))
     const off5 = on('building.break', ({ x, z, w }) => pushDust(x, z, Math.max(0.8, (w * 1.5) / DEBRIS.dustSize)))
+    const off6 = on('bomb.burst', ({ x, y, z }) => {
+      list.current.push({ pos: new THREE.Vector3(x, y, z), t: 0, dust: false })
+      if (list.current.length > pool.length) list.current.shift()
+      pushDust(x, z, 1)
+    })
     const off3 = on('imouto.hit', ({ x, y, z }) => {
       list.current.push({ pos: new THREE.Vector3(x, y, z), t: 0, dust: false })
       if (list.current.length > pool.length) list.current.shift()
@@ -140,6 +145,7 @@ export function Explosions() {
       off3()
       off4()
       off5()
+      off6()
     }
   }, [pool])
 

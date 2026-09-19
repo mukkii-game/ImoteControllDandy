@@ -87,6 +87,9 @@ export function Fighters() {
   const ents = useRef<Enemy[]>([])
   const u = useRef(0)
   const missiles = useRef<Missile[]>([])
+  const bombs = useRef<Missile[]>([])
+  const bombTimer = useRef(1)
+  const bombMesh = useRef<THREE.InstancedMesh>(null!)
   const pilots = useRef<Pilot[]>([])
   const fireTimer = useRef(FIGHTERS.missileInterval)
   const deadTimer = useRef(0)
@@ -134,6 +137,7 @@ export function Fighters() {
       deadTimer.current = 0
       missileMesh.current.count = 0
       pilotMesh.current.count = 0
+      bombMesh.current.count = 0
       return
     }
     if (!enabledRef.current) {
@@ -152,12 +156,18 @@ export function Fighters() {
     if (stunned) spd *= 0.15
     // 滞在：正面付近に着いたら、しばらくプレイヤーの近くを旋回してから抜ける（1 セット 1 回）
     const lo = FIGHTERS.loiter
+    const kindName = FIGHTERS.passes[gen % FIGHTERS.passes.length].loiter
+    const kind = lo.kinds[kindName]
+    const overhead = kindName === 'overhead'
     const L = loiter.current
-    if (!L.done && !L.active && inFront) {
+    // 上空集合はパスが妹の真上付近（前後 200m 以内）に来たら開始
+    const reach = overhead ? Math.hypot(localP.x, localP.z) < 220 : inFront
+    if (!L.done && !L.active && reach) {
       L.active = true
       L.t = 0
-      L.dur = lo.secMin + Math.random() * (lo.secMax - lo.secMin)
-      L.center.copy(localP)
+      L.dur = kind.secMin + Math.random() * (kind.secMax - kind.secMin)
+      if (overhead) L.center.set(...lo.overheadCenter)
+      else L.center.copy(localP).setY(localP.y + kind.height)
     }
     if (L.active) {
       L.t += dt
@@ -193,7 +203,7 @@ export function Fighters() {
       if (L.k > 0.001) {
         // 滞在中：中心の周りを回る位置へ寄せる（機体ごとに位相と半径を変える）
         const ph = (i / FIGHTERS.count) * Math.PI * 2
-        const R = lo.radius + fx * 0.6
+        const R = kind.radius + fx * 0.6
         const orbitAt = (a: number, out: THREE.Vector3) => {
           toWorld(L.center, out)
           out.x += Math.cos(a + ph) * R
@@ -212,8 +222,34 @@ export function Fighters() {
       g.quaternion.copy(q)
       g.visible = e.alive
     })
-    // ミサイル
+    // 爆撃（上空集合の滞在中）：機体から爆弾を落とす。妹にダメージは無いが被弾エフェクトは出る
     const im = refs.imouto
+    const bc = FIGHTERS.bomb
+    bombTimer.current -= dt
+    if (im && overhead && L.active && L.k > 0.5 && alive.length > 0 && bombTimer.current <= 0 && !stunned) {
+      bombTimer.current = bc.interval
+      const b = alive[Math.floor(Math.random() * alive.length)]
+      bombs.current.push({ pos: b.pos.clone().setY(b.pos.y - 3), vel: new THREE.Vector3((Math.random() - 0.5) * 6, -10, (Math.random() - 0.5) * 6), t: 0 })
+    }
+    for (let i = bombs.current.length - 1; i >= 0; i--) {
+      const bm = bombs.current[i]
+      bm.t += dt
+      bm.vel.y -= bc.gravity * dt
+      bm.pos.addScaledVector(bm.vel, dt)
+      const near = im && Math.hypot(bm.pos.x - im.position.x, bm.pos.z - im.position.z) < bc.hitRadius
+      const hitBody = near && bm.pos.y < 62 && bm.pos.y > 8
+      if (hitBody) emit('imouto.hit', { x: bm.pos.x, y: bm.pos.y, z: bm.pos.z })
+      else if (bm.pos.y <= 1) emit('bomb.burst', { x: bm.pos.x, y: 2, z: bm.pos.z })
+      if (hitBody || bm.pos.y <= 1 || bm.t > 12) bombs.current.splice(i, 1)
+    }
+    bombMesh.current.count = bombs.current.length
+    bombs.current.forEach((bm, i) => {
+      m4.identity()
+      m4.setPosition(bm.pos)
+      bombMesh.current.setMatrixAt(i, m4)
+    })
+    bombMesh.current.instanceMatrix.needsUpdate = true
+    // ミサイル
     fireTimer.current -= dt
     if (im && alive.length > 0 && fireTimer.current <= 0 && !stunned) {
       fireTimer.current = FIGHTERS.missileInterval
@@ -274,6 +310,10 @@ export function Fighters() {
         Array.from({ length: FIGHTERS.count }, (_, i) => (
           <SmokeRibbon key={`s${gen}-${i}`} source={groups.current[i]} color={FIGHTERS.smokeColors[i % FIGHTERS.smokeColors.length]} points={FIGHTERS.smokePoints} width={FIGHTERS.smokeWidth} opacity={FIGHTERS.smokeOpacity} />
         ))}
+      <instancedMesh ref={bombMesh} args={[undefined, undefined, 48]}>
+        <sphereGeometry args={[FIGHTERS.bomb.size, 8, 8]} />
+        <meshToonMaterial color="#333a44" gradientMap={toonGradient()} />
+      </instancedMesh>
       <instancedMesh ref={missileMesh} args={[undefined, undefined, 32]}>
         <sphereGeometry args={[1.6, 8, 8]} />
         <meshBasicMaterial color="#ffb347" />

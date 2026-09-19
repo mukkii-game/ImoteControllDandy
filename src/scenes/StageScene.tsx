@@ -5,6 +5,7 @@ import { useGame } from '../systems/store'
 import { Helis } from '../entities/Helis'
 import { BossBuildings } from '../entities/BossBuildings'
 import { BroGlow } from '../entities/BroGlow'
+import { BroAfterimage } from '../entities/BroAfterimage'
 
 /** 開始後しばらく fps を測り、低ければ影を切って解像度を 1 倍にする（自動の軽量化） */
 function AutoQuality() {
@@ -83,6 +84,7 @@ export function StageScene() {
       <GroundEnemies />
       <BossBuildings />
       <BroGlow />
+      <BroAfterimage />
       <Shoe />
       <Debris />
       <Explosions />

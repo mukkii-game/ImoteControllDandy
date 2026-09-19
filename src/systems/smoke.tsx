@@ -95,7 +95,6 @@ export function SmokeRibbon({
     }
     pos.needsUpdate = true
     al.needsUpdate = true
-    geom.computeBoundingSphere()
   })
 
   return <mesh geometry={geom} material={mat} frustumCulled={false} />

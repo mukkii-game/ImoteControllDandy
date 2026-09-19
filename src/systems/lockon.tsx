@@ -29,18 +29,20 @@ export function LockonSystem() {
     const charging = st.mode === 'shoulder' && a && st.phase === 'play'
     if (charging !== st.charging) st.setCharging(charging)
 
-    // サイトの位置：溜め中は画面端でカメラを押す。溜めていない時は中央へ戻る
+    // サイトの位置：溜め中（と地上）は画面端でカメラを押す。それ以外は中央へ戻る
     const rc = LOCKON.reticle
-    if (charging) {
+    const groundAim = st.mode === 'ground' && st.phase === 'play' && rc.groundHorizontalOnly
+    if (charging || groundAim) {
       const hx = size.width / 2
       const hy = size.height / 2
       const nx = refs.reticleX / hx
       const ny = refs.reticleY / hy
       const push = (n: number) => (Math.abs(n) > rc.edge ? Math.sign(n) * Math.min(1, (Math.abs(n) - rc.edge) / (1 - rc.edge)) : 0)
       const px = push(nx)
-      const py = push(ny)
+      const py = groundAim ? 0 : push(ny)
       if (px !== 0) refs.camYaw -= px * rc.pushSpeed * dt
       if (py !== 0) refs.camPitch = THREE.MathUtils.clamp(refs.camPitch + py * rc.pushSpeed * dt, CAMERA.pitchMin, CAMERA.pitchMax)
+      if (groundAim) refs.reticleY += (0 - refs.reticleY) * Math.min(1, rc.recenterLerp * dt)
     } else {
       const k = Math.min(1, rc.recenterLerp * dt)
       refs.reticleX += (0 - refs.reticleX) * k

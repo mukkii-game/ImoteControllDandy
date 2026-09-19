@@ -156,7 +156,7 @@ export function CameraRig() {
     computeGround(groundPos, groundLook)
     computeShoulder(shoulderPos, shoulderLook)
     // 溜め中（左クリック）は兄の近くへ寄る照準カメラ
-    const aimWant = st.charging && st.mode === 'shoulder' ? 1 : 0
+    const aimWant = CAMERA.aim.cameraEnabled && st.charging && st.mode === 'shoulder' ? 1 : 0
     aimK.current += (aimWant - aimK.current) * Math.min(1, dt / CAMERA.aim.blendSec)
     const ak = aimK.current
 

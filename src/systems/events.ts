@@ -18,6 +18,8 @@ export interface GameEvents {
   'bro.say': { text: string }
   /** 兄が妹に行き先を指示した */
   'bro.goto': { x: number; z: number }
+  /** 爆弾が地面や建物で爆発（演出） */
+  'bomb.burst': { x: number; y: number; z: number }
   /** 妹が被弾（ミサイル・砲弾） */
   'imouto.hit': { x: number; y: number; z: number }
   /** 妹の技 */

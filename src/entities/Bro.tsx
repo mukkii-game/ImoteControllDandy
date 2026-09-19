@@ -8,6 +8,7 @@ import { useModels, candidates } from '../systems/models'
 import { readMove, useInput } from '../systems/input'
 import { refs, shoulderWorld } from '../systems/refs'
 import { buildingAt } from '../systems/colliders'
+import { makeSilhouette, type Silhouette } from '../systems/silhouette'
 import { useGame } from '../systems/store'
 import { useVRM } from '../systems/loaders'
 import { emit } from '../systems/events'
@@ -66,6 +67,8 @@ export function Bro() {
   /** 地上の高速タックル */
   const tackle = useRef({ active: false, queued: false, t: 0, hits: 0, dir: new THREE.Vector3(), from: new THREE.Vector3() })
   const tackleCd = useRef(0)
+  const fadeK = useRef(0)
+  const silhouette = useRef<Silhouette | null>(null)
   /** 行き先（▼）をロックしていたら妹に「あそこへ行け」 */
   const orderDest = () => {
     if (!lock.dest) return
@@ -177,9 +180,12 @@ export function Bro() {
           tk.active = true
           tk.t = 0
           tk.hits = 0
-          tk.dir.set(Math.sin(refs.camYaw), 0, Math.cos(refs.camYaw))
+          // 向き：カメラの向き＋サイトの左右のずれ（画面の半分 ≒ 水平画角の半分）
+          const hfov = THREE.MathUtils.degToRad(CAMERA.ground.fov) * (window.innerWidth / window.innerHeight) * 0.5
+          const aimYaw = refs.camYaw - (refs.reticleX / (window.innerWidth / 2)) * hfov * 0.6
+          tk.dir.set(Math.sin(aimYaw), 0, Math.cos(aimYaw))
           tk.from.copy(g.position)
-          yawRef.current = refs.camYaw
+          yawRef.current = aimYaw
           emit('bro.tackle', undefined)
         }
         if (tk.active) {
@@ -215,6 +221,7 @@ export function Bro() {
             }
           }
         }
+        refs.broDash = tk.active
         wasA.current = input.keys.a && playing
         punchT.current = Math.max(0, punchT.current - dt)
         if (!tk.active) {
@@ -475,6 +482,16 @@ export function Bro() {
     refs.broYaw = yawRef.current
 
     if (vrm) {
+      // 射撃モード（肩上で溜め中）：妹と同じく一瞬で消える
+      {
+        const want = st.charging && st.mode === 'shoulder' ? 1 : 0
+        fadeK.current = want ? Math.min(1, fadeK.current + dt / CAMERA.aim.fadeSec) : 0
+        if (!silhouette.current) silhouette.current = makeSilhouette(vrm.scene, CAMERA.aim.silhouetteColor)
+        const sil = silhouette.current
+        if (fadeK.current <= 0) sil.set(0)
+        else if (fadeK.current >= 1) sil.hide()
+        else sil.set(CAMERA.aim.silhouetteOpacity * (1 - fadeK.current))
+      }
       const seq = throwSeq.current
       const onShoulder = st.mode === 'shoulder' || (st.mode === 'thrown' && seq.phase === 'windup' && seq.origin === 'shoulder')
       poseBlend.current += ((onShoulder ? 1 : 0) - poseBlend.current) * Math.min(1, 8 * dt)

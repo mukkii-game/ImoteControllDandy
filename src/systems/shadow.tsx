@@ -27,7 +27,7 @@ export function ShadowFollower({ size }: { size: number }) {
         shadow-camera-top={size}
         shadow-camera-bottom={-size}
         shadow-camera-near={1}
-        shadow-camera-far={600}
+        shadow-camera-far={420}
         shadow-normalBias={0.4}
       />
     </>

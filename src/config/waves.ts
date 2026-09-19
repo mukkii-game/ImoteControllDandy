@@ -15,7 +15,7 @@ export const FIGHTERS = {
     [88, -26, -58],
   ] as [number, number, number][],
   /** 巡航速度 m/s */
-  speed: 70,
+  speed: 110,
   /** 妹の正面（この距離・角度内）では減速してホバリング気味に留まる */
   hoverDist: 200,
   hoverAngleDeg: 70,
@@ -35,7 +35,8 @@ export const FIGHTERS = {
    */
   passes: [
     {
-      name: '前から',
+      name: '前から（近くで旋回）',
+      loiter: 'near',
       path: [
         [0, 130, 1100],
         [0, 100, 700],
@@ -47,7 +48,8 @@ export const FIGHTERS = {
       ],
     },
     {
-      name: '左から',
+      name: '左から（遠くで旋回）',
+      loiter: 'far',
       path: [
         [-900, 130, 320],
         [-560, 100, 230],
@@ -60,7 +62,21 @@ export const FIGHTERS = {
       ],
     },
     {
-      name: '右後ろから',
+      name: '上空に集合して爆撃',
+      loiter: 'overhead',
+      path: [
+        [600, 200, 900],
+        [300, 170, 500],
+        [60, 150, 140],
+        [-40, 140, 60],
+        [-120, 130, -80],
+        [-400, 150, -400],
+        [-800, 180, -800],
+      ],
+    },
+    {
+      name: '右後ろから（近くで旋回）',
+      loiter: 'near',
       path: [
         [800, 150, -700],
         [460, 116, -400],
@@ -72,14 +88,30 @@ export const FIGHTERS = {
         [0, 130, 1000],
       ],
     },
-  ] as { name: string; path: [number, number, number][] }[],
+  ] as { name: string; loiter: 'near' | 'far' | 'overhead'; path: [number, number, number][] }[],
   /** 何秒に1発ミサイルを撃つか（編隊全体） */
   missileInterval: 3.2,
   missileSpeed: 140,
   /** 抜けた後（または全滅後）、次のセットが来るまで */
   respawnSec: 2.5,
-  /** 滞在：正面付近に着いたら、しばらくプレイヤーの近くを旋回してから抜ける。秒数は範囲からランダム */
-  loiter: { secMin: 6, secMax: 12, radius: 110, turnSpeed: 0.55, heightWobble: 25, blendSec: 1.2 },
+  /**
+   * 滞在：正面付近に着いたら、しばらく旋回してから抜ける。種類ごとに半径・高さ・秒数が違う。
+   * near=近くで旋回、far=遠くで旋回、overhead=ロロの上空に集まって旋回（爆弾を落とす）
+   */
+  loiter: {
+    blendSec: 1.2,
+    turnSpeed: 0.55,
+    heightWobble: 25,
+    kinds: {
+      near: { secMin: 6, secMax: 11, radius: 110, height: 0 },
+      far: { secMin: 6, secMax: 10, radius: 280, height: 40 },
+      overhead: { secMin: 12, secMax: 18, radius: 70, height: 0 },
+    },
+    /** 上空集合の中心（妹ローカル：x=右, y=高さ, z=前） */
+    overheadCenter: [0, 150, 20] as [number, number, number],
+  },
+  /** 爆撃（上空集合中）：何秒に 1 発落とすか、落下の加速度、命中とみなす半径（妹の胴体中心から）。妹にダメージは無い（演出だけ） */
+  bomb: { interval: 0.9, gravity: 40, hitRadius: 45, size: 2.4 },
   /** パラシュートで降りるパイロット */
   pilotFallSpeed: 6,
   pilotSec: 8,

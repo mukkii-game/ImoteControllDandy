@@ -141,21 +141,35 @@ export function Stage() {
           <meshToonMaterial color={STAGE.roadColor} gradientMap={toonGradient()} />
         </mesh>
       ))}
-      {/* センターライン（縦方向だけ、距離感の目安） */}
-      {roadsX.map((x) =>
-        Array.from({ length: Math.floor(size / 16) }, (_, i) => (
-          <mesh key={`l${x}_${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.25, -size / 2 + i * 16 + 4]}>
-            <planeGeometry args={[0.8, 6]} />
-            <meshBasicMaterial color="#e8dc90" />
-          </mesh>
-        )),
-      )}
+      {/* センターライン（縦方向だけ、距離感の目安）。1 つの InstancedMesh にまとめる（以前は 5000 個以上の別メッシュで重かった） */}
+      <CenterLines roadsX={roadsX} size={size} />
       {/* 外部モデルの読み込み中は建物を出さない（読めなければ箱） */}
       {kit && <Buildings list={buildings} kit={kit} />}
       {kit && <Roofs list={buildings} />}
       <School />
     </group>
   )
+}
+
+/** 道路のセンターライン。全部を 1 つの InstancedMesh で描く */
+function CenterLines({ roadsX, size }: { roadsX: number[]; size: number }) {
+  const mesh = useMemo(() => {
+    const n = Math.floor(size / 16)
+    const m = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.8, 6), new THREE.MeshBasicMaterial({ color: '#e8dc90' }), roadsX.length * n)
+    const o = new THREE.Object3D()
+    let k = 0
+    for (const x of roadsX)
+      for (let i = 0; i < n; i++) {
+        o.position.set(x, 0.25, -size / 2 + i * 16 + 4)
+        o.rotation.set(-Math.PI / 2, 0, 0)
+        o.updateMatrix()
+        m.setMatrixAt(k++, o.matrix)
+      }
+    m.instanceMatrix.needsUpdate = true
+    m.frustumCulled = false
+    return m
+  }, [roadsX, size])
+  return <primitive object={mesh} />
 }
 
 /**
@@ -205,18 +219,30 @@ function Buildings({ list, kit }: { list: Building[]; kit: KitType[] }) {
       }
       g.idxs.push(i)
     })
-    const chunks: { m: THREE.InstancedMesh; center: THREE.Vector3 }[] = []
-    const slot = new Map<number, [THREE.InstancedMesh, number]>()
+    const chunks: { m: THREE.InstancedMesh; lod: THREE.InstancedMesh | null; center: THREE.Vector3 }[] = []
+    const slot = new Map<number, [THREE.InstancedMesh, number, THREE.InstancedMesh | null]>()
     const c = new THREE.Color()
+    const boxGeo = new THREE.BoxGeometry(1, 1, 1)
+    const boxMat = new THREE.MeshToonMaterial({ gradientMap: toonGradient() })
     groups.forEach(({ type, idxs, cx, cz }) => {
-      const geo = type < 0 ? new THREE.BoxGeometry(1, 1, 1) : kit[type].geometry
-      const mat = type < 0 ? new THREE.MeshToonMaterial({ gradientMap: toonGradient() }) : kit[type].material
+      const geo = type < 0 ? boxGeo : kit[type].geometry
+      const mat = type < 0 ? boxMat : kit[type].material
       const m = new THREE.InstancedMesh(geo, mat, idxs.length)
+      // 遠距離用（LOD）：同じ位置・大きさの箱。外部モデルの区画だけ
+      const lod = type < 0 ? null : new THREE.InstancedMesh(boxGeo, boxMat, idxs.length)
       idxs.forEach((bi, li) => {
         const b = list[bi]
         m.setMatrixAt(li, place(b, 0))
         if (type < 0) m.setColorAt(li, c.set(b.color))
-        slot.set(bi, [m, li])
+        if (lod) {
+          o.position.set(b.x, b.h / 2, b.z)
+          o.rotation.set(0, b.yaw, 0)
+          o.scale.set(b.w, b.h, b.d)
+          o.updateMatrix()
+          lod.setMatrixAt(li, o.matrix)
+          lod.setColorAt(li, c.set(b.color))
+        }
+        slot.set(bi, [m, li, lod])
       })
       m.castShadow = true
       m.receiveShadow = true
@@ -224,7 +250,14 @@ function Buildings({ list, kit }: { list: Building[]; kit: KitType[] }) {
       if (m.instanceColor) m.instanceColor.needsUpdate = true
       m.computeBoundingSphere()
       m.frustumCulled = true
-      chunks.push({ m, center: new THREE.Vector3(-half + (cx + 0.5) * cell, 0, -half + (cz + 0.5) * cell) })
+      if (lod) {
+        lod.instanceMatrix.needsUpdate = true
+        if (lod.instanceColor) lod.instanceColor.needsUpdate = true
+        lod.computeBoundingSphere()
+        lod.frustumCulled = true
+        lod.visible = false
+      }
+      chunks.push({ m, lod, center: new THREE.Vector3(-half + (cx + 0.5) * cell, 0, -half + (cz + 0.5) * cell) })
     })
     return { chunks, slot }
   }, [list, kit]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -259,6 +292,10 @@ function Buildings({ list, kit }: { list: Building[]; kit: KitType[] }) {
           o.updateMatrix()
           s[0].setMatrixAt(s[1], o.matrix)
           s[0].instanceMatrix.needsUpdate = true
+          if (s[2]) {
+            s[2].setMatrixAt(s[1], o.matrix)
+            s[2].instanceMatrix.needsUpdate = true
+          }
         }
         emit('building.break', { x: b.x, z: b.z, w: b.w, h: b.h, d: b.d, color: b.color })
       }
@@ -279,7 +316,11 @@ function Buildings({ list, kit }: { list: Building[]; kit: KitType[] }) {
       for (const ch of chunks) {
         const dCam = Math.hypot(ch.center.x - cp.x, ch.center.z - cp.z)
         const dIm = Math.hypot(ch.center.x - ip.x, ch.center.z - ip.z)
-        ch.m.visible = dCam < STAGE.drawDist + cell
+        const inRange = dCam < STAGE.drawDist + cell
+        const near = dCam < STAGE.lodDist + cell * 0.5
+        // 近い区画は外部モデル、遠い区画は箱（LOD）
+        ch.m.visible = inRange && (near || !ch.lod)
+        if (ch.lod) ch.lod.visible = inRange && !near
         ch.m.castShadow = dIm < STAGE.shadowDist + cell * 0.75
       }
     }
@@ -299,13 +340,26 @@ function Buildings({ list, kit }: { list: Building[]; kit: KitType[] }) {
       if (!s) return
       s[0].setMatrixAt(s[1], place(list[i], nt / GAME.crushSec))
       dirty.add(s[0])
+      if (s[2]) {
+        const b = list[i]
+        const k = nt / GAME.crushSec
+        o.position.set(b.x, (b.h * (1 - 0.92 * k)) / 2, b.z)
+        o.rotation.set(0, b.yaw, 0)
+        o.scale.set(b.w * (1 + 0.15 * k), b.h * (1 - 0.92 * k), b.d * (1 + 0.15 * k))
+        o.updateMatrix()
+        s[2].setMatrixAt(s[1], o.matrix)
+        dirty.add(s[2])
+      }
     })
     dirty.forEach((m) => (m.instanceMatrix.needsUpdate = true))
   })
   return (
     <group>
       {chunks.map((ch, i) => (
-        <primitive key={i} object={ch.m} />
+        <group key={i}>
+          <primitive object={ch.m} />
+          {ch.lod && <primitive object={ch.lod} />}
+        </group>
       ))}
     </group>
   )
