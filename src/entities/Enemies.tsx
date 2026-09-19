@@ -63,6 +63,8 @@ export function DummyEnemies() {
 interface Boom {
   pos: THREE.Vector3
   t: number
+  /** 砂煙（足元のリングだけ） */
+  dust: boolean
 }
 
 /** 着弾の爆発（膨らむ球＋リング）。イベント駆動 */
@@ -71,10 +73,10 @@ export function Explosions() {
   const group = useRef<THREE.Group>(null!)
   const pool = useMemo(
     () =>
-      Array.from({ length: 8 }, () => {
+      Array.from({ length: 14 }, () => {
         const g = new THREE.Group()
         const core = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), new THREE.MeshBasicMaterial({ color: '#fff1a8', transparent: true }))
-        const ring = new THREE.Mesh(new THREE.TorusGeometry(1, 0.08, 8, 32), new THREE.MeshBasicMaterial({ color: '#ff7a2a', transparent: true }))
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(1, 0.08, 8, 32), new THREE.MeshBasicMaterial({ color: '#ff7a2a', transparent: true, depthWrite: false }))
         ring.rotation.x = Math.PI / 2
         g.add(core, ring)
         g.visible = false
@@ -85,10 +87,19 @@ export function Explosions() {
 
   useEffect(() => {
     pool.forEach((g) => group.current.add(g))
-    return on('enemy.hit', ({ x, y, z }) => {
-      list.current.push({ pos: new THREE.Vector3(x, y, z), t: 0 })
+    const off1 = on('enemy.hit', ({ x, y, z }) => {
+      list.current.push({ pos: new THREE.Vector3(x, y, z), t: 0, dust: false })
       if (list.current.length > pool.length) list.current.shift()
     })
+    const off2 = on('imouto.step', ({ x, z, strength }) => {
+      if (strength < 0.3) return
+      list.current.push({ pos: new THREE.Vector3(x, 1, z), t: 0, dust: true })
+      if (list.current.length > pool.length) list.current.shift()
+    })
+    return () => {
+      off1()
+      off2()
+    }
   }, [pool])
 
   useFrame((_, dt) => {
@@ -99,11 +110,24 @@ export function Explosions() {
       const k = b.t / LOCKON.explosionSec
       g.visible = true
       g.position.copy(b.pos)
-      const r = LOCKON.explosionRadius * (0.3 + 0.7 * Math.sqrt(k))
-      g.children[0].scale.setScalar(r * (1 - k * 0.3))
-      g.children[1].scale.setScalar(r * 1.6)
-      ;(g.children[0] as THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>).material.opacity = 1 - k
-      ;(g.children[1] as THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>).material.opacity = 0.8 * (1 - k)
+      const core = g.children[0] as THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>
+      const ring = g.children[1] as THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>
+      if (b.dust) {
+        core.visible = false
+        ring.visible = true
+        ring.scale.setScalar(20 + 40 * Math.sqrt(k))
+        ring.material.color.set('#d9c8a0')
+        ring.material.opacity = 0.7 * (1 - k)
+      } else {
+        core.visible = true
+        ring.visible = true
+        ring.material.color.set('#ff7a2a')
+        const r = LOCKON.explosionRadius * (0.3 + 0.7 * Math.sqrt(k))
+        core.scale.setScalar(r * (1 - k * 0.3))
+        ring.scale.setScalar(r * 1.6)
+        core.material.opacity = 1 - k
+        ring.material.opacity = 0.8 * (1 - k)
+      }
     })
   })
 

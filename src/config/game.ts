@@ -250,6 +250,10 @@ export const GAME = {
     { name: 'ビル街', from: -500, to: 500 },
     { name: '航空公園', from: 500, to: 9999 },
   ],
+  /** 建物破壊：妹の足元この半径（m）の建物が潰れる。1棟ごとのスコア減 */
+  crushRadius: 34,
+  crushPenalty: 30,
+  crushSec: 0.35,
   /** 公園：この範囲は建物を置かない（|x| < halfWidth, z in [from, to]） */
   park: { halfWidth: 320, from: 560, to: 1250 },
 }

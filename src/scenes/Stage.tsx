@@ -1,4 +1,7 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
+import { useFrame } from '@react-three/fiber'
+import { on, emit } from '../systems/events'
+import { useGame } from '../systems/store'
 import * as THREE from 'three'
 import { STAGE, GAME } from '../config/game'
 import { toonGradient } from '../systems/toon'
@@ -100,7 +103,10 @@ export function Stage() {
   )
 }
 
+/** 建物。妹の一歩で足元の建物が潰れる（インスタンスの高さを縮める） */
 function Buildings({ list }: { list: Building[] }) {
+  const crushed = useRef<Map<number, number>>(new Map()) // index → 経過秒
+  const o = useMemo(() => new THREE.Object3D(), [])
   const mesh = useMemo(() => {
     const geo = new THREE.BoxGeometry(1, 1, 1)
     const mat = new THREE.MeshToonMaterial({ gradientMap: toonGradient() })
@@ -120,6 +126,46 @@ function Buildings({ list }: { list: Building[] }) {
     if (m.instanceColor) m.instanceColor.needsUpdate = true
     return m
   }, [list])
+
+  useEffect(
+    () =>
+      on('imouto.step', ({ x, z }) => {
+        let n = 0
+        const r = GAME.crushRadius
+        list.forEach((b, i) => {
+          if (crushed.current.has(i)) return
+          // 建物の矩形と足元円の距離
+          const dx = Math.max(Math.abs(x - b.x) - b.w / 2, 0)
+          const dz = Math.max(Math.abs(z - b.z) - b.d / 2, 0)
+          if (Math.hypot(dx, dz) < r) {
+            crushed.current.set(i, 0)
+            emit('enemy.hit', { id: -1, x: b.x, y: 4, z: b.z })
+            n++
+          }
+        })
+        if (n > 0) useGame.getState().addScore(-GAME.crushPenalty * n)
+      }),
+    [list],
+  )
+
+  useFrame((_, dt) => {
+    if (crushed.current.size === 0) return
+    let dirty = false
+    crushed.current.forEach((t, i) => {
+      if (t >= GAME.crushSec) return
+      const nt = Math.min(GAME.crushSec, t + dt)
+      crushed.current.set(i, nt)
+      const k = nt / GAME.crushSec
+      const b = list[i]
+      const h = b.h * (1 - 0.92 * k)
+      o.position.set(b.x, h / 2, b.z)
+      o.scale.set(b.w * (1 + 0.15 * k), h, b.d * (1 + 0.15 * k))
+      o.updateMatrix()
+      mesh.setMatrixAt(i, o.matrix)
+      dirty = true
+    })
+    if (dirty) mesh.instanceMatrix.needsUpdate = true
+  })
   return <primitive object={mesh} />
 }
 
