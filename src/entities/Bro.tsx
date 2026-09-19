@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { BRO, SCALE } from '../config/game'
+import { BRO, SCALE, LOCKON } from '../config/game'
+import { enemies, killEnemy, lock, clearLocks } from '../systems/enemies'
+import { DUMMY_ENEMIES } from '../config/game'
 import { useModels, candidates } from '../systems/models'
 import { readMove, useInput } from '../systems/input'
 import { refs, shoulderWorld } from '../systems/refs'
 import { useGame } from '../systems/store'
 import { useVRM } from '../systems/loaders'
 import { emit } from '../systems/events'
-import { applyWalk, applyShoulderPose } from '../systems/procAnim'
+import { applyWalk, applyShoulderPose, applyFlyPose } from '../systems/procAnim'
 
 const v = new THREE.Vector3()
 const target = new THREE.Vector3()
@@ -28,6 +30,16 @@ export function Bro() {
   /** 肩上の指示：null=腕組み, 0=前, -1=左, 1=右 */
   const steer = useRef<number | null>(null)
   const poseBlend = useRef(0)
+  /** 投擲シーケンス */
+  const throwSeq = useRef<{ targets: number[]; idx: number; phase: 'windup' | 'fly' | 'pause' | 'return'; t: number; from: THREE.Vector3; hits: number }>({
+    targets: [],
+    idx: 0,
+    phase: 'windup',
+    t: 0,
+    from: new THREE.Vector3(),
+    hits: 0,
+  })
+  const wasA = useRef(false)
   const selected = useModels((s) => s.bro)
   const setResolved = useModels((s) => s.setResolved)
   const { vrm, choice } = useVRM(candidates('bro', selected))
@@ -149,12 +161,103 @@ export function Bro() {
         g.rotation.y = yawRef.current
         const m = readMove()
         steer.current = m.y > 0.2 ? (m.x > 0.3 ? 1 : m.x < -0.3 ? -1 : 0) : m.x > 0.3 ? 1 : m.x < -0.3 ? -1 : m.y > 0.2 ? 0 : null
+        // A を離した瞬間、ロックがあれば投擲開始
+        const aNow = input.keys.a
+        if (wasA.current && !aNow && lock.ids.length > 0) {
+          const seq = throwSeq.current
+          seq.targets = [...lock.ids]
+          seq.idx = 0
+          seq.phase = 'windup'
+          seq.t = 0
+          seq.hits = 0
+          seq.from.copy(g.position)
+          clearLocks()
+          st.setMode('thrown')
+          emit('bro.throw', { count: seq.targets.length })
+        }
+        wasA.current = aNow
         if (pressedB) {
           refs.mountStart.copy(g.position)
           st.setTransition(0)
           st.setMode('dismounting')
           emit('bro.dismount', undefined)
         }
+        break
+      }
+      case 'thrown': {
+        const seq = throwSeq.current
+        seq.t += dt
+        moving = 1
+        const nextTarget = () => {
+          while (seq.idx < seq.targets.length) {
+            const e = enemies.find((x) => x.id === seq.targets[seq.idx])
+            if (e && e.alive) return e
+            seq.idx++
+          }
+          return null
+        }
+        if (seq.phase === 'windup') {
+          // 妹の肩で一瞬タメ（妹の腕が振りかぶる時間）。位置は肩に追従
+          shoulderWorld(v)
+          g.position.copy(v)
+          g.position.y += Math.sin(Math.min(1, seq.t / LOCKON.windupSec) * Math.PI) * 4
+          if (seq.t >= LOCKON.windupSec) {
+            seq.phase = 'fly'
+            seq.t = 0
+            seq.from.copy(g.position)
+          }
+        } else if (seq.phase === 'fly') {
+          const e = nextTarget()
+          if (!e) {
+            seq.phase = 'return'
+            seq.t = 0
+            seq.from.copy(g.position)
+          } else {
+            const dist = seq.from.distanceTo(e.pos)
+            const dur = Math.max(0.12, dist / LOCKON.flySpeed)
+            const k = Math.min(1, seq.t / dur)
+            g.position.lerpVectors(seq.from, e.pos, k)
+            // 少し弧を描く
+            g.position.y += Math.sin(k * Math.PI) * Math.min(25, dist * 0.12)
+            const dx = e.pos.x - seq.from.x
+            const dz = e.pos.z - seq.from.z
+            if (Math.hypot(dx, dz) > 0.5) yawRef.current = Math.atan2(dx, dz)
+            if (k >= 1) {
+              killEnemy(e.id, DUMMY_ENEMIES.respawnSec)
+              seq.hits++
+              emit('enemy.hit', { id: e.id, x: e.pos.x, y: e.pos.y, z: e.pos.z })
+              seq.idx++
+              seq.phase = 'pause'
+              seq.t = 0
+              seq.from.copy(g.position)
+            }
+          }
+        } else if (seq.phase === 'pause') {
+          if (seq.t >= LOCKON.hitPauseSec) {
+            seq.phase = nextTarget() ? 'fly' : 'return'
+            seq.t = 0
+            seq.from.copy(g.position)
+          }
+        } else if (seq.phase === 'return') {
+          const k = Math.min(1, seq.t / LOCKON.returnSec)
+          shoulderWorld(target)
+          const e = easeInOut(k)
+          g.position.lerpVectors(seq.from, target, e)
+          g.position.y += Math.sin(k * Math.PI) * SCALE.imoutoHeight * LOCKON.returnArc
+          const dx = target.x - seq.from.x
+          const dz = target.z - seq.from.z
+          if (Math.hypot(dx, dz) > 1) yawRef.current = Math.atan2(dx, dz)
+          if (k >= 1) {
+            if (seq.hits > 0) {
+              st.addScore(Math.round(100 * seq.hits * (seq.hits > 1 ? seq.hits * LOCKON.comboMulti : 1)))
+              if (seq.hits > 1) st.setCombo(seq.hits)
+            }
+            st.setMode('shoulder')
+            wasA.current = input.keys.a
+            emit('bro.return', undefined)
+          }
+        }
+        g.rotation.y = yawRef.current
         break
       }
       case 'dismounting': {
@@ -185,11 +288,17 @@ export function Bro() {
     refs.broYaw = yawRef.current
 
     if (vrm) {
-      const onShoulder = st.mode === 'shoulder'
+      const onShoulder = st.mode === 'shoulder' || (st.mode === 'thrown' && throwSeq.current.phase === 'windup')
       poseBlend.current += ((onShoulder ? 1 : 0) - poseBlend.current) * Math.min(1, 8 * dt)
-      if (poseBlend.current > 0.5) {
+      if (st.mode === 'thrown' && throwSeq.current.phase !== 'windup') {
+        // ライダーキック姿勢。飛行方向へ体を倒す
+        applyFlyPose(vrm, dt)
+        g.rotation.x = throwSeq.current.phase === 'return' ? -0.4 : 0.9
+      } else if (poseBlend.current > 0.5) {
+        g.rotation.x = 0
         applyShoulderPose(vrm, steer.current, dt)
       } else {
+        g.rotation.x = 0
         runRatio.current += (moving - runRatio.current) * Math.min(1, 10 * dt)
         if (runRatio.current > 0.02) phase.current += (dt / BRO.stepPeriod) * Math.PI * 2 * Math.max(0.5, runRatio.current)
         applyWalk(vrm, phase.current, runRatio.current, BRO.walk, modelHeight)

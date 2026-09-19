@@ -1,5 +1,5 @@
 // Esc で開く調整パネルの項目。path は game.ts のオブジェクトのドット区切り。
-import { SCALE, BRO, IMOUTO, CAMERA } from './game'
+import { SCALE, BRO, IMOUTO, CAMERA, LOCKON } from './game'
 
 export interface TuneItem {
   path: string
@@ -68,6 +68,20 @@ export const TUNE_GROUPS: { title: string; items: TuneItem[] }[] = [
     ],
   },
   {
+    title: 'ロックオン投擲',
+    items: [
+      { path: 'LOCKON.maxLocks', label: '最大ロック数', min: 1, max: 12, step: 1 },
+      { path: 'LOCKON.reticleRadius', label: 'サイト半径', min: 0.02, max: 0.3, step: 0.01 },
+      { path: 'LOCKON.flySpeed', label: '飛行速度', min: 60, max: 600, step: 10 },
+      { path: 'LOCKON.windupSec', label: '振りかぶり秒', min: 0, max: 1.5, step: 0.05 },
+      { path: 'LOCKON.returnSec', label: '帰還秒', min: 0.3, max: 3, step: 0.1 },
+      { path: 'LOCKON.explosionRadius', label: '爆発の大きさ', min: 4, max: 40, step: 1 },
+      { path: 'CAMERA.thrown.fov', label: '投擲 FOV', min: 40, max: 100, step: 1 },
+      { path: 'CAMERA.thrown.broWeight', label: '投擲 兄寄り', min: 0, max: 1, step: 0.05 },
+      { path: 'CAMERA.thrown.distanceK', label: '投擲 引き係数', min: 0.1, max: 1.5, step: 0.05 },
+    ],
+  },
+  {
     title: 'カメラ',
     items: [
       { path: 'CAMERA.ground.fov', label: '地上 FOV', min: 40, max: 110, step: 1 },
@@ -82,7 +96,7 @@ export const TUNE_GROUPS: { title: string; items: TuneItem[] }[] = [
   },
 ]
 
-const ROOTS: Record<string, Record<string, unknown>> = { SCALE, BRO, IMOUTO, CAMERA }
+const ROOTS: Record<string, Record<string, unknown>> = { SCALE, BRO, IMOUTO, CAMERA, LOCKON }
 const STORAGE_KEY = 'imouto-tuning-v1'
 
 function resolve(path: string): { obj: Record<string, unknown>; key: string } {

@@ -1,6 +1,7 @@
 import { CAMERA } from '../config/game'
 import { refs } from './refs'
 import { useGame } from './store'
+import { useInput } from './input'
 import * as THREE from 'three'
 
 /**
@@ -26,10 +27,15 @@ export function bindMouse(el: HTMLElement): () => void {
     if ((e.target as HTMLElement).closest('.stick, .buttons, .tune')) return
     if (useGame.getState().tuneOpen) return
     dragging = true
-    if (document.pointerLockElement !== el) el.requestPointerLock?.()
+    // 左クリック＝A（溜め）。ロック中でなければまずロックを取る
+    if (e.button === 0) {
+      if (document.pointerLockElement !== el) el.requestPointerLock?.()
+      useInput.getState().set('a', true)
+    }
   }
-  const onMouseUp = () => {
+  const onMouseUp = (e: MouseEvent) => {
     dragging = false
+    if (e.button === 0) useInput.getState().set('a', false)
   }
   const onTouchStart = (e: TouchEvent) => {
     for (const t of Array.from(e.changedTouches)) {

@@ -123,3 +123,25 @@ export function applyFace(vrm: VRM, t: number, walkRatio: number, f: { happy: nu
   const b = (t % f.blinkPeriod) / f.blinkPeriod
   em.setValue('blink', b > 0.95 ? Math.sin((b - 0.95) / 0.05 * Math.PI) : 0)
 }
+
+/** 飛行（ライダーキック）姿勢：右脚を前に突き出し、左脚を折り、腕は後ろへ */
+export function applyFlyPose(vrm: VRM, dt: number) {
+  const h = vrm.humanoid
+  const k = Math.min(1, 14 * dt)
+  const b = (n: VRMHumanBoneName) => h.getNormalizedBoneNode(n)
+  const g = armSign(vrm)
+  lerpTo(b('rightUpperLeg'), -1.4, 0, 0, k)
+  lerpTo(b('rightLowerLeg'), 0.1, 0, 0, k)
+  lerpTo(b('leftUpperLeg'), 0.6, 0, 0, k)
+  lerpTo(b('leftLowerLeg'), 1.9, 0, 0, k)
+  lerpTo(b('spine'), 0.1, 0, 0, k)
+  lerpTo(b('leftUpperArm'), 0.9 * g, 0, -1.0 * g, k)
+  lerpTo(b('rightUpperArm'), 0.9 * g, 0, 1.0 * g, k)
+  lerpTo(b('leftLowerArm'), 0, -0.6 * g, -0.2 * g, k)
+  lerpTo(b('rightLowerArm'), 0, 0.6 * g, 0.2 * g, k)
+  const hips = b('hips')
+  if (hips) {
+    const base = (hips.userData.baseY ??= hips.position.y) as number
+    hips.position.y = base
+  }
+}

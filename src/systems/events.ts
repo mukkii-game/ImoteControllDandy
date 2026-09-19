@@ -7,6 +7,11 @@ export interface GameEvents {
   'bro.mount': void
   'bro.dismount': void
   'bro.jump': void
+  /** 投擲開始（妹が掴んで投げる） */
+  'bro.throw': { count: number }
+  /** 兄が敵に着弾 */
+  'enemy.hit': { id: number; x: number; y: number; z: number }
+  'bro.return': void
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

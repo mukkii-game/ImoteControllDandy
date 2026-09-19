@@ -5,6 +5,8 @@ import { Bro } from '../entities/Bro'
 import { CameraRig } from '../systems/camera'
 import { Stage } from './Stage'
 import { ShadowFollower } from '../systems/shadow'
+import { DummyEnemies, Explosions, BroTrail } from '../entities/Enemies'
+import { LockonSystem } from '../systems/lockon'
 
 export function StageScene() {
   const H = SCALE.imoutoHeight
@@ -23,6 +25,10 @@ export function StageScene() {
       <Stage />
       <Imouto />
       <Bro />
+      <DummyEnemies />
+      <Explosions />
+      <BroTrail />
+      <LockonSystem />
       <CameraRig />
     </Canvas>
   )

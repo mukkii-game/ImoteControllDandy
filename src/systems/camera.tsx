@@ -14,6 +14,9 @@ const groundLook = new THREE.Vector3()
 const shoulderPos = new THREE.Vector3()
 const shoulderLook = new THREE.Vector3()
 const tmp = new THREE.Vector3()
+const thrownPos = new THREE.Vector3()
+const thrownLook = new THREE.Vector3()
+const headW = new THREE.Vector3()
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2)
 
 /** 注視点を中心に、camYaw/camPitch のオービット位置を求める */
@@ -42,6 +45,30 @@ function computeShoulder(pos: THREE.Vector3, look: THREE.Vector3) {
   orbit(look, CAMERA.shoulder.distance, pos)
 }
 
+/** 投擲中：兄と妹の頭の中間（兄寄り）を、二人を結ぶ線の横から見る。妹が必ず画面に入る */
+const sideV = new THREE.Vector3()
+function computeThrown(pos: THREE.Vector3, look: THREE.Vector3) {
+  const b = refs.bro
+  if (!b) return
+  if (refs.head) refs.head.getWorldPosition(headW)
+  else shoulderWorld(headW)
+  const c = CAMERA.thrown
+  look.lerpVectors(headW, b.position, c.broWeight)
+  const sep = headW.distanceTo(b.position)
+  const dist = c.distanceMin + sep * c.distanceK
+  tmp.subVectors(b.position, headW)
+  tmp.y = 0
+  if (tmp.lengthSq() < 1) tmp.set(Math.sin(refs.camYaw), 0, Math.cos(refs.camYaw))
+  tmp.normalize()
+  // 兄→妹の線に対して横。現在のカメラ側（右/左）を保って急に回り込まない
+  sideV.set(-tmp.z, 0, tmp.x)
+  const cur = new THREE.Vector3().subVectors(refs.camPos, look)
+  if (cur.dot(sideV) < 0) sideV.negate()
+  pos.copy(look).addScaledVector(sideV, dist).addScaledVector(tmp, -dist * 0.35)
+  pos.y = look.y + dist * c.heightK
+  if (pos.y < 3) pos.y = 3
+}
+
 /** 乗降中に妹の体を突き抜けないよう、左肩側（+X）へ外側に膨らませる */
 function bulge(pos: THREE.Vector3, t: number) {
   const yaw = refs.imouto?.rotation.y ?? 0
@@ -60,6 +87,7 @@ export function CameraRig() {
   const shake = useRef(0)
   const shakeT = useRef(0)
   const lastMode = useRef(useGame.getState().mode)
+  const blendUntil = useRef(0)
 
   useEffect(
     () =>
@@ -88,6 +116,11 @@ export function CameraRig() {
         refs.camYaw = refs.imouto?.rotation.y ?? refs.camYaw
       } else if (st.mode === 'dismounting') {
         refs.camPitch = CAMERA.ground.defaultPitch
+      } else if (st.mode === 'shoulder' && lastMode.current === 'thrown') {
+        // 帰還直後：妹の正面向き・既定ピッチへ、なめらかに戻す
+        refs.camYaw = refs.imouto?.rotation.y ?? refs.camYaw
+        refs.camPitch = CAMERA.shoulder.defaultPitch
+        blendUntil.current = performance.now() + CAMERA.thrown.blendBackSec * 1000
       }
       lastMode.current = st.mode
     }
@@ -106,6 +139,12 @@ export function CameraRig() {
         desiredPos.copy(shoulderPos)
         desiredLook.copy(shoulderLook)
         fov = CAMERA.shoulder.fov
+        break
+      case 'thrown':
+        computeThrown(thrownPos, thrownLook)
+        desiredPos.copy(thrownPos)
+        desiredLook.copy(thrownLook)
+        fov = CAMERA.thrown.fov
         break
       case 'mounting': {
         const e = easeInOut(st.transition)
@@ -146,8 +185,14 @@ export function CameraRig() {
     }
     // オービットはマウス直結なので位置は即応、注視点だけ軽くなめらかに
     const k = snap ? 1 : Math.min(1, CAMERA.followLerp * dt)
-    camera.position.copy(desiredPos)
-    smoothedLook.current.lerp(desiredLook, snap ? 1 : Math.min(1, k * 3))
+    if (st.mode === 'thrown' || performance.now() < blendUntil.current) {
+      const kk = Math.min(1, CAMERA.thrown.followLerp * dt)
+      camera.position.lerp(desiredPos, kk)
+      smoothedLook.current.lerp(desiredLook, Math.min(1, kk * 2))
+    } else {
+      camera.position.copy(desiredPos)
+      smoothedLook.current.lerp(desiredLook, snap ? 1 : Math.min(1, k * 3))
+    }
 
     shake.current = Math.max(0, shake.current - CAMERA.shakeDecay * dt * shake.current - dt * 0.2)
     shakeT.current += dt * 40
@@ -155,6 +200,7 @@ export function CameraRig() {
     camera.position.x += Math.sin(shakeT.current * 1.3) * amp
     camera.position.y += Math.sin(shakeT.current * 1.7 + 1) * amp * 0.8
     camera.lookAt(smoothedLook.current)
+    refs.camPos.copy(camera.position)
 
     if (Math.abs(cam.fov - fov) > 0.01) {
       cam.fov = THREE.MathUtils.lerp(cam.fov, fov, snap ? 1 : k)

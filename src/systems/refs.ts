@@ -13,6 +13,8 @@ export const refs = {
   /** カメラのオービット角（マウス操作）。yaw は「カメラが向いている方向」 */
   camYaw: Math.PI,
   camPitch: 0.12,
+  /** 直近のカメラ位置（投擲カメラの側判定用） */
+  camPos: new THREE.Vector3(),
   /** 兄の乗降アニメ用の始点（ワールド） */
   mountStart: new THREE.Vector3(),
   mountDuration: 1,

@@ -135,13 +135,48 @@ export const IMOUTO = {
   broHairColliderUp: 2.5,
 }
 
+export const LOCKON = {
+  /** 同時ロック最大数 */
+  maxLocks: 6,
+  /** サイト中心からこの半径（画面高さ比）に入った敵をロック */
+  reticleRadius: 0.12,
+  /** ロック可能距離（m） */
+  maxRange: 700,
+  /** 投げの飛行速度（m/s） */
+  flySpeed: 260,
+  /** 妹が掴んで振りかぶる時間（秒） */
+  windupSec: 0.35,
+  /** 着弾ごとの停止（秒） */
+  hitPauseSec: 0.08,
+  /** 最後の敵から肩へ戻る秒数 */
+  returnSec: 1.1,
+  /** 帰還の弧の高さ（妹の身長比） */
+  returnArc: 0.2,
+  /** 爆発の大きさ（m）と時間 */
+  explosionRadius: 16,
+  explosionSec: 0.6,
+  /** まとめ着弾のスコア倍率（n 体で n*multi） */
+  comboMulti: 1.5,
+}
+
+/** テスト用の的（ステップ4で戦闘機に置き換え） */
+export const DUMMY_ENEMIES = {
+  count: 8,
+  orbitRadius: 170,
+  orbitSpeed: 0.25,
+  heightMin: 35,
+  heightMax: 95,
+  size: 9,
+  respawnSec: 4,
+}
+
 export const CAMERA = {
   near: 0.3,
   far: 1500,
   /** マウス感度（rad / px） */
   mouseSensitivity: 0.0025,
   touchSensitivity: 0.006,
-  pitchMin: -0.35,
+  pitchMin: -0.9,
   pitchMax: 1.1,
   /** 地上：兄を中心にマウスで回すオービット。やや低めで妹が収まらない */
   ground: {
@@ -150,6 +185,19 @@ export const CAMERA = {
     /** 注視点の高さ（兄の腰〜胸） */
     targetHeight: 1.3,
     defaultPitch: 0.12,
+  },
+  /** 投擲中：兄と妹の両方を画面に。center は兄寄りの重み */
+  thrown: {
+    fov: 70,
+    broWeight: 0.6,
+    /** 兄と妹の距離に応じた引き（最小・係数） */
+    distanceMin: 22,
+    distanceK: 0.75,
+    /** 注視点からの高さ係数（距離比） */
+    heightK: 0.14,
+    followLerp: 7,
+    /** 帰還後に肩カメラへなめらかに戻す秒数 */
+    blendBackSec: 0.7,
   },
   /** 肩上：肩アンカーを中心にオービット。少し望遠 */
   shoulder: {
