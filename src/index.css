@@ -6,8 +6,9 @@ canvas { display: block; }
 .hud { position: absolute; inset: 0; pointer-events: none; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
 .hud-top { display: flex; justify-content: space-between; padding: 10px 14px; font-weight: 700; }
 .hud-top .step { font-weight: 400; opacity: .7; font-size: .8em; margin-left: 8px; }
-.hud-top .mode { background: rgba(0,0,0,.4); padding: 2px 10px; border-radius: 6px; }
-.hud-top .fps { position: absolute; right: 14px; top: 44px; font-size: 12px; opacity: .75; font-variant-numeric: tabular-nums; }
+/* 右上はタイマーが大きく占めるので、モード・スコア・fps・レーダーはその下へ */
+.hud-top .mode { position: absolute; right: 14px; top: 104px; background: rgba(0,0,0,.4); padding: 2px 10px; border-radius: 6px; }
+.hud-top .fps { position: absolute; right: 14px; top: 152px; font-size: 12px; opacity: .75; font-variant-numeric: tabular-nums; }
 .hint { position: absolute; left: 50%; bottom: 22%; transform: translateX(-50%); background: rgba(0,0,0,.5); padding: 8px 16px; border-radius: 8px; font-size: 15px; white-space: nowrap; }
 .hint-ready { background: rgba(255,200,40,.85); color: #222; text-shadow: none; font-weight: 700; }
 
@@ -38,7 +39,7 @@ canvas { display: block; }
 .tune-row-select { grid-template-columns: 110px 1fr; }
 .tune-row-select select { background: #111; color: #eee; border: 1px solid #444; border-radius: 4px; padding: 3px 4px; font-size: 12px; width: 100%; }
 
-.score { position: absolute; right: 14px; top: 44px; font-weight: 800; font-size: 16px; }
+.score { position: absolute; right: 14px; top: 132px; font-weight: 800; font-size: 16px; }
 .combo { position: absolute; left: 50%; top: 30%; transform: translateX(-50%); font-size: 40px; font-weight: 900; color: #ffd166; text-shadow: 0 2px 0 #7a1040, 0 0 18px rgba(255,120,60,.8); animation: combo-pop .5s ease-out; }
 @keyframes combo-pop { 0% { transform: translateX(-50%) scale(.4); opacity: 0 } 60% { transform: translateX(-50%) scale(1.15); opacity: 1 } 100% { transform: translateX(-50%) scale(1) } }
 .reticle-layer { position: absolute; inset: 0; pointer-events: none; }
@@ -62,7 +63,7 @@ canvas { display: block; }
 .dest-marker.locked .name { background: #ff4d7a; }
 .dest-marker.offscreen .tri { animation: none; }
 @keyframes dest-bob { 50% { transform: translateY(-8px) } }
-.radar { position: absolute; right: 14px; top: 70px; border-radius: 50%; pointer-events: none; }
+.radar { position: absolute; right: 14px; top: 172px; border-radius: 50%; pointer-events: none; }
 .pause-badge { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); font-size: 54px; font-weight: 900; letter-spacing: .2em; color: #fff; text-shadow: 0 3px 0 #7a1040, 0 0 24px rgba(0,0,0,.6); }
 /* 兄の吹き出し */
 .speech { position: absolute; left: 0; top: 0; display: none; background: #fff; color: #222; font-weight: 900; font-size: 44px; padding: 12px 28px; border-radius: 26px; border: 4px solid #222; white-space: nowrap; will-change: transform; animation: speech-pop .18s ease-out; text-shadow: none; }
@@ -82,9 +83,16 @@ canvas { display: block; }
 .skill.cd::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: var(--cd); background: rgba(255,255,255,.18); }
 .skill.active { border-color: #ff4d7a; box-shadow: 0 0 12px rgba(255,77,122,.7); }
 
-.timer { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); text-align: center; }
-.timer .t { font-size: 34px; font-weight: 900; letter-spacing: .05em; }
-.timer .d { font-size: 12px; opacity: .85; }
+/* タイマー：右上に大きく */
+.timer { position: absolute; right: 14px; top: 4px; text-align: right; font-variant-numeric: tabular-nums; }
+.timer .t { font-size: 76px; line-height: 1; font-weight: 900; letter-spacing: .04em; text-shadow: 0 3px 0 #7a1040, 0 0 18px rgba(0,0,0,.7); }
+.timer .d { font-size: 15px; opacity: .9; margin-top: 2px; }
+/* エリアに入った時の巨大な地名（画面中央、PAUSE と同じ位置） */
+.area-title { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); white-space: nowrap; font-size: min(11vw, 96px); font-weight: 900; letter-spacing: .12em; color: #ffe066;
+  font-family: "M PLUS Rounded 1c", "Rounded Mplus 1c", "Hiragino Maru Gothic ProN", "Yu Gothic UI", "Meiryo", "Noto Sans JP", system-ui, sans-serif;
+  text-shadow: 4px 4px 0 #ff4d7a, -4px 4px 0 #ff4d7a, 4px -4px 0 #ff4d7a, -4px -4px 0 #ff4d7a, 0 10px 0 #7a1040, 0 0 30px rgba(0,0,0,.6);
+  animation: area-in 3s ease-out both; }
+@keyframes area-in { 0% { opacity: 0; transform: translate(-50%, -50%) scale(1.6) } 12% { opacity: 1; transform: translate(-50%, -50%) scale(1) } 80% { opacity: 1 } 100% { opacity: 0 } }
 .timer.urgent .t { color: #ff5c7a; animation: blink 1s steps(2) infinite; }
 @keyframes blink { 50% { opacity: .4 } }
 .overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: rgba(10,12,20,.55); pointer-events: auto; text-align: center; padding: 20px; }

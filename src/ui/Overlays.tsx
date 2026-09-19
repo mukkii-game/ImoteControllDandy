@@ -1,7 +1,7 @@
 import { useGame } from '../systems/store'
 import { GAME, IMOUTO } from '../config/game'
 import { refs } from '../systems/refs'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 function fmt(sec: number) {
   const m = Math.floor(sec / 60)
@@ -21,16 +21,30 @@ export function Overlays() {
   const ready = loaded.imouto && loaded.bro
   const [dist, setDist] = useState(0)
   const [section, setSection] = useState('')
+  /** エリアに入った時の巨大な地名（areaTitleSec 秒で消える） */
+  const [areaTitle, setAreaTitle] = useState<string | null>(null)
+  const lastArea = useRef<string | null>(null)
 
   useEffect(() => {
+    let hide = 0
     const id = setInterval(() => {
       const im = refs.imouto
       if (!im) return
       setDist(Math.max(0, Math.round(GAME.gateZ - im.position.z)))
-      const sec = GAME.sections.find((s) => im.position.z >= s.from && im.position.z < s.to)
-      setSection(sec?.name ?? '')
+      const area = GAME.areas.find((s) => im.position.z >= s.from && im.position.z < s.to)?.name ?? ''
+      setSection(area)
+      // プレイ中にエリアが変わったら（最初のエリアも）巨大表示
+      if (useGame.getState().phase === 'play' && area && area !== lastArea.current) {
+        lastArea.current = area
+        setAreaTitle(area)
+        clearTimeout(hide)
+        hide = window.setTimeout(() => setAreaTitle(null), GAME.areaTitleSec * 1000)
+      }
     }, 250)
-    return () => clearInterval(id)
+    return () => {
+      clearInterval(id)
+      clearTimeout(hide)
+    }
   }, [])
 
   const urgent = phase === 'play' && timeLeft < GAME.scaredSec
@@ -46,6 +60,11 @@ export function Overlays() {
         </div>
       )}
       {phase === 'play' && paused && <div className="pause-badge">PAUSE</div>}
+      {phase === 'play' && areaTitle && !paused && (
+        <div key={areaTitle} className="area-title">
+          {areaTitle}
+        </div>
+      )}
       {phase === 'title' && (
         <div className="overlay title-screen">
           <div className="logo">

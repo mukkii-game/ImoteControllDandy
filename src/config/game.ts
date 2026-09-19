@@ -453,12 +453,23 @@ export const GAME = {
   gateHalfWidth: 45,
   /** 校舎・校庭の配置。超巨大な校舎（スタート地点からでも見える。フォグを受けない） */
   school: { z: 1700, width: 900, depth: 160, height: 220, yardDepth: 120, towerHeight: 180, towerWidth: 60 },
-  /** 区間（z の境界）：住宅街 → ビル街 → 航空公園 */
-  sections: [
+  /** 街の見た目の区間（z の境界）：住宅街（屋根付きの低い家）→ ビル街（高層）→ 航空公園 */
+  terrain: [
     { name: '住宅街', from: -9999, to: -500 },
     { name: 'ビル街', from: -500, to: 500 },
     { name: '航空公園', from: 500, to: 9999 },
   ],
+  /**
+   * ゲーム上のエリア（仮に 4 分割）。入った時に画面中央へ巨大な地名を areaTitleSec 秒出す。タイマー下の表示にも使う。
+   * スタート z=-1000 〜 校門 z=1400 を 600m ずつ
+   */
+  areas: [
+    { name: 'プロペ商店街', from: -9999, to: -400 },
+    { name: '航空公園', from: -400, to: 200 },
+    { name: '米軍基地', from: 200, to: 800 },
+    { name: '小学校近辺', from: 800, to: 9999 },
+  ],
+  areaTitleSec: 3,
   /** 建物破壊：妹の足元この半径（m）の建物が潰れる（妹の横幅 ≒ 12m より少し大きい程度）。1棟ごとのスコア減 */
   crushRadius: 8,
   crushPenalty: 30,

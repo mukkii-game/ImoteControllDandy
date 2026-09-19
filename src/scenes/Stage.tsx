@@ -55,7 +55,7 @@ export function Stage() {
             if (Math.abs(cx) < GAME.park.halfWidth && cz > GAME.park.from && cz < GAME.park.to) continue
             if (Math.abs(cx) < GAME.school.width / 2 + 60 && cz > GAME.gateZ - 40 && cz < GAME.school.z + 150) continue
             // 区間で見た目を変える：住宅街（z < -500）は屋根付きの低い家、ビル街は高層
-            const section = GAME.sections.find((sc) => cz >= sc.from && cz < sc.to)?.name
+            const section = GAME.terrain.find((sc) => cz >= sc.from && cz < sc.to)?.name
             if (section === '住宅街') {
               // 1 区画を 2×2 の家に分ける
               for (let hi = 0; hi < 2; hi++)

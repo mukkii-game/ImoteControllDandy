@@ -70,6 +70,7 @@ npm run build    # dist/ に出力（itch.io 用）
 - 爆撃（FIGHTERS.bomb）：黒い爆弾が黄色い光をまとって、妹の胴体へゆっくり曲がりながら飛んでくる（speed / homing / gravity）。当たると被弾エフェクト＋減速。上空集合の旋回は半径 135m・高さ 210m（loiter.kinds.overhead）
 - 吹っ飛び：地上の敵は上へ 160m/s、空中の敵は上へ 75m/s で勢いよく散ってから半分の重力で落ちる（DEBRIS.knockback / DEBRIS.air）
 - 空の敵：戦闘機は 2 編隊（FIGHTERS.squadrons、各 7 機）が同時に別方向から。ヘリは 2 編隊 × 4 機（HELIS.groups / perGroup / formation）でまとまって妹の周りを回る。全体的に前より遠め（loiter.kinds の center、HELIS.keepDist 260）。戦闘機の速度は 220 m/s
+- エリア（GAME.areas、仮の 4 分割・600m ずつ）：プロペ商店街 → 航空公園 → 米軍基地 → 小学校近辺。入ると画面中央（PAUSE と同じ位置）に巨大な地名を 3 秒（GAME.areaTitleSec、.area-title）。街の見た目の区間は別（GAME.terrain）。タイマーは右上に大きく（.timer）、その下にモード・スコア・fps・レーダー
 - スタートは z=-1000（ビル街 z=-500 の手前）。エネミービルは 2 組：スタート先に右＝満洲・左＝山田うどん、学校との中間（z≈160〜260）にも道から左右 230m 離れて 1 組（BOSSES）。900m 手前から 5 m/s でゆっくり近づき（BOSS.aggroDist / creepSpeed）、体を左右に揺らし上半分がしなりながらにじり寄る（BOSS.sway）
 - 敵の弾（ミサイル・砲弾）の速さは 14〜15 m/s（爆弾は 14）
 - 被弾：SPEC 通り 0.5 秒減速（HIT.slowSec / slowFactor）＋驚き顔＋「いたっ」の声（line_imouto_hit、SOUND.hitVoiceMinGapSec で連呼を抑える）。ダメージは無い
