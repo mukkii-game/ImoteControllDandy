@@ -49,9 +49,10 @@ export const MODEL_CHOICES: { imouto: ModelChoice[]; bro: ModelChoice[] } = {
     },
     {
       id: 'seed-san',
-      label: 'Seed-san（素体のまま）',
+      label: 'Seed-san（ロボアーム・バックパック無し）',
       url: 'models/Seed-san.vrm',
       credit: 'Seed-san by VirtualCast, Inc.',
+      hideMaterials: ['arm_mat', 'arm_plastic', 'armgear', 'robo_face', 'green_emit', 'glass', 'backpack', 'anim_logo', 'wear_metal'],
     },
   ],
 }
