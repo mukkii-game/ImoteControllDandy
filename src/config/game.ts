@@ -49,12 +49,9 @@ export const MODEL_CHOICES: { imouto: ModelChoice[]; bro: ModelChoice[] } = {
     },
     {
       id: 'seed-san',
-      label: 'Seed-san（学生服風に色替え）',
+      label: 'Seed-san（素体のまま）',
       url: 'models/Seed-san.vrm',
       credit: 'Seed-san by VirtualCast, Inc.',
-      hideMaterials: ['backpack', 'anim_logo'],
-      tintMaterials: ['huku', 'arm_mat', 'arm_plastic', 'armgear', 'wear_metal'],
-      tintColor: '#1c2140',
     },
   ],
 }
@@ -82,7 +79,28 @@ export const BRO = {
 }
 
 export const IMOUTO = {
+  name: 'ロロ',
   spawn: { x: 0, y: 0, z: 0 },
+  /**
+   * 服のロゴ。Tops テクスチャに Canvas で描く（VRM ファイルは触らない）。
+   * u/v は 0..1 のテクスチャ座標（胸の前面 UV の中心）。
+   */
+  logo: {
+    material: 'Tops',
+    text: 'ロロ',
+    vertical: true,
+    u: 0.5,
+    v: 0.245,
+    /** テクスチャ幅に対する1文字の大きさ */
+    size: 0.18,
+    lineGap: 1.15,
+    color: '#ff2d8a',
+    outline: '#7a1040',
+    outlineWidth: 0.012,
+    font: '900 {px}px "Rounded Mplus 1c", "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Yu Gothic UI", "Noto Sans JP", sans-serif',
+    /** 描画の上下反転（UV の向きがモデルによって違うため） */
+    flipY: false,
+  },
   /** 歩行速度（m/s）。1歩で車数台分 */
   walkSpeed: 22,
   /** 1歩の周期（秒） */

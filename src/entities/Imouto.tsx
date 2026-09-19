@@ -10,6 +10,7 @@ import { useGame } from '../systems/store'
 import { readMove } from '../systems/input'
 import { emit } from '../systems/events'
 import { applyWalk, applyFace } from '../systems/procAnim'
+import { applyLogo } from '../systems/logo'
 
 const raycaster = new THREE.Raycaster()
 const DOWN = new THREE.Vector3(0, -1, 0)
@@ -90,6 +91,7 @@ export function Imouto() {
       targets.push(m)
     })
     probeTargets.current = targets
+    applyLogo(vrm)
     // スプリングボーン（髪）の力は世界座標で効くので、巨大化した分だけ強くしないと動きが鈍い
     const sb = vrm.springBoneManager
     if (sb) {
