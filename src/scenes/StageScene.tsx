@@ -49,18 +49,42 @@ function AutoQuality() {
   return null
 }
 
-/** Esc（調整パネル）中はフレームループを止めてポーズ */
-function PauseControl() {
-  const paused = useGame((s) => s.tuneOpen)
-  const set = useThree((s) => s.set)
+/**
+ * フレームループを自前で回す：品質プリセットの maxFps で上限を付け（120Hz のスマホで無駄に回さない、発熱を抑える）、
+ * Esc（調整パネル）中は止めてポーズ
+ */
+function FrameLimiter() {
+  const setFrameloop = useThree((s) => s.setFrameloop)
+  const advance = useThree((s) => s.advance)
   const clock = useThree((s) => s.clock)
   useEffect(() => {
-    if (paused) set({ frameloop: 'never' })
-    else {
-      clock.getDelta() // 止まっていた時間を次のフレームに渡さない
-      set({ frameloop: 'always' })
+    // 'never' にすると R3F は時計を止め、advance(秒) で渡した時刻との差を dt にする
+    setFrameloop('never')
+    let raf = 0
+    let last = -1
+    let resync = true
+    const loop = (t: number) => {
+      raf = requestAnimationFrame(loop)
+      if (useGame.getState().tuneOpen) {
+        resync = true // 止まっていた時間を次のフレームに渡さない
+        return
+      }
+      const minMs = 1000 / preset().maxFps - 1
+      if (last >= 0 && t - last < minMs) return
+      last = t
+      const sec = t / 1000
+      if (resync) {
+        resync = false
+        clock.elapsedTime = sec
+      }
+      advance(sec)
     }
-  }, [paused, set, clock])
+    raf = requestAnimationFrame(loop)
+    return () => {
+      cancelAnimationFrame(raf)
+      setFrameloop('always')
+    }
+  }, [setFrameloop, advance, clock])
   return null
 }
 import { Imouto } from '../entities/Imouto'
@@ -87,7 +111,7 @@ export function StageScene() {
       shadows
       camera={{ fov: CAMERA.ground.fov, near: CAMERA.near, far: CAMERA.far, position: [0, 2, 70] }}
       dpr={effectiveDpr()}
-      gl={{ antialias: true }}
+      gl={{ antialias: preset().antialias, powerPreference: 'high-performance' }}
     >
       <color attach="background" args={[STAGE.skyColor]} />
       <fog attach="fog" args={[STAGE.fogColor, STAGE.fogNear, STAGE.fogFar]} />
@@ -115,7 +139,7 @@ export function StageScene() {
       <LockonSystem />
       <CameraRig />
       <GameFlow />
-      <PauseControl />
+      <FrameLimiter />
       <AutoQuality />
     </Canvas>
   )

@@ -7,6 +7,7 @@ import { DUMMY_ENEMIES } from '../config/game'
 import { useModels, candidates } from '../systems/models'
 import { readMove, useInput } from '../systems/input'
 import { refs, shoulderWorld, handWorld } from '../systems/refs'
+import { vrmUpdate } from '../systems/vrmUpdate'
 import { buildingAt } from '../systems/colliders'
 import { makeSilhouette, type Silhouette } from '../systems/silhouette'
 import { useGame } from '../systems/store'
@@ -530,7 +531,7 @@ export function Bro() {
         applyWalk(vrm, phase.current, runRatio.current, BRO.walk, modelHeight)
         if (punchT.current > 0) applyPunchPose(vrm, 1 - punchT.current / 0.35)
       }
-      vrm.update(dt)
+      vrmUpdate(vrm, dt)
     }
   })
 

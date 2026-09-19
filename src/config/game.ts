@@ -641,7 +641,9 @@ export const TEARS = {
 
 /**
  * 品質プリセット（低／中／高）。処理落ち対策。選択は Esc パネルか URL の ?q=low|mid|high|auto。
- * dpr=描画解像度の倍率（画面の画素密度に対して。1 未満でぼやける代わりに軽い）。描画解像度は最大でも maxWidth×maxHeight（フルHD）で頭打ち
+ * dpr=描画解像度の倍率（画面の画素密度に対して。1 未満でぼやける代わりに軽い）。描画解像度は最大でも maxWidth×maxHeight（フルHD）で頭打ち。
+ * antialias=輪郭のギザギザ取り（スマホでは重い。変更は再読み込みで反映）、outline=VRM のトゥーン輪郭線（キャラを 2 回描く）、
+ * springEvery=髪の物理を何フレームに 1 回計算するか、maxFps=フレーム上限（30 にすると安定して発熱も減る）
  */
 export type QualityLevel = 'low' | 'mid' | 'high'
 export const QUALITY = {
@@ -655,8 +657,8 @@ export const QUALITY = {
   maxWidth: 1920,
   maxHeight: 1080,
   presets: {
-    low: { label: '低', shadows: false, shadowMapSize: 1024, shadowDist: 120, dpr: 0.75, drawDist: 450, lodDist: 120, fogNear: 150, fogFar: 450, kit: false, fighterSquadrons: 1, heliGroups: 1, smoke: false, xray: false },
-    mid: { label: '中', shadows: false, shadowMapSize: 1024, shadowDist: 160, dpr: 1, drawDist: 600, lodDist: 200, fogNear: 200, fogFar: 600, kit: true, fighterSquadrons: 2, heliGroups: 2, smoke: true, xray: true },
-    high: { label: '高', shadows: true, shadowMapSize: 2048, shadowDist: 200, dpr: 1, drawDist: 720, lodDist: 260, fogNear: 240, fogFar: 720, kit: true, fighterSquadrons: 2, heliGroups: 2, smoke: true, xray: true },
-  } as Record<QualityLevel, { label: string; shadows: boolean; shadowMapSize: number; shadowDist: number; dpr: number; drawDist: number; lodDist: number; fogNear: number; fogFar: number; kit: boolean; fighterSquadrons: number; heliGroups: number; smoke: boolean; xray: boolean }>,
+    low: { label: '低', shadows: false, shadowMapSize: 1024, shadowDist: 120, dpr: 0.6, drawDist: 380, lodDist: 90, fogNear: 130, fogFar: 380, kit: false, fighterSquadrons: 1, heliGroups: 1, smoke: false, xray: false, antialias: false, outline: false, springEvery: 2, maxFps: 30 },
+    mid: { label: '中', shadows: false, shadowMapSize: 1024, shadowDist: 160, dpr: 1, drawDist: 600, lodDist: 200, fogNear: 200, fogFar: 600, kit: true, fighterSquadrons: 2, heliGroups: 2, smoke: true, xray: true, antialias: true, outline: true, springEvery: 1, maxFps: 60 },
+    high: { label: '高', shadows: true, shadowMapSize: 2048, shadowDist: 200, dpr: 1, drawDist: 720, lodDist: 260, fogNear: 240, fogFar: 720, kit: true, fighterSquadrons: 2, heliGroups: 2, smoke: true, xray: true, antialias: true, outline: true, springEvery: 1, maxFps: 60 },
+  } as Record<QualityLevel, { label: string; shadows: boolean; shadowMapSize: number; shadowDist: number; dpr: number; drawDist: number; lodDist: number; fogNear: number; fogFar: number; kit: boolean; fighterSquadrons: number; heliGroups: number; smoke: boolean; xray: boolean; antialias: boolean; outline: boolean; springEvery: number; maxFps: number }>,
 }

@@ -42,6 +42,7 @@ npm run build    # dist/ に出力（itch.io 用）
 - 満洲・山田うどんの画像の権利（公開前に確認）
 - ゲーム中 BGM（GiantLOLO）は仮。公開前に必ず差し替える（public/audio/bgm/play.mp3）
 - ▼ をロックして「あそこへ行け」で行き先を指示する仕組み（製品版で入れるかも。今はオフ：GAME.dest.lockEnabled）。プロトは妹が自動で学校へ向かう（GAME.dest.autoNavigate）
+- ネイティブアプリ化（スマホの重さ対策）。ブラウザ内では Three.js が既に最軽量級で、エンジンを替えても速くならない。速くなるのはネイティブ（Unity＝UniVRM で VRM がそのまま使える／Godot＝無料）に移した時で、目安 2〜5 倍。移すなら「遊びの設計が固まってから」。数値が src/config に集まっているので移植時にそのまま持っていける
 - 肩上から玉（兄）を発射したあと、妹の体で玉が隠れる問題。暫定は「兄が戻るまで妹を消したまま」（CAMERA.aim.hideDuringThrow）。別案：地上のダッシュと同じく、カメラが兄を遅れて追いかける（CAMERA.thrown.enabled と dashFollowLerp 相当の値で試せる）
 
 ## 引き継ぎメモ（2026-09-19 時点）
@@ -85,7 +86,7 @@ npm run build    # dist/ に出力（itch.io 用）
 - エネミービル（config/waves.ts の BOSSES：ぎょうざの満洲・山田うどん、顔画像は public/textures/）：出発地点の少し先の道に立ち、妹が近づくとにじり寄る。通り抜け不可。ロック点 4 つ（ビルの中に散らばる）を全部当てるか技で倒す。画像は仮（権利は要確認）
 - 行き先は ▼（GAME.dest、今は校門）。妹は A D を触っていない間、自動で校門へ旋回する。▼ のロック指示はオフ。兄のセリフは吹き出し（SPEECH.lines：右へまわれ／左へ回れ／ロロップだ／蹴れ／泣け／オレを投げろ／あそこへ行け）
 - 肩に乗った瞬間は妹の左側から見るカメラ（CAMERA.mountViewYaw）。妹の踏み潰し半径は横幅より少し大きい程度（GAME.crushRadius 8 / bodyRadius 7 / POLICE.stompRadius 9）
-- 品質プリセット（QUALITY、systems/quality.ts）：低／中／高／自動。タイトル画面の「重さ」ボタン、Esc パネルの「品質」、URL の `?q=low|mid|high|auto`（`?lite` は低）のどれでも。選ぶと localStorage に保存。スマホ（タッチ操作）は何も選んでいなければ最初から低（QUALITY.touchDefault）。自動は開始 3 秒後から 5 秒の平均 fps で決める（25 未満＝低、45 未満＝中）。低＝影なし・描画解像度 0.75 倍・街は箱・描画距離 450m・戦闘機 1 編隊・ヘリ 1 編隊・スモークなし・X 線輪郭なし。中＝影なし・解像度 1 倍・描画距離 600m。高＝影あり（2048 の影マップ）。描画解像度はどのプリセットでも最大フルHD（1920×1080）で頭打ち。プリセットが変わると街・ヘリ・影ライトは作り直し（key）
+- 品質プリセット（QUALITY、systems/quality.ts）：低／中／高／自動。タイトル画面の「重さ」ボタン、Esc パネルの「品質」、URL の `?q=low|mid|high|auto`（`?lite` は低）のどれでも。選ぶと localStorage に保存。スマホ（タッチ操作）は何も選んでいなければ最初から低（QUALITY.touchDefault）。自動は開始 3 秒後から 5 秒の平均 fps で決める（25 未満＝低、45 未満＝中）。低＝影なし・描画解像度 0.6 倍・街は箱（敵の外部モデルも無し）・描画距離 380m・戦闘機 1 編隊・ヘリ 1 編隊・スモークなし・X 線輪郭なし・アンチエイリアスなし・トゥーン輪郭線なし（three-vrm は輪郭線を同じメッシュの追加マテリアル isOutline で描くので、その material.visible を落とす＝キャラを 2 回描かない）・髪の物理は 2 フレームに 1 回・フレーム上限 30。中＝影なし・解像度 1 倍・描画距離 600m。高＝影あり（2048 の影マップ）。描画解像度はどのプリセットでも最大フルHD（1920×1080）で頭打ち。プリセットが変わると街・ヘリ・影ライトは作り直し（key）。アンチエイリアスだけは WebGL の作成時に決まるので再読み込みで反映。フレームループは自前（StageScene の FrameLimiter：R3F を frameloop='never' にして requestAnimationFrame から advance(秒) を呼ぶ。'never' では R3F が「渡した秒−前回の秒」を dt にするので ms ではなく秒を渡す。maxFps で上限、Esc 中は止めて解除時に clock.elapsedTime を合わせ直す＝止まっていた時間が一気に進まない）。VRM の更新は systems/vrmUpdate.ts（髪の物理の間引きと輪郭線の表示切替）
 - ヘッドレス Chromium は通常モードだと 1fps 未満（自動テストは `?lite`）
 - サイトはパンツァードラグーン式：溜め中はマウスでサイト自体が動き、画面端に寄るとカメラがその方向へ回る（LOCKON.reticle）。攻撃中はカメラを変えない（CAMERA.thrown.enabled = false）。1 体目まではベジェ曲線で回り込む（LOCKON.curve）
 - 敵セット（仮）：戦闘機は config/waves.ts の FIGHTERS.passes（前から→左から→右後ろから）を順に回り、次の方向へ抜けていく。編隊は FIGHTERS.formation で上下前後にばらす。戦車は 1 グループごとに左右を入れ替える。本格的なエネセットは別途計画

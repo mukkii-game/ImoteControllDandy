@@ -7,6 +7,7 @@ import { useModels, candidates } from '../systems/models'
 import { useVRM } from '../systems/loaders'
 import { VRMSpringBoneCollider, VRMSpringBoneColliderShapeSphere } from '@pixiv/three-vrm'
 import { refs } from '../systems/refs'
+import { vrmUpdate } from '../systems/vrmUpdate'
 import { useGame } from '../systems/store'
 import { readMove } from '../systems/input'
 import { emit, on } from '../systems/events'
@@ -334,7 +335,7 @@ export function Imouto() {
       if (walkRatio > 0.3) emit('imouto.step', { strength: walkRatio * IMOUTO.stepShake, x: g.position.x, z: g.position.z })
       lastStepSide.current = side
     }
-    vrm.update(dt)
+    vrmUpdate(vrm, dt)
 
     // 肩の表面をレイキャストで探し、アンカーをそこへ（兄がめり込まず・浮かず乗る）
     probeTimer.current -= dt

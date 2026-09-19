@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { useEffect, useState } from 'react'
 import { loadGLTF } from './loaders'
+import { STAGE } from '../config/game'
 
 export interface KitEntry {
   url: string
@@ -28,6 +29,8 @@ export function useKitModel(key: keyof KitManifest): { scene: THREE.Object3D; en
   const [res, setRes] = useState<{ scene: THREE.Object3D; entry: KitEntry } | null>(null)
   useEffect(() => {
     let alive = true
+    // 品質「低」（STAGE.kit.enabled=false）では外部モデルを使わずプリミティブのまま
+    if (!STAGE.kit.enabled) return
     loadManifest().then(async (m) => {
       const entry = m[key]
       if (!entry) return
