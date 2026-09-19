@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { IMOUTO, SCALE, CAMERA } from '../config/game'
+import { IMOUTO, SCALE, CAMERA, SPEECH } from '../config/game'
 import { makeSilhouette, type Silhouette } from '../systems/silhouette'
 import { useModels, candidates } from '../systems/models'
 import { useVRM } from '../systems/loaders'
@@ -44,6 +44,10 @@ export function Imouto() {
   const fadeK = useRef(0)
   const silhouette = useRef<Silhouette | null>(null)
   const skills = useRef(new SkillRunner())
+  /** 吹き出しの後に発動する技 */
+  const pendingSkill = useRef<{ id: SkillId; t: number } | null>(null)
+  const titleSayT = useRef(1.2)
+  const titleSayI = useRef(0)
   const throwK = useRef(-1)
   const sitK = useRef(0)
   const anchorRef = useRef<THREE.Object3D | null>(null)
@@ -158,17 +162,38 @@ export function Imouto() {
     }
     // 技の入力（肩上のみ）
     const inp = useInput.getState()
+    // 技の指示：兄の吹き出し（＋声）が先に出て、SPEECH.skillDelaySec 後に発動
+    const order = (id: SkillId) => {
+      if (pendingSkill.current || !skills.current.canUse(id)) return
+      pendingSkill.current = { id, t: 0 }
+      emit('bro.say', { text: SPEECH.lines[id], key: id })
+    }
     if (mode === 'shoulder' && playing) {
       for (const id of ['skip', 'shoe', 'cry'] as SkillId[]) {
         const key = SKILLS[id].key
         const action = (`skill${key}`) as 'skill1' | 'skill2' | 'skill3'
-        if (inp.consume(action)) skills.current.start(id, g.position, g.rotation.y)
+        if (inp.consume(action)) order(id)
       }
-      if (inp.consume('skillFire')) {
-        const id = (['skip', 'shoe', 'cry'] as SkillId[])[inp.skillSel]
-        skills.current.start(id, g.position, g.rotation.y)
+      if (inp.consume('skillFire')) order((['skip', 'shoe', 'cry'] as SkillId[])[inp.skillSel])
+    }
+    if (pendingSkill.current) {
+      pendingSkill.current.t += dt
+      if (pendingSkill.current.t >= SPEECH.skillDelaySec) {
+        skills.current.start(pendingSkill.current.id, g.position, g.rotation.y)
+        pendingSkill.current = null
       }
     }
+    // タイトル：眠そうなセリフを順番に
+    if (game.phase === 'title') {
+      titleSayT.current -= dt
+      if (titleSayT.current <= 0) {
+        titleSayT.current = SPEECH.imouto.titleEverySec
+        const lines = SPEECH.imouto.title
+        const i = titleSayI.current % lines.length
+        titleSayI.current++
+        emit('imouto.say', { text: lines[i], key: i === 0 ? 'yawn' : 'sleepy' })
+      }
+    } else titleSayT.current = 0.5
     skills.current.tick(dt, g.position)
     const sk = skills.current.active
     const skT = skills.current.t

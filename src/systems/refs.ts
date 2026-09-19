@@ -24,6 +24,8 @@ export const refs = {
   broDash: false,
   /** 兄の頭の画面座標 [x, y, 画面内か]（吹き出し用。lockon が毎フレーム更新） */
   broScreen: [0, 0, false] as [number, number, boolean],
+  /** 妹の頭の画面座標（吹き出し用） */
+  imoutoScreen: [0, 0, false] as [number, number, boolean],
   /** 兄の乗降アニメ用の始点（ワールド） */
   mountStart: new THREE.Vector3(),
   mountDuration: 1,

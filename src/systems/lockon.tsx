@@ -42,7 +42,14 @@ export function LockonSystem() {
       const py = groundAim ? 0 : push(ny)
       if (px !== 0) refs.camYaw -= px * rc.pushSpeed * dt
       if (py !== 0) refs.camPitch = THREE.MathUtils.clamp(refs.camPitch + py * rc.pushSpeed * dt, CAMERA.pitchMin, CAMERA.pitchMax)
-      if (groundAim) refs.reticleY += (0 - refs.reticleY) * Math.min(1, rc.recenterLerp * dt)
+      if (groundAim) {
+        refs.reticleY += (0 - refs.reticleY) * Math.min(1, rc.recenterLerp * dt)
+        // カメラがサイトの方へ遅れて追いつく（サイトの画面位置はその分だけ中央へ戻す）
+        const hfov = THREE.MathUtils.degToRad(CAMERA.ground.fov) * (size.width / size.height) * 0.5
+        const turn = nx * hfov * 0.6 * Math.min(1, rc.groundFollow * dt)
+        refs.camYaw -= turn
+        refs.reticleX -= (turn / (hfov * 0.6)) * hx
+      }
     } else {
       const k = Math.min(1, rc.recenterLerp * dt)
       refs.reticleX += (0 - refs.reticleX) * k
@@ -56,6 +63,8 @@ export function LockonSystem() {
     }
     // 兄の頭の画面位置（吹き出し用）
     if (refs.bro) refs.broScreen = toScreen(tmpV.copy(refs.bro.position).setY(refs.bro.position.y + 2.2))
+    if (refs.head) refs.imoutoScreen = toScreen(refs.head.getWorldPosition(tmpV).setY(tmpV.y + 6))
+    else if (refs.imouto) refs.imoutoScreen = toScreen(tmpV.copy(refs.imouto.position).setY(refs.imouto.position.y + 62))
     // 行き先（▼）：溜め中にサイトへ入ればロック。描画距離より遠くても同じ方向の近い点で画面位置を出す
     const d = GAME.dest
     tmpV.set(d.x, d.height, d.z).sub(camera.position)

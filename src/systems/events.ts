@@ -14,8 +14,12 @@ export interface GameEvents {
   /** 地上の高速タックル開始 */
   'bro.tackle': void
   'bro.return': void
-  /** 兄のセリフ（吹き出し） */
-  'bro.say': { text: string }
+  /** 兄のセリフ（吹き出し）。key があれば line.bro.<key> の音声も鳴る */
+  'bro.say': { text: string; key?: string }
+  /** 妹のセリフ（吹き出し）。key があれば line.imouto.<key> の音声も鳴る */
+  'imouto.say': { text: string; key?: string }
+  /** 肩上でロックオンのボタンを押した（溜め開始） */
+  'bro.charge': void
   /** 兄が妹に行き先を指示した */
   'bro.goto': { x: number; z: number }
   /** 爆弾が地面や建物で爆発（演出） */

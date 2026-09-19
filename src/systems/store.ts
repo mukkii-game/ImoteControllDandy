@@ -27,6 +27,9 @@ interface GameState {
   /** 兄の吹き出し */
   speech: { text: string; at: number } | null
   say: (text: string) => void
+  /** 妹の吹き出し */
+  imoutoSpeech: { text: string; at: number } | null
+  sayImouto: (text: string) => void
   score: number
   addScore: (n: number) => void
   /** 直近のコンボ表示 */
@@ -65,6 +68,8 @@ export const useGame = create<GameState>((set) => ({
   setWaypoint: (waypoint) => set({ waypoint }),
   speech: null,
   say: (text) => set({ speech: { text, at: performance.now() } }),
+  imoutoSpeech: null,
+  sayImouto: (text) => set({ imoutoSpeech: { text, at: performance.now() } }),
   score: 0,
   addScore: (n) => set((s) => ({ score: s.score + n })),
   combo: null,

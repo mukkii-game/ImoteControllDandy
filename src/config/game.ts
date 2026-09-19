@@ -80,7 +80,7 @@ export const BRO = {
   /** 建物との当たり半径（m）。建物は貫通できない */
   bodyRadius: 1.2,
   /** 残像と尾（タックル中・飛び乗り中）：残像を出す間隔（秒）・寿命・色・濃さ、尾の半幅（m）・点数 */
-  afterimage: { spawnEvery: 0.04, lifeSec: 0.35, color: '#bfe9ff', opacity: 0.45, trailWidth: 1.6, trailPoints: 40, trailOpacity: 0.7 },
+  afterimage: { spawnEvery: 0.05, lifeSec: 0.3, color: '#bfe9ff', opacity: 0.22, trailWidth: 0.7, trailPoints: 30, trailOpacity: 0.35 },
   gravity: 28,
   /** 肩へ飛び乗る演出の秒数（距離に応じて min〜max） */
   mountSecMin: 0.9,
@@ -172,7 +172,7 @@ export const LOCKON = {
   /** 投げの飛行速度（m/s）。待ちが無いように速く */
   flySpeed: 900,
   /** 光弾化：兄を包む光のオーラ（芯・ハロの半径 m ≒ 兄の 5 倍の大きさ、色）と光の軌跡（半幅 m ≒ 兄の 3 倍の太さ・点数） */
-  glow: { color: '#7fe9ff', coreColor: '#ffffff', coreRadius: 5, haloRadius: 12, trailWidth: 7.5, trailPoints: 90, trailOpacity: 0.9 },
+  glow: { color: '#7fe9ff', coreColor: '#ffffff', coreRadius: 2.2, haloRadius: 5, haloOpacity: 0.22, trailWidth: 2.6, trailPoints: 70, trailOpacity: 0.45, sparkles: 28, sparkleRadius: 7, sparkleSize: 0.55 },
   /** 妹が掴んで振りかぶる時間（秒） */
   windupSec: 0.15,
   /** 着弾ごとの停止（秒） */
@@ -204,8 +204,9 @@ export const LOCKON = {
   reticle: {
     /** マウス 1px でサイトが動く px */
     sensitivity: 1.0,
-    /** 地上ではサイトは左右にしか動かない（上下はカメラ） */
+    /** 地上ではサイトは左右にしか動かない（上下はカメラ）。カメラはサイトの方へ遅れて追いつく（1 秒あたりの追いつき率） */
     groundHorizontalOnly: true,
+    groundFollow: 4,
     /** 画面の中心からこの割合（画面の半分の大きさ比）を越えるとカメラを押し始める */
     edge: 0.62,
     /** 端まで押し込んだ時のカメラ回転速度（rad/s） */
@@ -247,6 +248,10 @@ export const CAMERA = {
     /** 注視点の高さ（兄の腰〜胸） */
     targetHeight: 5,
     defaultPitch: 0.12,
+    /** カメラの追従の速さ（通常／ダッシュ中）。ダッシュ中は遅らせて、兄が先に飛び出しカメラが後から追いつく（目に優しく） */
+    followLerp: 18,
+    dashFollowLerp: 3.2,
+    dashLookLerp: 6,
   },
   /** タイトル画面：妹の正面から見上げ、下に兄・上にロロの顔 */
   title: { fov: 56, ahead: 69, side: 12, height: 1.5, lookAhead: 10, lookHeight: 26, broAhead: 57, broSide: 6 },
@@ -368,20 +373,34 @@ export const GAME = {
   dest: { label: '学校', x: 0, z: 1400, height: 60, arriveDist: 80 },
 }
 
-/** 兄のセリフ（吹き出し）。文言はここで変える */
+/** セリフ（吹き出し）。文言はここで変える。音声は config/voices.json の line.bro.* / line.imouto.* */
 export const SPEECH = {
   /** 表示秒数 */
-  sec: 1.6,
+  sec: 1.8,
   /** 旋回のセリフの連発を抑える秒数 */
   turnCooldownSec: 1.5,
+  /** 技：吹き出しが出てから技が発動するまでの秒数 */
+  skillDelaySec: 1.0,
+  /** 吹き出しの文字の大きさ（px）。兄／妹 */
+  fontPx: 44,
+  imoutoFontPx: 40,
   lines: {
     turnRight: '右へまわれ！',
     turnLeft: '左へ回れ！',
     skip: 'ロロップだ！',
-    shoe: '蹴れ！',
+    shoe: 'なぎ払え！',
     cry: '泣け！',
     throw: 'オレを投げろ！',
     goto: 'あそこへ行け！',
+  },
+  /** 妹のセリフ */
+  imouto: {
+    /** タイトル画面（順番に繰り返す）と、その間隔（秒） */
+    title: ['ふああぁぁ', 'ねむいー'],
+    titleEverySec: 3.5,
+    throw: 'そおれっ',
+    skip: 'ロロップロロップー',
+    shoe: 'えいやっ！',
   },
 }
 

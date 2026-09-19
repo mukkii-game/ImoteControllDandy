@@ -31,6 +31,7 @@ npm run build    # dist/ に出力（itch.io 用）
 - 妹（ショート）：VRoid Hub のモデル（作者名：要記入。利用条件：クレジット表記必要・個人の商用利用は非営利のみ）
 - 妹（ロング）：VRM1_Constraint_Twist_Sample (c) pixiv Inc.（VRM Public License 1.0）
 - 兄：Seed-san by VirtualCast, Inc.（VRM Public License 1.0）
+- 音声：VOICEVOX:青山龍星（兄）、VOICEVOX:四国めたん（妹）。Web 版 VOICEVOX API で生成（詳細は SOURCES.md）
 - 街（家・ビル）とパトカー：Kenney（www.kenney.nl）の City Kit Suburban / City Kit Commercial / Car Kit（CC0、表記任意）
 
 モデルは Esc の調整パネル「モデル」で切り替えられます。追加は `public/models/` に置いて `src/config/game.ts` の MODEL_CHOICES に1行足すだけです。
@@ -46,6 +47,8 @@ npm run build    # dist/ に出力（itch.io 用）
 - 兄の攻撃でやられた地上の敵は本体が食らった方向へノックバックして上へ派手に吹っ飛ぶ（DEBRIS.knockback）。空中の敵（戦闘機・ヘリ）はその場で爆発してモデルが離散し、半分の重力でパラパラ落ちる（DEBRIS.air）
 - 戦闘機のウエーブ：FIGHTERS.passes を順に回す。滞在の種類 near（近くで旋回）／far（遠くで旋回）／overhead（ロロの上空に集まって旋回し爆弾を落とす。ロロにダメージは無く被弾エフェクトだけ）。上空集合のときはプレイヤーが上を向いてまとめてロックする想定
 - 地上でもサイトを表示（左右にだけ動く。タックルの向き）。肩上で溜めると射撃モード：妹も兄も同じ色のシルエットになりながら一瞬で消える（systems/silhouette.ts、深度だけ先に書いて一番手前だけ塗る方式なので口や歯が透けない）。カメラはそのまま（CAMERA.aim.cameraEnabled=false）
+- セリフ：兄の吹き出しは 44px、妹は 40px（SPEECH.fontPx）。技は吹き出し（＋声）→1 秒後に発動（SPEECH.skillDelaySec）。投擲の「オレを投げろ！」は溜め開始時。妹は投げる時「そおれっ」、スキップ「ロロップロロップー」、靴「えいやっ！」、タイトルであくび。音声は VOICEVOX（SOURCES.md）。
+- 地上：サイトは左右に動き、カメラが遅れて追いつく（LOCKON.reticle.groundFollow）。ダッシュ中はカメラがわざと遅れて追いつく（CAMERA.ground.dashFollowLerp）。光弾は小さな芯＋粒（LOCKON.glow.sparkles）に
 - レーダーマップ（右上、半透明、RADAR）：中心はロロでロロの向きが上。650m の範囲。兄＝水色、雑魚＝小さい点（空中は黄）、エネミービル＝大きい赤点
 - タックル中と飛び乗り中は残像と光の尾（BRO.afterimage、entities/BroAfterimage.tsx）
 - 軽量化その 2：道路のセンターラインを 1 つの InstancedMesh に（以前は 5,000 個以上の別メッシュ）。520m より遠い区画は箱で描く LOD（STAGE.lodDist）。影のカメラ far を 420 に

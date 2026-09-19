@@ -149,8 +149,9 @@ export function Bro() {
         const camYaw = refs.camYaw
         const fx = Math.sin(camYaw)
         const fz = Math.cos(camYaw)
-        const rx = Math.cos(camYaw)
-        const rz = -Math.sin(camYaw)
+        // カメラの右方向（前方 (sin,cos) に対して右は (-cos, sin)）
+        const rx = -Math.cos(camYaw)
+        const rz = Math.sin(camYaw)
         const dx = fx * m.y + rx * m.x
         const dz = fz * m.y + rz * m.x
         const mag = Math.hypot(dx, dz)
@@ -278,8 +279,9 @@ export function Bro() {
         }
         wasLeft.current = leftNow
         wasRight.current = rightNow
-        // A を離した瞬間：行き先ロックなら指示、敵ロックがあれば投擲開始
+        // A を押した瞬間（溜め開始）：「オレを投げろ！」。離した瞬間：行き先ロックなら指示、敵ロックがあれば投擲開始
         const aNow = input.keys.a && playing
+        if (aNow && !wasA.current) emit('bro.charge', undefined)
         if (wasA.current && !aNow) orderDest()
         if (wasA.current && !aNow && lock.ids.length > 0) {
           const seq = throwSeq.current
