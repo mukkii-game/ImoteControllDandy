@@ -12,6 +12,8 @@ export interface GameEvents {
   /** 兄が敵に着弾 */
   'enemy.hit': { id: number; x: number; y: number; z: number }
   'bro.return': void
+  /** 妹が被弾（ミサイル・砲弾） */
+  'imouto.hit': { x: number; y: number; z: number }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

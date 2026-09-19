@@ -5,7 +5,9 @@ import { Bro } from '../entities/Bro'
 import { CameraRig } from '../systems/camera'
 import { Stage } from './Stage'
 import { ShadowFollower } from '../systems/shadow'
-import { DummyEnemies, Explosions, BroTrail } from '../entities/Enemies'
+import { Explosions, BroTrail } from '../entities/Enemies'
+import { Fighters } from '../entities/Fighters'
+import { GroundEnemies } from '../entities/GroundEnemies'
 import { LockonSystem } from '../systems/lockon'
 
 export function StageScene() {
@@ -25,7 +27,8 @@ export function StageScene() {
       <Stage />
       <Imouto />
       <Bro />
-      <DummyEnemies />
+      <Fighters />
+      <GroundEnemies />
       <Explosions />
       <BroTrail />
       <LockonSystem />

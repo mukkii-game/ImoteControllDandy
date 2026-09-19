@@ -8,7 +8,8 @@ import { VRMSpringBoneCollider, VRMSpringBoneColliderShapeSphere } from '@pixiv/
 import { refs } from '../systems/refs'
 import { useGame } from '../systems/store'
 import { readMove } from '../systems/input'
-import { emit } from '../systems/events'
+import { emit, on } from '../systems/events'
+import { HIT } from '../config/waves'
 import { applyWalk, applyFace } from '../systems/procAnim'
 import { applyLogo } from '../systems/logo'
 
@@ -33,6 +34,7 @@ export function Imouto() {
   const lastStepSide = useRef(0)
   const probeTimer = useRef(0)
   const clock = useRef(0)
+  const hitTimer = useRef(0)
   const anchorRef = useRef<THREE.Object3D | null>(null)
   const boneRef = useRef<THREE.Object3D | null>(null)
   const chestRef = useRef<THREE.Object3D | null>(null)
@@ -116,6 +118,8 @@ export function Imouto() {
     }
   }, [vrm, choice, setLoaded, setResolved, scale])
 
+  useEffect(() => on('imouto.hit', () => { hitTimer.current = HIT.slowSec }), [])
+
   useFrame((_, dt) => {
     if (!vrm) return
     const g = group.current
@@ -130,7 +134,8 @@ export function Imouto() {
     const m = mode === 'shoulder' ? readMove() : { x: 0, y: 0 }
 
     g.rotation.y -= m.x * IMOUTO.turnSpeed * dt
-    const targetSpeed = Math.max(0, m.y) * IMOUTO.walkSpeed
+    hitTimer.current = Math.max(0, hitTimer.current - dt)
+    const targetSpeed = Math.max(0, m.y) * IMOUTO.walkSpeed * (hitTimer.current > 0 ? HIT.slowFactor : 1)
     speed.current += (targetSpeed - speed.current) * Math.min(1, IMOUTO.accel * dt)
     g.position.x += Math.sin(g.rotation.y) * speed.current * dt
     g.position.z += Math.cos(g.rotation.y) * speed.current * dt
@@ -139,7 +144,7 @@ export function Imouto() {
     if (walkRatio > 0.02) phase.current += (dt / IMOUTO.stepPeriod) * Math.PI * 2 * Math.max(0.4, walkRatio)
     applyWalk(vrm, phase.current, walkRatio, IMOUTO.walk, modelHeight)
     clock.current += dt
-    applyFace(vrm, clock.current, walkRatio, IMOUTO.face)
+    applyFace(vrm, clock.current, walkRatio, IMOUTO.face, hitTimer.current > 0)
 
     const side = Math.sign(Math.sin(phase.current))
     if (side !== 0 && side !== lastStepSide.current) {

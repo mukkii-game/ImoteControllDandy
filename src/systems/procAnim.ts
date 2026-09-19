@@ -113,9 +113,20 @@ export function applyShoulderPose(vrm: VRM, steer: number | null, dt: number) {
 }
 
 /** 子どもっぽい笑顔＋まばたき。walkRatio が高いほど口が開く */
-export function applyFace(vrm: VRM, t: number, walkRatio: number, f: { happy: number; mouthOpen: number; mouthOpenWalk: number; blinkPeriod: number }) {
+export function applyFace(vrm: VRM, t: number, walkRatio: number, f: { happy: number; mouthOpen: number; mouthOpenWalk: number; blinkPeriod: number }, hit = false) {
   const em = vrm.expressionManager
   if (!em) return
+  if (hit) {
+    // 被弾：おどろき（VRM1: surprised / VRM0: Surprised）
+    em.setValue('happy', 0)
+    em.setValue('aa', 0.6)
+    em.setValue('surprised', 1)
+    em.setValue('Surprised', 1)
+    em.setValue('blink', 0)
+    return
+  }
+  em.setValue('surprised', 0)
+  em.setValue('Surprised', 0)
   em.setValue('happy', f.happy)
   const open = f.mouthOpen + (f.mouthOpenWalk - f.mouthOpen) * walkRatio
   // 歩調に合わせて口をわずかにパクつかせる

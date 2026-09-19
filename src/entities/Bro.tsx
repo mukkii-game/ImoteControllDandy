@@ -223,7 +223,7 @@ export function Bro() {
             const dz = e.pos.z - seq.from.z
             if (Math.hypot(dx, dz) > 0.5) yawRef.current = Math.atan2(dx, dz)
             if (k >= 1) {
-              killEnemy(e.id, DUMMY_ENEMIES.respawnSec)
+              killEnemy(e.id, e.kind === 'dummy' ? DUMMY_ENEMIES.respawnSec : 0)
               seq.hits++
               emit('enemy.hit', { id: e.id, x: e.pos.x, y: e.pos.y, z: e.pos.z })
               seq.idx++
