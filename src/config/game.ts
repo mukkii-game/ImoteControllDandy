@@ -61,7 +61,8 @@ export const MODEL_CHOICES: { imouto: ModelChoice[]; bro: ModelChoice[] } = {
 
 export const BRO = {
   walkSpeed: 4,
-  runSpeed: 10.5,
+  /** 地上の移動速度（m/s） */
+  runSpeed: 21,
   turnLerp: 14,
   jumpVelocity: 9,
   /** 地上パンチ：この距離以内の敵を殴る（m）。ロックオン攻撃でもこの距離内はダッシュ打撃 */
@@ -301,6 +302,9 @@ export const CAMERA = {
     followLerp: 18,
     dashFollowLerp: 3.2,
     dashLookLerp: 6,
+    /** ダッシュが終わったあと、カメラが追いつく速さ（followLerp の半分くらい）と、その状態から通常の速さへ戻すまでの秒数 */
+    dashRecoverLerp: 8,
+    dashRecoverSec: 1.0,
   },
   /** タイトル画面：妹の正面から見上げ、下に兄・上にロロの顔 */
   title: { fov: 56, ahead: 69, side: 12, height: 1.5, lookAhead: 10, lookHeight: 26, broAhead: 57, broSide: 6 },

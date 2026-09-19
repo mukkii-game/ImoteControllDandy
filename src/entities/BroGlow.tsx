@@ -10,6 +10,7 @@ import { SmokeRibbon } from '../systems/smoke'
 const m4 = new THREE.Matrix4()
 const s3 = new THREE.Vector3()
 const p3 = new THREE.Vector3()
+const qId = new THREE.Quaternion()
 
 /**
  * 光弾化した兄。攻撃中（thrown）は光の芯＋ハロ＋周りを舞う光の粒（パーティクル）に包まれ、
@@ -77,7 +78,7 @@ export function BroGlow() {
       p3.set(Math.cos(a) * r, Math.sin(a * 1.3 + o.tilt) * r * 0.6, Math.sin(a) * r)
       const tw = 0.5 + 0.5 * Math.sin(t.current * 9 + o.ph * 3)
       s3.setScalar(gl.sparkleSize * o.sz * tw * k.current + 0.001)
-      m4.compose(p3, new THREE.Quaternion(), s3)
+      m4.compose(p3, qId, s3)
       m.setMatrixAt(i, m4)
     })
     m.instanceMatrix.needsUpdate = true

@@ -32,6 +32,7 @@ const loiterN = new THREE.Vector3()
 const sweepL = new THREE.Vector3()
 const viewR = new THREE.Vector3()
 const bombAim = new THREE.Vector3()
+const rightV = new THREE.Vector3()
 
 /**
  * 編隊の「横」方向：ロロから見て画面の横になる向き（ロロ→機体の視線に直交する水平ベクトル）。
@@ -215,7 +216,7 @@ export function Fighters({ squad = 0 }: { squad?: number }) {
       curve.getPointAt(Math.min(1, uu + 0.01), localN)
       toWorld(localN, nextT)
       tangent.subVectors(nextT, e.pos).normalize()
-      const right = new THREE.Vector3().crossVectors(tangent, up).normalize()
+      const right = rightV.crossVectors(tangent, up).normalize() // 毎フレームの new を避ける（GC のカクつき対策）
       viewRight(e.pos, right, viewR)
       e.pos.addScaledVector(viewR, fx)
       e.pos.y += fy

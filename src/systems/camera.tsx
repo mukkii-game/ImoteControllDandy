@@ -92,6 +92,8 @@ export function CameraRig() {
   const blendUntil = useRef(0)
   /** 地上発の攻撃中にカメラを留めておく位置 */
   const holdPos = useRef(new THREE.Vector3())
+  /** 最後のダッシュが終わってからの秒数（追いつきの速さの切り替え用） */
+  const sinceDash = useRef(10)
   /** 照準カメラへの寄り具合 0..1 */
   const aimK = useRef(0)
 
@@ -284,10 +286,17 @@ export function CameraRig() {
       camera.position.lerp(desiredPos, kk)
       smoothedLook.current.lerp(desiredLook, Math.min(1, kk * 2))
     } else if (st.mode === 'ground') {
-      // 地上：位置も軽く追従。ダッシュ中はわざと遅らせて、兄が先に飛び出しカメラが後から追いつく
+      // 地上：位置も軽く追従。ダッシュ中はわざと遅らせて、兄が先に飛び出しカメラが後から追いつく。
+      // ダッシュ直後はゆっくり（dashRecoverLerp）追いつき、dashRecoverSec かけて通常の速さへ戻す（急に戻りすぎない）
+      const gc = CAMERA.ground
       const dash = refs.broDash
-      camera.position.lerp(desiredPos, Math.min(1, (dash ? CAMERA.ground.dashFollowLerp : CAMERA.ground.followLerp) * dt))
-      smoothedLook.current.lerp(desiredLook, Math.min(1, (dash ? CAMERA.ground.dashLookLerp : 14) * dt))
+      if (dash) sinceDash.current = 0
+      else sinceDash.current += dt
+      const rec = Math.min(1, sinceDash.current / gc.dashRecoverSec)
+      const posLerp = dash ? gc.dashFollowLerp : THREE.MathUtils.lerp(gc.dashRecoverLerp, gc.followLerp, rec)
+      const lookLerp = dash ? gc.dashLookLerp : THREE.MathUtils.lerp(gc.dashLookLerp, 14, rec)
+      camera.position.lerp(desiredPos, Math.min(1, posLerp * dt))
+      smoothedLook.current.lerp(desiredLook, Math.min(1, lookLerp * dt))
     } else {
       camera.position.copy(desiredPos)
       smoothedLook.current.lerp(desiredLook, snap ? 1 : Math.min(1, k * 3))

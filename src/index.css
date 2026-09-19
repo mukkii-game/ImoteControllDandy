@@ -7,6 +7,7 @@ canvas { display: block; }
 .hud-top { display: flex; justify-content: space-between; padding: 10px 14px; font-weight: 700; }
 .hud-top .step { font-weight: 400; opacity: .7; font-size: .8em; margin-left: 8px; }
 .hud-top .mode { background: rgba(0,0,0,.4); padding: 2px 10px; border-radius: 6px; }
+.hud-top .fps { position: absolute; right: 14px; top: 44px; font-size: 12px; opacity: .75; font-variant-numeric: tabular-nums; }
 .hint { position: absolute; left: 50%; bottom: 22%; transform: translateX(-50%); background: rgba(0,0,0,.5); padding: 8px 16px; border-radius: 8px; font-size: 15px; white-space: nowrap; }
 .hint-ready { background: rgba(255,200,40,.85); color: #222; text-shadow: none; font-weight: 700; }
 

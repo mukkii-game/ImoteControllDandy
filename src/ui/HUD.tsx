@@ -9,6 +9,29 @@ import { SkillBar } from './SkillBar'
 import { Overlays } from './Overlays'
 import { useEffect, useState } from 'react'
 
+/** fps 表示（右上の「地上／肩上」の下）。カクつきが描画の重さ（fps 低下）なのか、動きの作り方なのかを切り分けるため */
+function Fps() {
+  const [fps, setFps] = useState(0)
+  useEffect(() => {
+    let raf = 0
+    let frames = 0
+    let t0 = performance.now()
+    const tick = () => {
+      raf = requestAnimationFrame(tick)
+      frames++
+      const now = performance.now()
+      if (now - t0 >= 500) {
+        setFps(Math.round((frames * 1000) / (now - t0)))
+        frames = 0
+        t0 = now
+      }
+    }
+    tick()
+    return () => cancelAnimationFrame(raf)
+  }, [])
+  return <div className="fps">{fps} fps</div>
+}
+
 export function HUD() {
   const mode = useGame((s) => s.mode)
   const phase = useGame((s) => s.phase)
@@ -31,6 +54,7 @@ export function HUD() {
       <div className={`hud-top ${phase === 'title' ? 'hidden' : ''}`}>
         <div className="title">いもーとコントロールダンディ <span className="step">prototype</span></div>
         <div className="mode">{mode === 'shoulder' ? '肩上' : mode === 'ground' ? '地上' : mode === 'thrown' ? '攻撃中' : '…'}</div>
+        <Fps />
       </div>
       <div className="score">SCORE {score}</div>
       {combo && comboVisible && <div className="combo">{combo.n}機まとめ！</div>}

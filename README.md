@@ -61,6 +61,9 @@ npm run build    # dist/ に出力（itch.io 用）
 - 攻撃中の兄は光弾（芯 4.4m・ハロ 10m・粒 14m、レーザーのような光の軌跡 140 点、LOCKON.glow）。軌跡は戻ったあとフェードで消える（trailFadeSec）。肩に戻ると着地エフェクト（LOCKON.landFx）。最大ロック 16、ロック距離は無制限（画面に映っていれば）
 - 飛行は「1 体あたりほぼ一定時間」（LOCKON.hopSec、遠いほど加速。パンツァードラグーンのレーザーと同じで距離無視）。ロック数で少し時間が変わるだけで、すぐ倒しきって戻る（returnSec 0.25）
 - 地上サイト：倒せる敵（タックルの届く高さ・距離）に重なるとサイトが赤く太く光り（refs.groundTarget）、その時の左クリックはその敵へ全距離タックル。重なっていない時はサイトの向きへ半分の距離（BRO.tackle.missDistanceMul）
+- 地上の移動速度は 21 m/s（BRO.runSpeed）。ダッシュ後のカメラは dashRecoverLerp（8）でゆっくり追いつき、dashRecoverSec（1 秒）かけて通常の速さ（followLerp 18）に戻る
+- 右上の「地上／肩上」の下に fps 表示（ui/HUD.tsx の Fps）。カクつきの切り分け用：fps が低ければ描画の重さ、60 なのにカクつくなら動きの作り方
+- 毎フレームの new THREE.Vector3 / Quaternion を減らした（Fighters の right、BroGlow の粒）。GC による周期的なカクつき対策
 - 地上の上下の見回しは肩上より広め（CAMERA.ground.pitchMin/pitchMax。上 77° まで。頭上の敵をバルカンで狙える）
 - 地上のバルカン（entities/Vulcan.tsx、BRO.vulcan）：兄はサイトの方向へ自動で連射。サイトが敵（空中でも）を捉えると（refs.aimTarget、サイトが赤く光る）その敵へ吸い付く。弾速 7200（ほぼ一瞬）、3 発ずつ「ダダダッ」のリズム（burst / interval / burstGap）、曳光弾は発射時にサイトの円くらいの太さ。2 発で倒す（hitsToKill）。タックルと違って一撃死ではない。何も捉えていない時も撃つ（fireAlways=false で「捉えている時だけ」に変えられる）。音は audio/se/vulcan.mp3（気弾1）
 - 爆撃（FIGHTERS.bomb）：黒い爆弾が黄色い光をまとって、妹の胴体へゆっくり曲がりながら飛んでくる（speed / homing / gravity）。当たると被弾エフェクト＋減速。上空集合の旋回は半径 135m・高さ 210m（loiter.kinds.overhead）
