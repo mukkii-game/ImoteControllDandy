@@ -1,5 +1,6 @@
 import { useGame } from '../systems/store'
-import { GAME, IMOUTO } from '../config/game'
+import { GAME, IMOUTO, QUALITY } from '../config/game'
+import { useQuality } from '../systems/quality'
 import { refs } from '../systems/refs'
 import { useEffect, useRef, useState } from 'react'
 
@@ -18,6 +19,7 @@ export function Overlays() {
   const clearTime = useGame((s) => s.clearTime)
   const loaded = useGame((s) => s.loaded)
   const paused = useGame((s) => s.tuneOpen)
+  const quality = useQuality()
   const ready = loaded.imouto && loaded.bro
   const [dist, setDist] = useState(0)
   const [section, setSection] = useState('')
@@ -83,6 +85,16 @@ export function Overlays() {
             <div>肩上：左クリック長押しでサイトを動かして敵をロック → 離すと妹が投げる　　地上：左クリックでサイトの向きへ高速タックル</div>
             <div>1 / 2 / 3（テンキー可）：スキップ・靴飛ばし・泣く　ホイールで選択・ホイールクリックで発動</div>
             <div>制限時間 {fmt(GAME.timeLimitSec)}。校門をまたげばクリア</div>
+          </div>
+          {/* 重さ（品質）の切り替え：スマホは Esc が無いのでここで選ぶ */}
+          <div className="quality-pick">
+            <span>重さ：</span>
+            {(['auto', 'low', 'mid', 'high'] as const).map((c) => (
+              <button key={c} className={quality.choice === c ? 'on' : ''} onClick={() => quality.setChoice(c)}>
+                {c === 'auto' ? '自動' : QUALITY.presets[c].label}
+              </button>
+            ))}
+            <span className="q-note">{quality.choice === 'auto' ? `（今：${QUALITY.presets[quality.level].label}。開始後に自動判定）` : '重いときは「低」'}</span>
           </div>
           <button className="start" disabled={!ready} onClick={() => setPhase('play')}>
             {ready ? 'いってきまーす' : 'モデル読み込み中…'}

@@ -32,6 +32,8 @@ function readInitial(): QualityChoice {
   } catch {
     /* ignore */
   }
+  // スマホ（タッチ操作）は何も選んでいなければ最初から「低」
+  if (typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches) return QUALITY.touchDefault
   return QUALITY.default
 }
 

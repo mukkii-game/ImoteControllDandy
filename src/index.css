@@ -114,6 +114,11 @@ canvas { display: block; }
 .logo .subtitle { margin-top: 3vh; font-size: min(7vw, 6.4vh); color: #fff; letter-spacing: .06em;
   text-shadow: 3px 3px 0 #ff4d7a, -3px 3px 0 #ff4d7a, 3px -3px 0 #ff4d7a, -3px -3px 0 #ff4d7a, 0 7px 0 #7a1040, 0 0 24px rgba(255,80,140,.6); }
 .hud-top.hidden { display: none; }
+/* タイトルの「重さ」切り替え */
+.quality-pick { display: flex; align-items: center; gap: 8px; margin: 8px 0 12px; pointer-events: auto; font-size: 14px; font-weight: 700; flex-wrap: wrap; }
+.quality-pick button { min-width: 52px; padding: 8px 14px; border-radius: 8px; border: 2px solid rgba(255,255,255,.5); background: rgba(0,0,0,.4); color: #fff; font-weight: 800; font-size: 15px; cursor: pointer; touch-action: manipulation; }
+.quality-pick button.on { background: #ff4d7a; border-color: #ffd166; }
+.quality-pick .q-note { font-size: 12px; opacity: .85; font-weight: 500; }
 .overlay .story { font-size: min(2.6vw, 20px); font-weight: 800; line-height: 1.6; text-shadow: 0 2px 0 #000; margin-top: 10px; }
 .app, .app canvas { cursor: default; }
 
