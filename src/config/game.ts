@@ -219,8 +219,23 @@ export const LOCKON = {
   glow: { color: '#7fe9ff', coreColor: '#ffffff', coreRadius: 4.4, haloRadius: 10, haloOpacity: 0.22, trailWidth: 5.2, trailPoints: 140, trailOpacity: 0.45, trailFadeSec: 0.8, sparkles: 28, sparkleRadius: 14, sparkleSize: 1.1 },
   /** 肩に戻ったときの着地エフェクト：広がるリングの半径（m）と秒数 */
   landFx: { radius: 16, sec: 0.45 },
-  /** 妹が掴んで振りかぶる時間（秒） */
-  windupSec: 0.15,
+  /** 妹が投げるモーションの長さ（秒）。この間、兄は妹の右手に握られたままで、終わった瞬間に手から発射される */
+  windupSec: 0.45,
+  /**
+   * 掴み：ロックオンのボタンを押すと妹が右手で兄を掴む（肘をへそ辺りで曲げ、手のひらに兄が乗る）。
+   * sec=肩から手へ移る秒数、returnSec=投げ終わって腕が戻る秒数、handOffset=手の骨からの兄の位置（m、上方向）。
+   * 腕のポーズは [upperArm x, y, z] / [lowerArm x, y, z]（rad。x と z の符号はモデルの腕の向きで自動補正）。
+   * hold=構え、windBack=振りかぶり（windRatio までの間）、release=投げ切った形（この瞬間に発射）
+   */
+  grab: {
+    sec: 0.3,
+    returnSec: 0.5,
+    handOffset: 1.2,
+    hold: { upper: [-0.35, 0.1, 1.1], lower: [0, 1.75, 0.15] },
+    windBack: { upper: [1.0, 0.25, 0.85], lower: [0, 2.1, 0.1] },
+    release: { upper: [-2.4, 0, 0.45], lower: [0, 0.25, 0] },
+    windRatio: 0.35,
+  },
   /** 着弾ごとの停止（秒） */
   hitPauseSec: 0.02,
   /** 最後の敵から肩へ戻る秒数 */
@@ -365,7 +380,7 @@ export const CAMERA = {
      * X 線輪郭：妹の体（や建物）の向こうに隠れている敵の、隠れた部分の縁だけが光る（systems/xray.tsx）。
      * power が大きいほど縁が細く、intensity は明るさ。scanEverySec は新しいメッシュを拾う間隔。alwaysOn=true で常時
      */
-    xray: { enabled: true, color: '#7fff9a', power: 1.6, intensity: 1.8, scanEverySec: 0.5, alwaysOn: false },
+    xray: { enabled: true, color: '#7fff9a', power: 1.6, intensity: 1.8, scanEverySec: 0.5, alwaysOn: false, occluderRadius: 12, occluderHeight: 62 },
   },
   followLerp: 7,
   /** シェイク減衰 */

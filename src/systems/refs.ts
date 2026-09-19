@@ -8,6 +8,8 @@ export const refs = {
   shoulder: null as THREE.Object3D | null,
   /** 妹の頭ボーン。肩上カメラのオービット中心 */
   head: null as THREE.Object3D | null,
+  /** 妹の右手の骨（生ボーン）。掴まれた兄はここに乗る */
+  rightHand: null as THREE.Object3D | null,
   /** 兄の向き（yaw, rad） */
   broYaw: 0,
   /** カメラのオービット角（マウス操作）。yaw は「カメラが向いている方向」 */
@@ -39,6 +41,14 @@ const tmp = new THREE.Vector3()
 export function shoulderWorld(out = tmp): THREE.Vector3 {
   if (!refs.shoulder) return out.set(0, 0, 0)
   return refs.shoulder.getWorldPosition(out)
+}
+
+/** 妹の右手の上（兄が掴まれて乗る位置）。手の骨が無ければ肩 */
+export function handWorld(out = tmp, up = 0): THREE.Vector3 {
+  if (!refs.rightHand) return shoulderWorld(out)
+  refs.rightHand.getWorldPosition(out)
+  out.y += up
+  return out
 }
 
 // デバッグ用：コンソールから位置を確認できる

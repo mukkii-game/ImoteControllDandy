@@ -6,7 +6,7 @@ import { enemies, killEnemy, lock, clearLocks } from '../systems/enemies'
 import { DUMMY_ENEMIES } from '../config/game'
 import { useModels, candidates } from '../systems/models'
 import { readMove, useInput } from '../systems/input'
-import { refs, shoulderWorld } from '../systems/refs'
+import { refs, shoulderWorld, handWorld } from '../systems/refs'
 import { buildingAt } from '../systems/colliders'
 import { makeSilhouette, type Silhouette } from '../systems/silhouette'
 import { useGame } from '../systems/store'
@@ -66,6 +66,8 @@ export function Bro() {
   const turnSayT = useRef(0)
   /** 地上の高速タックル */
   const tackle = useRef({ active: false, queued: false, t: 0, hits: 0, dist: BRO.tackle.distance, dir: new THREE.Vector3(), from: new THREE.Vector3() })
+  /** 肩上で妹の右手に掴まれている度合い（0=肩、1=手の上） */
+  const grabK = useRef(0)
   const tackleCd = useRef(0)
   const fadeK = useRef(0)
   const silhouette = useRef<Silhouette | null>(null)
@@ -270,7 +272,14 @@ export function Bro() {
         break
       }
       case 'shoulder': {
+        // ロックオン中（溜め）は妹の右手に掴まれる：肩から手へ LOCKON.grab.sec で移る。離せば肩へ戻る
+        const grabWant = st.charging && playing
+        grabK.current = THREE.MathUtils.clamp(grabK.current + (grabWant ? dt / LOCKON.grab.sec : -dt / LOCKON.grab.returnSec), 0, 1)
         shoulderWorld(v)
+        if (grabK.current > 0.001) {
+          handWorld(target, LOCKON.grab.handOffset)
+          v.lerp(target, easeInOut(grabK.current))
+        }
         g.position.copy(v)
         yawRef.current = refs.imouto?.rotation.y ?? 0
         g.rotation.y = yawRef.current
@@ -365,10 +374,9 @@ export function Bro() {
             g.position.z = seq.from.z
             g.position.y = seq.from.y + Math.sin(Math.min(1, seq.t / windup) * Math.PI) * gc.hopHeight
           } else {
-            // 妹の肩で一瞬タメ（妹の腕が振りかぶる時間）。位置は肩に追従
-            shoulderWorld(v)
+            // 妹の右手に握られたまま投げモーションに付いていく。モーションが終わった瞬間に手から発射
+            handWorld(v, LOCKON.grab.handOffset)
             g.position.copy(v)
-            g.position.y += Math.sin(Math.min(1, seq.t / windup) * Math.PI) * 4
           }
           if (seq.t >= windup) beginFly(true)
         } else if (seq.phase === 'fly') {

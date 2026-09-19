@@ -84,7 +84,8 @@ npm run build    # dist/ に出力（itch.io 用）
 - 妹は自動で歩く（W 加速・S 減速・A D 旋回）。歩幅・速度は半分ずつ落とした状態。制限時間 11:00
 - 揺れは停止中（CAMERA.shakeAmp = 0）。後で調整する
 - 音：public/audio/se/ に効果音ラボの SE（出典は public/audio/se/SOURCES.md）。無ければ合成音。ロックオン＝決定ボタンを押す26、玉の発射（肩上）＝雷魔法4、建物が壊れた＝2 種類をランダム（一歩で何軒も潰れるので SOUND.building.minGapSec より短い間隔では鳴らさない）。ゲーム中 BGM は public/audio/bgm/play.mp3（GiantLOLO。知人からもらった仮の曲で、公開時に差し替え必須）。音量は SOUND（game.ts）
-- 射撃モードで妹と兄を消す処理は今はオフ（CAMERA.aim.vanish=false。true に戻すと短いフェードで消える：fadeSec / showFadeSec、systems/silhouette.ts の blend）。代わりに X 線輪郭（CAMERA.aim.xray、systems/xray.tsx）：溜め中・攻撃中は、妹の体や建物の向こうに隠れている敵の「隠れた部分の縁」だけが緑に光る。仕組みは敵メッシュの複製を深度テスト逆（GreaterDepth）＋リムライトで描く。対象は XrayRoot で包んだまとまり（戦闘機・ヘリ・パトカー/戦車。エネミービルは大きすぎて縁が変に見えるので対象外）
+- 射撃モードで妹と兄を消す処理は今はオフ（CAMERA.aim.vanish=false。true に戻すと短いフェードで消える：fadeSec / showFadeSec、systems/silhouette.ts の blend）。代わりに X 線輪郭（CAMERA.aim.xray、systems/xray.tsx）：溜め中・攻撃中は、妹の体や建物の向こうに隠れている敵の「隠れた部分の縁」だけが緑に光る。仕組みは敵メッシュの複製を深度テスト逆（GreaterDepth）＋リムライトで描く。対象は XrayRoot で包んだまとまり（戦闘機・ヘリ・パトカー/戦車。エネミービルは大きすぎて縁が変に見えるので対象外）。見せるのは「カメラ→敵の線が妹の体（半径 occluderRadius・高さ occluderHeight の円柱）を通る敵」だけ。建物に隠れた敵や隠れていない敵には出ない
+- 掴んで投げる（LOCKON.grab / windupSec）：ロックオンのボタンを押すと妹が右手で兄を掴む（肘をへそ辺りで曲げた構え、兄は手のひらの上：refs.rightHand）。離して発射すると振りかぶり→振り抜きの投げモーション（windupSec 0.45 秒）の間は手に握られたままで、終わった瞬間に手から発射。腕は returnSec で歩きに戻る。ポーズの数値は grab.hold / windBack / release
 - モデル：妹は VRoid Hub のショート（public/models/custom/imouto.vrm、クレジット必要・作者名は未記入）。兄は Seed-san（ロボアーム非表示・服を黒く）。models/custom/bro.vrm を置けば差し替え
 - 街と車：Kenney（CC0）の City Kit Suburban / Commercial / Car Kit を public/models/kit/ に置き、家・ビル（STAGE.kit）とパトカー（manifest.json）に使用。戦車・戦闘機はまだプリミティブ（manifest.json に glb を書けば差し替わる）
 - 破壊表現：家は屋根が飛び壁の破片が散る、ビルはブロックに砕ける、敵は部品が飛び散り黒煙（DEBRIS）

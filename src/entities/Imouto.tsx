@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { IMOUTO, SCALE, CAMERA, SPEECH } from '../config/game'
+import { IMOUTO, SCALE, CAMERA, SPEECH, LOCKON } from '../config/game'
 import { makeSilhouette, type Silhouette } from '../systems/silhouette'
 import { useModels, candidates } from '../systems/models'
 import { useVRM } from '../systems/loaders'
@@ -11,7 +11,9 @@ import { useGame } from '../systems/store'
 import { readMove } from '../systems/input'
 import { emit, on } from '../systems/events'
 import { HIT } from '../config/waves'
-import { applyWalk, applyFace, applySkillPose, applySkillFace, applyThrowArm, applySitPose, armSign as armSignOf } from '../systems/procAnim'
+import { applyWalk, applyFace, applySkillPose, applySkillFace, applySitPose, armSign as armSignOf } from '../systems/procAnim'
+
+const smooth = (t: number) => { const k = THREE.MathUtils.clamp(t, 0, 1); return k * k * (3 - 2 * k) }
 import { GAME } from '../config/game'
 import { SkillRunner } from '../systems/skills'
 import { SKILLS, type SkillId } from '../config/skills'
@@ -49,6 +51,8 @@ export function Imouto() {
   const titleSayT = useRef(1.2)
   const titleSayI = useRef(0)
   const throwK = useRef(-1)
+  /** 右腕の上書きの重み（0=歩きのまま、1=掴み／投げポーズ） */
+  const armW = useRef(0)
   const sitK = useRef(0)
   const anchorRef = useRef<THREE.Object3D | null>(null)
   const boneRef = useRef<THREE.Object3D | null>(null)
@@ -95,6 +99,7 @@ export function Imouto() {
     chestRef.current = chest ?? null
     anchorTarget.current = null
     refs.head = vrm.humanoid.getNormalizedBoneNode('head')
+    refs.rightHand = vrm.humanoid.getRawBoneNode('rightHand')
     // 肩レイキャストは髪を除いた体だけ（髪は高ポリで重い）
     const targets: THREE.Object3D[] = []
     vrm.scene.traverse((o) => {
@@ -269,11 +274,43 @@ export function Imouto() {
       vrm.expressionManager?.setValue('sad', 0)
       applyFace(vrm, clock.current, walkRatio, IMOUTO.face, hitTimer.current > 0)
     }
-    // 投げる腕（兄の投擲開始から 0.6 秒）
-    if (throwK.current >= 0) {
-      throwK.current += dt / 0.6
-      if (throwK.current >= 1) throwK.current = -1
-      else applyThrowArm(vrm, throwK.current)
+    // 右腕：掴み（ロックオン中は兄を右手に握って構える）→ 投げモーション → 戻る。歩きの腕の上から重みで上書き
+    {
+      const gr = LOCKON.grab
+      const holding = game.charging && mode === 'shoulder'
+      if (throwK.current >= 0) {
+        throwK.current += dt / LOCKON.windupSec
+        if (throwK.current >= 1) throwK.current = -1
+      }
+      const wantArm = holding || throwK.current >= 0
+      armW.current = THREE.MathUtils.clamp(armW.current + (wantArm ? dt / gr.sec : -dt / gr.returnSec), 0, 1)
+      if (armW.current > 0.001) {
+        const g2 = armSignOf(vrm)
+        let upper: number[]
+        let lower: number[]
+        if (throwK.current >= 0) {
+          // 投げ：構え → 振りかぶり（windRatio まで）→ 一気に振り抜く
+          const t = throwK.current
+          const mix = (a: number[], b: number[], k: number) => a.map((v, i) => THREE.MathUtils.lerp(v, b[i], k))
+          if (t < gr.windRatio) {
+            const k = smooth(t / gr.windRatio)
+            upper = mix(gr.hold.upper, gr.windBack.upper, k)
+            lower = mix(gr.hold.lower, gr.windBack.lower, k)
+          } else {
+            const k = smooth((t - gr.windRatio) / (1 - gr.windRatio))
+            upper = mix(gr.windBack.upper, gr.release.upper, k)
+            lower = mix(gr.windBack.lower, gr.release.lower, k)
+          }
+        } else {
+          upper = gr.hold.upper
+          lower = gr.hold.lower
+        }
+        const w = smooth(armW.current)
+        const ua = vrm.humanoid.getNormalizedBoneNode('rightUpperArm')
+        const la = vrm.humanoid.getNormalizedBoneNode('rightLowerArm')
+        if (ua) ua.rotation.set(THREE.MathUtils.lerp(ua.rotation.x, upper[0] * g2, w), THREE.MathUtils.lerp(ua.rotation.y, upper[1], w), THREE.MathUtils.lerp(ua.rotation.z, upper[2] * g2, w))
+        if (la) la.rotation.set(THREE.MathUtils.lerp(la.rotation.x, lower[0], w), THREE.MathUtils.lerp(la.rotation.y, lower[1] * g2, w), THREE.MathUtils.lerp(la.rotation.z, lower[2] * g2, w))
+      }
     }
 
     const side = Math.sign(Math.sin(phase.current))
