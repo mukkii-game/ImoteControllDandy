@@ -7,6 +7,7 @@ import { DUMMY_ENEMIES } from '../config/game'
 import { useModels, candidates } from '../systems/models'
 import { readMove, useInput } from '../systems/input'
 import { refs, shoulderWorld } from '../systems/refs'
+import { buildingAt } from '../systems/colliders'
 import { useGame } from '../systems/store'
 import { useVRM } from '../systems/loaders'
 import { emit } from '../systems/events'
@@ -59,18 +60,16 @@ export function Bro() {
     curveLen: 0,
   })
   const wasA = useRef(false)
-  /** A を押し続けている秒数（短押し判定用） */
-  const aHoldT = useRef(0)
   const wasLeft = useRef(false)
   const wasRight = useRef(false)
   const turnSayT = useRef(0)
-  /** 直前の A 離しで行き先を指示したか（その場合はジャンプしない） */
-  const orderedDest = useRef(false)
+  /** 地上の高速タックル */
+  const tackle = useRef({ active: false, queued: false, t: 0, hits: 0, dir: new THREE.Vector3(), from: new THREE.Vector3() })
+  const tackleCd = useRef(0)
   /** 行き先（▼）をロックしていたら妹に「あそこへ行け」 */
   const orderDest = () => {
     if (!lock.dest) return
     lock.dest = false
-    orderedDest.current = true
     const d = GAME.dest
     useGame.getState().setWaypoint({ x: d.x, z: d.z })
     emit('bro.goto', { x: d.x, z: d.z })
@@ -152,70 +151,77 @@ export function Bro() {
         const dx = fx * m.y + rx * m.x
         const dz = fz * m.y + rz * m.x
         const mag = Math.hypot(dx, dz)
-        if (mag > 0.001) {
+        const tk = tackle.current
+        const tc = BRO.tackle
+        if (mag > 0.001 && !tk.active) {
           const sp = BRO.runSpeed * Math.min(1, mag)
-          g.position.x += (dx / mag) * sp * dt
-          g.position.z += (dz / mag) * sp * dt
+          const nx = g.position.x + (dx / mag) * sp * dt
+          const nz = g.position.z + (dz / mag) * sp * dt
+          // 建物は貫通できない
+          if (!buildingAt(nx, nz, BRO.bodyRadius)) {
+            g.position.x = nx
+            g.position.z = nz
+          }
           const want = Math.atan2(dx, dz)
           let diff = want - yawRef.current
           diff = Math.atan2(Math.sin(diff), Math.cos(diff))
           yawRef.current += diff * Math.min(1, BRO.turnLerp * dt)
           moving = Math.min(1, mag)
         }
-        const grounded = g.position.y <= 0.001
-        const aNow = input.keys.a && playing
-        const heldSec = aHoldT.current
-        aHoldT.current = aNow ? aHoldT.current + dt : 0
-        if (pressedA && grounded) {
-          // 押した瞬間：近くに敵がいればその場でパンチ（自動ロックオン）。押し続ければサイトでロック
-          let best: (typeof enemies)[number] | null = null
-          let bd = BRO.punchRange
-          for (const e of enemies) {
-            if (!e.alive || e.pos.y > LOCKON.ground.meleeMaxHeight) continue
-            const d = Math.hypot(e.pos.x - g.position.x, e.pos.z - g.position.z)
-            if (d < bd) {
-              bd = d
-              best = e
+        // 地上の攻撃：A（左クリック）でカーソル（カメラ）の向きへ高速タックル。
+        // 自分の背丈くらいの弧を描いて一定距離（敵がいてもいなくても）。敵で止まらず当たった敵は全部倒す。建物で止まる。連打で高速移動になる
+        tackleCd.current = Math.max(0, tackleCd.current - dt)
+        if (pressedA) tk.queued = true
+        if (tk.queued && !tk.active && tackleCd.current <= 0) {
+          tk.queued = false
+          tk.active = true
+          tk.t = 0
+          tk.hits = 0
+          tk.dir.set(Math.sin(refs.camYaw), 0, Math.cos(refs.camYaw))
+          tk.from.copy(g.position)
+          yawRef.current = refs.camYaw
+          emit('bro.tackle', undefined)
+        }
+        if (tk.active) {
+          const dur = tc.distance / tc.speed
+          tk.t += dt
+          const k = Math.min(1, tk.t / dur)
+          const nx = tk.from.x + tk.dir.x * tc.distance * k
+          const nz = tk.from.z + tk.dir.z * tc.distance * k
+          if (buildingAt(nx, nz, BRO.bodyRadius)) {
+            // 建物にぶつかったらそこで止まる
+            tk.active = false
+            tackleCd.current = tc.cooldownSec
+            vy.current = 0
+          } else {
+            g.position.x = nx
+            g.position.z = nz
+            g.position.y = Math.sin(k * Math.PI) * SCALE.broHeight * tc.arcHeight
+            moving = 1
+            for (const e of enemies) {
+              if (!e.alive || e.pos.y > tc.maxHeight) continue
+              if (Math.hypot(e.pos.x - g.position.x, e.pos.z - g.position.z) < tc.radius) {
+                killEnemy(e.id, e.kind === 'dummy' ? DUMMY_ENEMIES.respawnSec : 0)
+                tk.hits++
+                emit('enemy.hit', { id: e.id, x: e.pos.x, y: e.pos.y, z: e.pos.z, dir: [tk.dir.x, 0.5, tk.dir.z] })
+                st.addScore(100 * tk.hits)
+                if (tk.hits > 1) st.setCombo(tk.hits)
+              }
+            }
+            if (k >= 1) {
+              tk.active = false
+              tackleCd.current = tc.cooldownSec
+              vy.current = 0
             }
           }
-          if (best) {
-            yawRef.current = Math.atan2(best.pos.x - g.position.x, best.pos.z - g.position.z)
-            g.position.x += Math.sin(yawRef.current) * Math.min(bd, 6)
-            g.position.z += Math.cos(yawRef.current) * Math.min(bd, 6)
-            killEnemy(best.id)
-            emit('enemy.hit', { id: best.id, x: best.pos.x, y: best.pos.y, z: best.pos.z })
-            st.addScore(100)
-            punchT.current = 0.35
-          }
         }
-        // 離した瞬間：ロックがあれば自力で跳んで順に体当たり。無ければ短押しはジャンプ
-        if (wasA.current && !aNow) {
-          orderDest()
-          if (lock.ids.length > 0) {
-            const seq = throwSeq.current
-            seq.targets = [...lock.ids]
-            seq.idx = 0
-            seq.phase = 'windup'
-            seq.t = 0
-            seq.hits = 0
-            seq.origin = 'ground'
-            seq.melee = false
-            seq.from.copy(g.position)
-            clearLocks()
-            st.setAttackFrom('ground')
-            st.setMode('thrown')
-            emit('bro.throw', { count: seq.targets.length, from: seq.origin })
-          } else if (grounded && heldSec < LOCKON.tapSec && punchT.current <= 0 && !orderedDest.current) {
-            vy.current = BRO.jumpVelocity
-            emit('bro.jump', undefined)
-          }
-          orderedDest.current = false
-        }
-        wasA.current = aNow
+        wasA.current = input.keys.a && playing
         punchT.current = Math.max(0, punchT.current - dt)
-        vy.current -= BRO.gravity * dt
-        g.position.y = Math.max(0, g.position.y + vy.current * dt)
-        if (g.position.y <= 0) vy.current = Math.max(0, vy.current)
+        if (!tk.active) {
+          vy.current -= BRO.gravity * dt
+          g.position.y = Math.max(0, g.position.y + vy.current * dt)
+          if (g.position.y <= 0) vy.current = Math.max(0, vy.current)
+        }
         g.rotation.y = yawRef.current
 
         if (pressedB && refs.shoulder) {
@@ -383,7 +389,9 @@ export function Bro() {
             if (k >= 1) {
               killEnemy(e.id, e.kind === 'dummy' ? DUMMY_ENEMIES.respawnSec : 0)
               seq.hits++
-              emit('enemy.hit', { id: e.id, x: e.pos.x, y: e.pos.y, z: e.pos.z })
+              v.subVectors(e.pos, seq.from)
+              if (v.lengthSq() > 1) v.normalize()
+              emit('enemy.hit', { id: e.id, x: e.pos.x, y: e.pos.y, z: e.pos.z, dir: [v.x, Math.max(0.35, v.y), v.z] })
               if (seq.melee) punchT.current = 0.35
               seq.idx++
               seq.phase = 'pause'
@@ -478,6 +486,10 @@ export function Bro() {
       } else if (poseBlend.current > 0.5) {
         g.rotation.x = 0
         applyShoulderPose(vrm, steer.current, dt)
+      } else if (tackle.current.active) {
+        // タックル：頭から突っ込む
+        applyFlyPose(vrm, dt)
+        g.rotation.x = 0.7
       } else {
         g.rotation.x = 0
         runRatio.current += (moving - runRatio.current) * Math.min(1, 10 * dt)

@@ -287,6 +287,11 @@ export function bindAudio(): () => void {
         if (!ok) seWhoosh(0.8)
       })
     }),
+    on('bro.tackle', () => {
+      playVoice('se.throw').then((ok) => {
+        if (!ok) seWhoosh(1.2)
+      })
+    }),
     on('bro.jump', () => {
       playVoice('se.jump').then((ok) => {
         if (!ok) seWhoosh(1.6)

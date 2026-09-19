@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { on, emit } from '../systems/events'
 import { useGame } from '../systems/store'
 import { refs } from '../systems/refs'
@@ -7,6 +7,7 @@ import * as THREE from 'three'
 import { STAGE, GAME } from '../config/game'
 import { toonGradient } from '../systems/toon'
 import { useStageKit, type KitType } from '../systems/stageKit'
+import { setBuildingColliders, nearbyBuildings, cellOf, colliders } from '../systems/colliders'
 
 const HOUSE_PALETTE = ['#e8dcc8', '#f0e6d2', '#dcd0b8', '#e6d8c0', '#f2ead8']
 const ROOF_COLORS = ['#b5432f', '#4a5d8a', '#6b7a4a', '#8a5a3a']
@@ -159,11 +160,14 @@ export function Stage() {
 
 /**
  * 建物。妹の一歩で足元の建物が潰れる（インスタンスの高さを縮める）。
- * 種類（箱／外部モデルの各種）ごとに InstancedMesh を 1 つ持ち、建物の添字 → (メッシュ, その中の番号) で更新する。
+ * 軽量化：種類 × 区画（STAGE.chunkBlocks ブロック四方）ごとに InstancedMesh を分け、
+ * 画面外の区画はフラスタムカリング、遠い区画は非表示、影は近い区画だけ。
+ * 建物の添字 → (メッシュ, その中の番号) で更新する。当たり判定の索引（colliders）もここで登録。
  */
 function Buildings({ list, kit }: { list: Building[]; kit: KitType[] }) {
   const crushed = useRef<Map<number, number>>(new Map()) // index → 経過秒
   const o = useMemo(() => new THREE.Object3D(), [])
+  const { camera } = useThree()
   /** 建物 1 棟のインスタンス行列。k = 潰れ具合 0..1 */
   const place = (b: Building, k: number) => {
     if (b.type < 0) {
@@ -180,17 +184,31 @@ function Buildings({ list, kit }: { list: Building[]; kit: KitType[] }) {
     o.updateMatrix()
     return o.matrix
   }
-  const { meshes, slot } = useMemo(() => {
-    const byType = new Map<number, number[]>()
+  const { chunks, slot } = useMemo(() => {
+    const cell = STAGE.chunkBlocks * STAGE.blockSize
+    const half = (STAGE.blocks * STAGE.blockSize) / 2
+    // 当たり判定の索引
+    setBuildingColliders(
+      list.map((b) => ({ x: b.x, z: b.z, w: b.w, d: b.d, h: b.h, dead: false })),
+      cell,
+      half,
+    )
+    // 種類 × 区画 でまとめる
+    const groups = new Map<string, { type: number; idxs: number[]; cx: number; cz: number }>()
     list.forEach((b, i) => {
-      const arr = byType.get(b.type) ?? []
-      arr.push(i)
-      byType.set(b.type, arr)
+      const [cx, cz] = cellOf(b.x, b.z)
+      const key = `${b.type}|${cx}|${cz}`
+      let g = groups.get(key)
+      if (!g) {
+        g = { type: b.type, idxs: [], cx, cz }
+        groups.set(key, g)
+      }
+      g.idxs.push(i)
     })
-    const meshes: THREE.InstancedMesh[] = []
+    const chunks: { m: THREE.InstancedMesh; center: THREE.Vector3 }[] = []
     const slot = new Map<number, [THREE.InstancedMesh, number]>()
     const c = new THREE.Color()
-    byType.forEach((idxs, type) => {
+    groups.forEach(({ type, idxs, cx, cz }) => {
       const geo = type < 0 ? new THREE.BoxGeometry(1, 1, 1) : kit[type].geometry
       const mat = type < 0 ? new THREE.MeshToonMaterial({ gradientMap: toonGradient() }) : kit[type].material
       const m = new THREE.InstancedMesh(geo, mat, idxs.length)
@@ -204,23 +222,28 @@ function Buildings({ list, kit }: { list: Building[]; kit: KitType[] }) {
       m.receiveShadow = true
       m.instanceMatrix.needsUpdate = true
       if (m.instanceColor) m.instanceColor.needsUpdate = true
-      meshes.push(m)
+      m.computeBoundingSphere()
+      m.frustumCulled = true
+      chunks.push({ m, center: new THREE.Vector3(-half + (cx + 0.5) * cell, 0, -half + (cz + 0.5) * cell) })
     })
-    return { meshes, slot }
+    return { chunks, slot }
   }, [list, kit]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const broken = useRef<Set<number>>(new Set())
   const bodyClock = useRef(0)
+  const cullClock = useRef(1)
 
-  /** 足元円内の建物を潰す／砕く。低い建物はぺちゃんこ、高い建物はブロックに砕ける */
+  /** 足元円内の建物を潰す／砕く。低い建物はぺちゃんこ、高い建物はブロックに砕ける（近くの区画だけ調べる） */
   const hitBuildings = (x: number, z: number, r: number) => {
     let n = 0
-    list.forEach((b, i) => {
-      if (crushed.current.has(i) || broken.current.has(i)) return
+    for (const i of nearbyBuildings(x, z)) {
+      const b = list[i]
+      if (crushed.current.has(i) || broken.current.has(i)) continue
       const dx = Math.max(Math.abs(x - b.x) - b.w / 2, 0)
       const dz = Math.max(Math.abs(z - b.z) - b.d / 2, 0)
-      if (Math.hypot(dx, dz) >= r) return
+      if (Math.hypot(dx, dz) >= r) continue
       n++
+      colliders.list[i].dead = true
       if (b.h <= GAME.stompHeight) {
         crushed.current.set(i, 0)
         // 音用（id -1 は建物）。見た目は building.crush 側（屋根が飛ぶ・壁の破片・砂煙）
@@ -239,13 +262,27 @@ function Buildings({ list, kit }: { list: Building[]; kit: KitType[] }) {
         }
         emit('building.break', { x: b.x, z: b.z, w: b.w, h: b.h, d: b.d, color: b.color })
       }
-    })
+    }
     if (n > 0) useGame.getState().addScore(-GAME.crushPenalty * n)
   }
 
   useEffect(() => on('imouto.step', ({ x, z }) => hitBuildings(x, z, GAME.crushRadius)), [list]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useFrame((_, dt) => {
+    // 遠い区画は描かない・影は近い区画だけ（0.25 秒ごと）
+    cullClock.current += dt
+    if (cullClock.current > 0.25) {
+      cullClock.current = 0
+      const cell = STAGE.chunkBlocks * STAGE.blockSize
+      const cp = camera.position
+      const ip = refs.imouto?.position ?? cp
+      for (const ch of chunks) {
+        const dCam = Math.hypot(ch.center.x - cp.x, ch.center.z - cp.z)
+        const dIm = Math.hypot(ch.center.x - ip.x, ch.center.z - ip.z)
+        ch.m.visible = dCam < STAGE.drawDist + cell
+        ch.m.castShadow = dIm < STAGE.shadowDist + cell * 0.75
+      }
+    }
     // 体（胴）に当たった建物も壊す
     bodyClock.current += dt
     if (bodyClock.current > 0.12 && refs.imouto) {
@@ -267,8 +304,8 @@ function Buildings({ list, kit }: { list: Building[]; kit: KitType[] }) {
   })
   return (
     <group>
-      {meshes.map((m, i) => (
-        <primitive key={i} object={m} />
+      {chunks.map((ch, i) => (
+        <primitive key={i} object={ch.m} />
       ))}
     </group>
   )

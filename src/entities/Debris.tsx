@@ -79,11 +79,18 @@ export function Debris() {
         push(boxes.current, MAX_BOX, piece(new THREE.Vector3(x + Math.cos(a) * w * 0.4, h * 0.5, z + Math.sin(a) * d * 0.4), vel, size, color))
       }
     })
-    const offHit = on('enemy.hit', ({ id, x, y, z }) => {
+    const offHit = on('enemy.hit', ({ id, x, y, z, dir }) => {
       if (id < 0) return
       const kind = getEnemy(id)?.kind ?? 'dummy'
       const parts = DEBRIS.parts[kind] ?? DEBRIS.parts.dummy
       const b = DEBRIS.burst
+      // 兄の攻撃：本体がノックバックして上へも吹っ飛ぶ（気持ちよさ）
+      const body = dir && DEBRIS.knockback.body[kind]
+      if (body && dir) {
+        const kb = DEBRIS.knockback
+        const vel = new THREE.Vector3(dir[0] * kb.speed, kb.up + Math.max(0, dir[1]) * kb.speed, dir[2] * kb.speed)
+        push(boxes.current, MAX_BOX, piece(new THREE.Vector3(x, Math.max(2, y), z), vel, new THREE.Vector3(...body.size), body.color, GAME.debrisSec + 1, 5))
+      }
       for (const part of parts) {
         for (let i = 0; i < part.n; i++) {
           const vel = new THREE.Vector3(rnd(b.spread), b.up * (0.5 + Math.random()), rnd(b.spread))

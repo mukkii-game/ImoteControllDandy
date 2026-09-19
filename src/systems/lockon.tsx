@@ -25,7 +25,8 @@ export function LockonSystem() {
   useFrame((_, dt) => {
     const st = useGame.getState()
     const a = useInput.getState().keys.a
-    const charging = (st.mode === 'shoulder' || st.mode === 'ground') && a && st.phase === 'play'
+    // ロックオンは肩上だけ（地上は高速タックル）
+    const charging = st.mode === 'shoulder' && a && st.phase === 'play'
     if (charging !== st.charging) st.setCharging(charging)
 
     // サイトの位置：溜め中は画面端でカメラを押す。溜めていない時は中央へ戻る

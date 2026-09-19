@@ -66,6 +66,19 @@ export const BRO = {
   jumpVelocity: 9,
   /** 地上パンチ：この距離以内の敵を殴る（m）。ロックオン攻撃でもこの距離内はダッシュ打撃 */
   punchRange: 60,
+  /** 地上の高速タックル：カーソル（カメラ）の向きへ突進。敵で止まらず、当たった敵は全部倒す */
+  tackle: {
+    speed: 240,
+    distance: 180,
+    /** 当たり判定の半径（m）と、この高さ以下の敵にだけ当たる */
+    radius: 16,
+    maxHeight: 32,
+    /** 弧の高さ（兄の身長比）と、次のタックルまでの間（秒。連打で高速移動になる） */
+    arcHeight: 1.0,
+    cooldownSec: 0.05,
+  },
+  /** 建物との当たり半径（m）。建物は貫通できない */
+  bodyRadius: 1.2,
   gravity: 28,
   /** 肩へ飛び乗る演出の秒数（距離に応じて min〜max） */
   mountSecMin: 0.9,
@@ -154,16 +167,16 @@ export const LOCKON = {
   reticleRadius: 0.12,
   /** ロック可能距離（m） */
   maxRange: 700,
-  /** 投げの飛行速度（m/s） */
-  flySpeed: 520,
-  /** 光弾化：兄を包む光（芯・ハロの半径 m、色）と光の軌跡（幅 m・点数） */
-  glow: { color: '#7fe9ff', coreColor: '#ffffff', coreRadius: 2.2, haloRadius: 6, trailWidth: 3.5, trailPoints: 70, trailOpacity: 0.9 },
+  /** 投げの飛行速度（m/s）。待ちが無いように速く */
+  flySpeed: 900,
+  /** 光弾化：兄を包む光のオーラ（芯・ハロの半径 m ≒ 兄の 5 倍の大きさ、色）と光の軌跡（半幅 m ≒ 兄の 3 倍の太さ・点数） */
+  glow: { color: '#7fe9ff', coreColor: '#ffffff', coreRadius: 5, haloRadius: 12, trailWidth: 7.5, trailPoints: 90, trailOpacity: 0.9 },
   /** 妹が掴んで振りかぶる時間（秒） */
-  windupSec: 0.35,
+  windupSec: 0.15,
   /** 着弾ごとの停止（秒） */
-  hitPauseSec: 0.08,
+  hitPauseSec: 0.04,
   /** 最後の敵から肩へ戻る秒数 */
-  returnSec: 1.1,
+  returnSec: 0.5,
   /** 帰還の弧の高さ（妹の身長比） */
   returnArc: 0.2,
   /** 爆発の大きさ（m）と時間 */
@@ -221,7 +234,8 @@ export const CAMERA = {
   pitchMax: 1.1,
   /** 地上：兄を中心にマウスで回すオービット。やや低めで妹が収まらない */
   ground: {
-    /** 妹の方へカメラが戻る：入力が止まってからの秒数と速さ */
+    /** 妹の方へカメラが戻る：入力が止まってからの秒数と速さ（操作しづらいので一旦オフ） */
+    pullEnabled: false,
     pullDelaySec: 1.2,
     pullLerp: 0.9,
     fov: 78,
@@ -260,9 +274,9 @@ export const CAMERA = {
   mountViewYaw: -Math.PI / 2,
   /** 溜め中（左クリック）：兄の近くへ寄る照準カメラ。妹は半透明に */
   aim: {
-    /** 肩上：兄からの距離（m）と注視の高さ（m） */
-    distance: 7,
-    height: 1.3,
+    /** 肩上：兄の上半身のすぐ後ろ。兄からの距離（m）と注視の高さ（m） */
+    distance: 3.6,
+    height: 1.6,
     /** 地上：兄からの距離（m） */
     groundDistance: 2.6,
     fov: 50,
@@ -293,6 +307,12 @@ export const STAGE = {
   buildingMax: 38,
   towerChance: 0.05,
   towerMax: 95,
+  /** 描画の軽量化：建物を区画（ブロック数）ごとにまとめて、カメラからこの距離（m）より遠い区画は描かない。影はこの距離まで */
+  chunkBlocks: 3,
+  drawDist: 1100,
+  shadowDist: 260,
+  /** 開始後 5 秒の平均 fps がこれ未満なら、影を切って解像度を 1 倍にする */
+  autoLiteFps: 32,
   /** 外部モデル（Kenney、CC0）で家とビルを描く。false なら箱と屋根のまま。読めなかった時も箱に戻る */
   kit: {
     enabled: true,
@@ -389,6 +409,18 @@ export const DEBRIS = {
       { color: '#e5322d', size: [2.5, 2.5, 2.5], n: 3 },
     ],
   } as Record<string, { color: string; size: [number, number, number]; n: number }[]>,
+  /** 兄の攻撃でやられた敵はノックバックして上へも吹っ飛ぶ：飛ぶ速さ（進行方向・上、m/s）と、飛ぶ本体の大きさ・色 */
+  knockback: {
+    speed: 90,
+    up: 60,
+    body: {
+      police: { size: [7, 4, 14], color: '#f5f5f5' },
+      tank: { size: [12, 7, 20], color: '#6b7a4a' },
+      fighter: { size: [30, 3, 12], color: '#1f3fbf' },
+      heli: { size: [5, 4, 16], color: '#3d6b3a' },
+      dummy: { size: [9, 9, 9], color: '#ff8fa3' },
+    } as Record<string, { size: [number, number, number]; color: string }>,
+  },
   /** 黒煙：個数、上昇速度、寿命秒、大きさ m */
   smoke: { n: 6, rise: 8, sec: 1.5, size: 6 },
   /** 砂煙リング（家・ビルが壊れた時）の大きさ m */

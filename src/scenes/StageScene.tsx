@@ -1,10 +1,35 @@
-import { Canvas, useThree } from '@react-three/fiber'
-import { useEffect } from 'react'
+import { Canvas, useThree, useFrame } from '@react-three/fiber'
+import { useEffect, useRef } from 'react'
 import { CAMERA, SCALE, STAGE } from '../config/game'
 import { useGame } from '../systems/store'
 import { Helis } from '../entities/Helis'
 import { BossBuildings } from '../entities/BossBuildings'
 import { BroGlow } from '../entities/BroGlow'
+
+/** 開始後しばらく fps を測り、低ければ影を切って解像度を 1 倍にする（自動の軽量化） */
+function AutoQuality() {
+  const gl = useThree((s) => s.gl)
+  const setDpr = useThree((s) => s.setDpr)
+  const acc = useRef({ t: 0, n: 0, warm: 0, done: false })
+  useFrame((_, dt) => {
+    const a = acc.current
+    if (a.done || useGame.getState().phase !== 'play') return
+    a.warm += dt
+    if (a.warm < 3) return // 読み込み直後は測らない
+    a.t += dt
+    a.n++
+    if (a.t >= 5) {
+      const fps = a.n / a.t
+      a.done = true
+      if (fps < STAGE.autoLiteFps) {
+        gl.shadowMap.enabled = false
+        setDpr(1)
+        console.info(`fps ${fps.toFixed(0)}：重いので影を切り、解像度を 1 倍にしました`)
+      }
+    }
+  })
+  return null
+}
 
 /** Esc（調整パネル）中はフレームループを止めてポーズ */
 function PauseControl() {
@@ -42,7 +67,7 @@ export function StageScene() {
     <Canvas
       shadows={!LITE}
       camera={{ fov: CAMERA.ground.fov, near: CAMERA.near, far: CAMERA.far, position: [0, 2, 70] }}
-      dpr={LITE ? 1 : [1, 1.5]}
+      dpr={LITE ? 1 : [1, 1.25]}
       gl={{ antialias: true }}
     >
       <color attach="background" args={[STAGE.skyColor]} />
@@ -65,6 +90,7 @@ export function StageScene() {
       <CameraRig />
       <GameFlow />
       <PauseControl />
+      <AutoQuality />
     </Canvas>
   )
 }

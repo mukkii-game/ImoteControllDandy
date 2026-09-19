@@ -143,7 +143,7 @@ export function CameraRig() {
     }
 
     // 地上：しばらくカメラを触らないと妹の方へゆっくり向く（妹が心配な兄）
-    if (st.mode === 'ground' && refs.bro && refs.imouto && performance.now() - refs.lastLookInput > CAMERA.ground.pullDelaySec * 1000) {
+    if (CAMERA.ground.pullEnabled && st.mode === 'ground' && refs.bro && refs.imouto && performance.now() - refs.lastLookInput > CAMERA.ground.pullDelaySec * 1000) {
       const dx = refs.imouto.position.x - refs.bro.position.x
       const dz = refs.imouto.position.z - refs.bro.position.z
       const want = Math.atan2(dx, dz)
@@ -156,7 +156,7 @@ export function CameraRig() {
     computeGround(groundPos, groundLook)
     computeShoulder(shoulderPos, shoulderLook)
     // 溜め中（左クリック）は兄の近くへ寄る照準カメラ
-    const aimWant = st.charging && (st.mode === 'shoulder' || st.mode === 'ground') ? 1 : 0
+    const aimWant = st.charging && st.mode === 'shoulder' ? 1 : 0
     aimK.current += (aimWant - aimK.current) * Math.min(1, dt / CAMERA.aim.blendSec)
     const ak = aimK.current
 

@@ -169,7 +169,8 @@ export function Imouto() {
       }
       if (on) {
         const op = 1 - fadeK.current * (1 - CAMERA.aim.imoutoOpacity)
-        for (const mat of fadeMats.current) mat.opacity = op
+        // MToon の輪郭線（黒い裏面シェル）は半透明にすると手前に黒く出るので、半透明中は消す
+        for (const mat of fadeMats.current) mat.opacity = (mat as THREE.Material & { isOutline?: boolean }).isOutline ? 0 : op
       } else if (fadeMats.current.length && fadeMats.current[0].opacity !== 1) {
         for (const mat of fadeMats.current) mat.opacity = 1
       }

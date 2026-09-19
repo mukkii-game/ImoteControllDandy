@@ -9,8 +9,10 @@ export interface GameEvents {
   'bro.jump': void
   /** ロックオン攻撃開始。from: 肩上（妹が掴んで投げる）か地上（兄が自力で跳ぶ）か */
   'bro.throw': { count: number; from: 'shoulder' | 'ground' }
-  /** 兄が敵に着弾 */
-  'enemy.hit': { id: number; x: number; y: number; z: number }
+  /** 兄が敵に着弾。dir があれば兄の攻撃（その方向へノックバックして吹っ飛ぶ） */
+  'enemy.hit': { id: number; x: number; y: number; z: number; dir?: [number, number, number] }
+  /** 地上の高速タックル開始 */
+  'bro.tackle': void
   'bro.return': void
   /** 兄のセリフ（吹き出し） */
   'bro.say': { text: string }
