@@ -80,6 +80,35 @@ export const BRO = {
     aimRadius: 0.09,
     missDistanceMul: 0.5,
   },
+  /**
+   * 地上のバルカン：サイトの方向へ自動で連射する。サイトが敵（空中でも）を捉えていればその敵へ吸い付く（自動照準）。
+   * fireAlways=false なら敵を捉えている時だけ撃つ。タックルと違って一撃死ではなく hitsToKill 発で倒す
+   */
+  vulcan: {
+    fireAlways: true,
+    /** 連射間隔（秒）、弾速（m/s）、弾の寿命（秒）、当たり判定の半径（m） */
+    interval: 0.07,
+    speed: 720,
+    lifeSec: 1.4,
+    hitRadius: 10,
+    hitsToKill: 2,
+    /** エネミービルのロック点は硬い（1 点あたりの必要発数） */
+    bossHitsToKill: 6,
+    /** 自動照準：サイトからこの半径（画面高さ比）に入った敵を狙う。ばらつき（rad） */
+    aimRadius: 0.1,
+    spread: 0.012,
+    /** 銃口の高さ（m、兄の足元から）。曳光弾の長さ・太さ（m）と色 */
+    muzzleHeight: 2.6,
+    tracerLen: 4,
+    tracerWidth: 0.4,
+    color: '#ffd166',
+    /** 1 発当てた時と倒した時のスコア */
+    hitScore: 10,
+    killScore: 100,
+    /** 着弾の火花の大きさ（m）と秒数 */
+    sparkSize: 5,
+    sparkSec: 0.18,
+  },
   /** 建物との当たり半径（m）。建物は貫通できない */
   bodyRadius: 1.2,
   /** 残像と尾（タックル中・飛び乗り中）：残像を出す間隔（秒）・寿命・色・濃さ、尾の半幅（m）・点数 */
@@ -318,6 +347,13 @@ export const CAMERA = {
     silhouetteOpacity: 0.9,
     /** 暫定：肩上から玉を発射したあと、兄が戻ってくるまで妹を消したままにする（妹の体で玉が見えなくなるのを防ぐ） */
     hideDuringThrow: true,
+    /** 射撃モードで妹と兄を消すか。false なら消さず、代わりに X 線輪郭（xray）で向こう側の敵を見せる */
+    vanish: false,
+    /**
+     * X 線輪郭：妹の体（や建物）の向こうに隠れている敵の、隠れた部分の縁だけが光る（systems/xray.tsx）。
+     * power が大きいほど縁が細く、intensity は明るさ。scanEverySec は新しいメッシュを拾う間隔。alwaysOn=true で常時
+     */
+    xray: { enabled: true, color: '#7fff9a', power: 1.6, intensity: 1.8, scanEverySec: 0.5, alwaysOn: false },
   },
   followLerp: 7,
   /** シェイク減衰 */
@@ -512,4 +548,6 @@ export const SOUND = {
   building: { volume: 0.7, minGapSec: 0.35 },
   /** ロックオン音の音量 */
   lockVolume: 0.8,
+  /** バルカン 1 発の音量（連射なので小さめ） */
+  vulcanVolume: 0.25,
 }

@@ -61,6 +61,7 @@ npm run build    # dist/ に出力（itch.io 用）
 - 攻撃中の兄は光弾（芯 4.4m・ハロ 10m・粒 14m、レーザーのような光の軌跡 140 点、LOCKON.glow）。軌跡は戻ったあとフェードで消える（trailFadeSec）。肩に戻ると着地エフェクト（LOCKON.landFx）。最大ロック 16、ロック距離は無制限（画面に映っていれば）
 - 飛行は「1 体あたりほぼ一定時間」（LOCKON.hopSec、遠いほど加速。パンツァードラグーンのレーザーと同じで距離無視）。ロック数で少し時間が変わるだけで、すぐ倒しきって戻る（returnSec 0.25）
 - 地上サイト：倒せる敵（タックルの届く高さ・距離）に重なるとサイトが赤く太く光り（refs.groundTarget）、その時の左クリックはその敵へ全距離タックル。重なっていない時はサイトの向きへ半分の距離（BRO.tackle.missDistanceMul）
+- 地上のバルカン（entities/Vulcan.tsx、BRO.vulcan）：兄はサイトの方向へ自動で連射。サイトが敵（空中でも）を捉えると（refs.aimTarget、サイトが赤く光る）その敵へ吸い付く。弾速 720、2 発で倒す（hitsToKill）。タックルと違って一撃死ではない。何も捉えていない時も撃つ（fireAlways=false で「捉えている時だけ」に変えられる）。音は audio/se/vulcan.mp3 が無ければ合成音
 - 吹っ飛び：地上の敵は上へ 160m/s、空中の敵は上へ 75m/s で勢いよく散ってから半分の重力で落ちる（DEBRIS.knockback / DEBRIS.air）
 - 空の敵：戦闘機は 2 編隊（FIGHTERS.squadrons、各 7 機）が同時に別方向から。ヘリは 2 編隊 × 4 機（HELIS.groups / perGroup / formation）でまとまって妹の周りを回る。全体的に前より遠め（loiter.kinds の center、HELIS.keepDist 260）。戦闘機の速度は 220 m/s
 - スタートは z=-1000（ビル街 z=-500 の手前）。エネミービルは右に満洲・左に山田うどん（BOSSES）。体を左右に揺らし上半分がしなりながらにじり寄る（BOSS.sway）
@@ -78,7 +79,7 @@ npm run build    # dist/ に出力（itch.io 用）
 - 妹は自動で歩く（W 加速・S 減速・A D 旋回）。歩幅・速度は半分ずつ落とした状態。制限時間 11:00
 - 揺れは停止中（CAMERA.shakeAmp = 0）。後で調整する
 - 音：public/audio/se/ に効果音ラボの SE（出典は public/audio/se/SOURCES.md）。無ければ合成音。ロックオン＝決定ボタンを押す26、玉の発射（肩上）＝雷魔法4、建物が壊れた＝2 種類をランダム（一歩で何軒も潰れるので SOUND.building.minGapSec より短い間隔では鳴らさない）。ゲーム中 BGM は public/audio/bgm/play.mp3（GiantLOLO。知人からもらった仮の曲で、公開時に差し替え必須）。音量は SOUND（game.ts）
-- 射撃モードの消え方／戻り方は短いフェード（CAMERA.aim.fadeSec / showFadeSec）：前半はモデルがシルエット色に染まり、後半はシルエットが薄れて消える。戻るときは逆順（systems/silhouette.ts の blend）
+- 射撃モードで妹と兄を消す処理は今はオフ（CAMERA.aim.vanish=false。true に戻すと短いフェードで消える：fadeSec / showFadeSec、systems/silhouette.ts の blend）。代わりに X 線輪郭（CAMERA.aim.xray、systems/xray.tsx）：溜め中・攻撃中は、妹の体や建物の向こうに隠れている敵の「隠れた部分の縁」だけが緑に光る。仕組みは敵メッシュの複製を深度テスト逆（GreaterDepth）＋リムライトで描く。対象は XrayRoot で包んだまとまり（戦闘機・ヘリ・パトカー/戦車。エネミービルは大きすぎて縁が変に見えるので対象外）
 - モデル：妹は VRoid Hub のショート（public/models/custom/imouto.vrm、クレジット必要・作者名は未記入）。兄は Seed-san（ロボアーム非表示・服を黒く）。models/custom/bro.vrm を置けば差し替え
 - 街と車：Kenney（CC0）の City Kit Suburban / Commercial / Car Kit を public/models/kit/ に置き、家・ビル（STAGE.kit）とパトカー（manifest.json）に使用。戦車・戦闘機はまだプリミティブ（manifest.json に glb を書けば差し替わる）
 - 破壊表現：家は屋根が飛び壁の破片が散る、ビルはブロックに砕ける、敵は部品が飛び散り黒煙（DEBRIS）

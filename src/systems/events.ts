@@ -13,6 +13,9 @@ export interface GameEvents {
   'enemy.hit': { id: number; x: number; y: number; z: number; dir?: [number, number, number] }
   /** 地上の高速タックル開始 */
   'bro.tackle': void
+  /** 地上のバルカン：1 発撃った／敵に当たった（まだ倒れていない） */
+  'vulcan.shot': void
+  'vulcan.hit': { x: number; y: number; z: number }
   'bro.return': void
   /** 兄のセリフ（吹き出し）。key があれば line.bro.<key> の音声も鳴る */
   'bro.say': { text: string; key?: string }

@@ -9,6 +9,7 @@ import { emit, on } from '../systems/events'
 import { toonGradient } from '../systems/toon'
 import { useGame } from '../systems/store'
 import { useKitModel } from '../systems/kit'
+import { XrayRoot } from '../systems/xray'
 
 const m4 = new THREE.Matrix4()
 const tmpV = new THREE.Vector3()
@@ -215,7 +216,7 @@ export function GroundEnemies() {
   })
 
   return (
-    <group>
+    <XrayRoot>
       {policeKit &&
         Array.from({ length: POLICE.max }, (_, i) => (
           <group key={`pk${i}`} ref={(el) => el && (policeGroups.current[i] = el)} visible={false}>
@@ -244,6 +245,6 @@ export function GroundEnemies() {
         <sphereGeometry args={[1.4, 8, 8]} />
         <meshBasicMaterial color="#ffd166" />
       </instancedMesh>
-    </group>
+    </XrayRoot>
   )
 }

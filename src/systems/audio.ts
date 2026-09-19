@@ -223,6 +223,34 @@ export function seWhoosh(pitch = 1) {
   n.start(t)
 }
 
+/** タタタ：バルカン 1 発（短いノイズ＋低いクリック） */
+export function seVulcan() {
+  const c = ac()
+  if (!c || c.state !== 'running') return
+  const t = c.currentTime
+  const n = c.createBufferSource()
+  n.buffer = noise(c, 0.05)
+  const f = c.createBiquadFilter()
+  f.type = 'bandpass'
+  f.frequency.value = 1400
+  f.Q.value = 1.2
+  const g = c.createGain()
+  g.gain.setValueAtTime(0.16, t)
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.05)
+  n.connect(f).connect(g).connect(c.destination)
+  n.start(t)
+  const o = c.createOscillator()
+  o.type = 'square'
+  o.frequency.setValueAtTime(220, t)
+  o.frequency.exponentialRampToValueAtTime(90, t + 0.04)
+  const og = c.createGain()
+  og.gain.setValueAtTime(0.08, t)
+  og.gain.exponentialRampToValueAtTime(0.001, t + 0.045)
+  o.connect(og).connect(c.destination)
+  o.start(t)
+  o.stop(t + 0.05)
+}
+
 /** ピッ：ロックオン */
 export function seLock(index = 0) {
   const c = ac()
@@ -310,6 +338,11 @@ export function bindAudio(): () => void {
     on('bomb.burst', () => {
       playVoice('se.boom', 0.6).then((ok) => {
         if (!ok) seBoom()
+      })
+    }),
+    on('vulcan.shot', () => {
+      playVoice('se.vulcan', SOUND.vulcanVolume).then((ok) => {
+        if (!ok) seVulcan()
       })
     }),
     on('bro.tackle', () => {

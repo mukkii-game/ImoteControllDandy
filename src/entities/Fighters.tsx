@@ -8,6 +8,7 @@ import { emit, on } from '../systems/events'
 import { SmokeRibbon } from '../systems/smoke'
 import { toonGradient } from '../systems/toon'
 import { useKitModel } from '../systems/kit'
+import { XrayRoot } from '../systems/xray'
 
 const up = new THREE.Vector3(0, 1, 0)
 const tangent = new THREE.Vector3()
@@ -329,7 +330,7 @@ export function Fighters({ squad = 0 }: { squad?: number }) {
   })
 
   return (
-    <group>
+    <XrayRoot>
       {Array.from({ length: FIGHTERS.count }, (_, i) => (
         <group key={`${gen}-${i}`} ref={(el) => el && (groups.current[i] = el)}>
           <JetMesh />
@@ -352,6 +353,6 @@ export function Fighters({ squad = 0 }: { squad?: number }) {
         <coneGeometry args={[4, 5, 10]} />
         <meshToonMaterial color="#ffe08a" gradientMap={toonGradient()} />
       </instancedMesh>
-    </group>
+    </XrayRoot>
   )
 }

@@ -5,6 +5,8 @@ import { useGame } from '../systems/store'
 import { Helis } from '../entities/Helis'
 import { BossBuildings } from '../entities/BossBuildings'
 import { BroGlow } from '../entities/BroGlow'
+import { Vulcan } from '../entities/Vulcan'
+import { XrayLayer } from '../systems/xray'
 import { BroAfterimage } from '../entities/BroAfterimage'
 
 /** 開始後しばらく fps を測り、低ければ影を切って解像度を 1 倍にする（自動の軽量化） */
@@ -87,6 +89,8 @@ export function StageScene() {
       <GroundEnemies />
       <BossBuildings />
       <BroGlow />
+      <Vulcan />
+      <XrayLayer />
       <BroAfterimage />
       <Shoe />
       <Debris />

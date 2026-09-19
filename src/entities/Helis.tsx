@@ -7,6 +7,7 @@ import { refs } from '../systems/refs'
 import { emit } from '../systems/events'
 import { toonGradient } from '../systems/toon'
 import { useKitModel } from '../systems/kit'
+import { XrayRoot } from '../systems/xray'
 import { useGame } from '../systems/store'
 
 const m4 = new THREE.Matrix4()
@@ -188,7 +189,7 @@ export function Helis() {
   })
 
   return (
-    <group>
+    <XrayRoot>
       {Array.from({ length: TOTAL }, (_, i) => (
         <group key={i} ref={(el) => el && (groups.current[i] = el)} visible={false}>
           <HeliMesh rotor={(el) => (rotors.current[i] = el)} tail={(el) => (tails.current[i] = el)} />
@@ -198,6 +199,6 @@ export function Helis() {
         <sphereGeometry args={[1.6, 8, 8]} />
         <meshBasicMaterial color="#ffb347" />
       </instancedMesh>
-    </group>
+    </XrayRoot>
   )
 }

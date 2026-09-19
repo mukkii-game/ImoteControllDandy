@@ -87,6 +87,8 @@ export function LockonSystem() {
     // 地上：サイトが重なっている「倒せる敵」（タックルの届く高さ・距離）を探す。一番サイトに近い 1 体
     let gtId = -1
     let gtBest = Infinity
+    let aimId = -1
+    let aimBest = Infinity
     const bro = refs.bro
     for (const e of enemies) {
       if (!e.alive) continue
@@ -95,9 +97,15 @@ export function LockonSystem() {
       const sx = (proj.x * 0.5 + 0.5) * size.width
       const sy = (-proj.y * 0.5 + 0.5) * size.height
       lock.screen.set(e.id, [sx, sy, inFront])
-      if (groundAim && inFront && bro && e.pos.y <= BRO.tackle.maxHeight && Math.hypot(e.pos.x - bro.position.x, e.pos.z - bro.position.z) <= BRO.tackle.distance) {
+      if (groundAim && inFront && bro) {
         const d = Math.hypot((sx - cx) / size.height, (sy - cy) / size.height)
-        if (d < BRO.tackle.aimRadius && d < gtBest) {
+        // バルカンの自動照準：高さ・距離を問わずサイトに一番近い敵
+        if (d < BRO.vulcan.aimRadius && d < aimBest) {
+          aimBest = d
+          aimId = e.id
+        }
+        // タックルの狙い：届く高さ・距離の敵だけ
+        if (e.pos.y <= BRO.tackle.maxHeight && Math.hypot(e.pos.x - bro.position.x, e.pos.z - bro.position.z) <= BRO.tackle.distance && d < BRO.tackle.aimRadius && d < gtBest) {
           gtBest = d
           gtId = e.id
         }
@@ -116,6 +124,7 @@ export function LockonSystem() {
       }
     }
     refs.groundTarget = groundAim ? gtId : -1
+    refs.aimTarget = groundAim ? aimId : -1
     // ロック中の敵が死んだら外す
     for (let i = lock.ids.length - 1; i >= 0; i--) {
       const e = enemies.find((x) => x.id === lock.ids[i])

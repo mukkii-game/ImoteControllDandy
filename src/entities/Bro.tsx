@@ -495,7 +495,7 @@ export function Bro() {
     if (vrm) {
       // 射撃モード（肩上で溜め中）：妹と同じく一瞬で消える
       {
-        const want = st.charging && st.mode === 'shoulder'
+        const want = CAMERA.aim.vanish && st.charging && st.mode === 'shoulder'
         fadeK.current = THREE.MathUtils.clamp(fadeK.current + (want ? dt / CAMERA.aim.fadeSec : -dt / CAMERA.aim.showFadeSec), 0, 1)
         if (!silhouette.current) silhouette.current = makeSilhouette(vrm.scene, CAMERA.aim.silhouetteColor)
         silhouette.current.blend(fadeK.current, CAMERA.aim.silhouetteOpacity)

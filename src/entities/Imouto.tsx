@@ -155,7 +155,7 @@ export function Imouto() {
     // 射撃モード（肩上で溜め中）：一瞬で同じ色のシルエットになりながら消える。離すと元に戻る
     {
       const throwing = CAMERA.aim.hideDuringThrow && mode === 'thrown' && game.attackFrom === 'shoulder'
-      const want = (game.charging && mode === 'shoulder') || throwing
+      const want = CAMERA.aim.vanish && ((game.charging && mode === 'shoulder') || throwing)
       // 消えるときは fadeSec、戻るときは showFadeSec の短いフェード
       fadeK.current = THREE.MathUtils.clamp(fadeK.current + (want ? dt / CAMERA.aim.fadeSec : -dt / CAMERA.aim.showFadeSec), 0, 1)
       if (!silhouette.current) silhouette.current = makeSilhouette(vrm.scene, CAMERA.aim.silhouetteColor)
