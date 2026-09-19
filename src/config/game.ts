@@ -108,6 +108,12 @@ export const BRO = {
     tracerLen: 60,
     tracerWidth: 48,
     color: '#ffd166',
+    /** 弾の見た目：半透明の四角（color）の中に別の色の丸（coreColor、coreRatio=四角の幅に対する丸の直径）。spin=進行方向まわりの回転（rad/s）、tumble=横回転（rad/s） */
+    boxOpacity: 0.55,
+    coreColor: '#ff3b6b',
+    coreRatio: 0.45,
+    spin: 28,
+    tumble: 9,
     /** 1 発当てた時と倒した時のスコア。敵の弾を撃ち落とした時のスコア */
     hitScore: 10,
     killScore: 100,

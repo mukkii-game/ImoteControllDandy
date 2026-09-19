@@ -65,7 +65,7 @@ npm run build    # dist/ に出力（itch.io 用）
 - 右上の「地上／肩上」の下に fps 表示（ui/HUD.tsx の Fps）。カクつきの切り分け用：fps が低ければ描画の重さ、60 なのにカクつくなら動きの作り方
 - 毎フレームの new THREE.Vector3 / Quaternion を減らした（Fighters の right、BroGlow の粒）。GC による周期的なカクつき対策
 - 地上の上下の見回しは肩上より広め（CAMERA.ground.pitchMin/pitchMax。上 77° まで。頭上の敵をバルカンで狙える）
-- 地上のバルカン（entities/Vulcan.tsx、BRO.vulcan）：兄はサイトの方向へ自動で連射。サイトが敵（空中でも）を捉えると（refs.aimTarget、サイトが赤く光る）その敵へ吸い付く。弾速 3600、3 発ずつ「ダダダッ」のリズム（burst / interval / burstGap）、曳光弾は太さ 48m・長さ 60m の巨大な光の塊。2 発で倒す（hitsToKill）。タックルと違って一撃死ではない。サイトが敵を捉えている時だけ撃つ（fireAlways=false）。音は audio/se/vulcan.mp3（雷魔法4）
+- 地上のバルカン（entities/Vulcan.tsx、BRO.vulcan）：兄はサイトの方向へ自動で連射。サイトが敵（空中でも）を捉えると（refs.aimTarget、サイトが赤く光る）その敵へ吸い付く。弾速 3600、3 発ずつ「ダダダッ」のリズム（burst / interval / burstGap）、曳光弾は太さ 48m・長さ 60m の半透明の黄色い四角の中に赤い丸（coreColor / coreRatio）。進行方向まわりに高速回転しながら横にも回って飛ぶ（spin / tumble）。2 発で倒す（hitsToKill）。タックルと違って一撃死ではない。サイトが敵を捉えている時だけ撃つ（fireAlways=false）。音は audio/se/vulcan.mp3（雷魔法4）
 - タックルの速さは 120 m/s（BRO.tackle.speed）
 - 爆撃（FIGHTERS.bomb）：黒い爆弾が黄色い光をまとって、妹の胴体へゆっくり曲がりながら飛んでくる（speed / homing / gravity）。当たると被弾エフェクト＋減速。上空集合の旋回は半径 135m・高さ 210m（loiter.kinds.overhead）
 - 吹っ飛び：地上の敵は上へ 160m/s、空中の敵は上へ 75m/s で勢いよく散ってから半分の重力で落ちる（DEBRIS.knockback / DEBRIS.air）

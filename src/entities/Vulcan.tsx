@@ -13,6 +13,8 @@ interface Bullet {
   prev: THREE.Vector3
   vel: THREE.Vector3
   t: number
+  /** 回転の位相（弾ごとにばらす） */
+  phase: number
 }
 interface Spark {
   pos: THREE.Vector3
@@ -23,6 +25,8 @@ const MAX = 96
 const SPARK_MAX = 24
 const m4 = new THREE.Matrix4()
 const q = new THREE.Quaternion()
+const qSpin = new THREE.Quaternion()
+const sideAxis = new THREE.Vector3(1, 0, 0)
 const s3 = new THREE.Vector3()
 const dir = new THREE.Vector3()
 const muzzle = new THREE.Vector3()
@@ -39,6 +43,7 @@ const up = new THREE.Vector3(0, 1, 0)
 export function Vulcan() {
   const { camera } = useThree()
   const mesh = useRef<THREE.InstancedMesh>(null!)
+  const coreMesh = useRef<THREE.InstancedMesh>(null!)
   const sparkMesh = useRef<THREE.InstancedMesh>(null!)
   const bullets = useRef<Bullet[]>([])
   const sparks = useRef<Spark[]>([])
@@ -94,7 +99,7 @@ export function Vulcan() {
         dir.y += (Math.random() - 0.5) * vc.spread * 2
         dir.z += (Math.random() - 0.5) * vc.spread * 2
         dir.normalize()
-        const b: Bullet = { pos: muzzle.clone(), prev: muzzle.clone(), vel: dir.clone().multiplyScalar(vc.speed), t: 0 }
+        const b: Bullet = { pos: muzzle.clone(), prev: muzzle.clone(), vel: dir.clone().multiplyScalar(vc.speed), t: 0, phase: Math.random() * Math.PI * 2 }
         bullets.current.push(b)
         if (bullets.current.length > MAX) bullets.current.shift()
         dbg.spawned++
@@ -163,17 +168,29 @@ export function Vulcan() {
       if (b.t > vc.lifeSec || b.pos.y < 0) dead = true
       if (dead) list.splice(i, 1)
     }
-    // 描画：曳光弾（進行方向に向けた細長い箱）
+    // 描画：曳光弾（進行方向に向けた箱、高速回転）＋中の丸
     const m = mesh.current
+    const cm = coreMesh.current
     m.count = list.length
+    cm.count = list.length
     list.forEach((b, i) => {
       dir.copy(b.vel).normalize()
       q.setFromUnitVectors(up, dir)
+      // 進行方向まわりの高速回転と、横回転（弾ごとに位相をずらす）
+      qSpin.setFromAxisAngle(up, b.t * vc.spin + b.phase)
+      q.multiply(qSpin)
+      qSpin.setFromAxisAngle(sideAxis, b.t * vc.tumble + b.phase * 0.5)
+      q.multiply(qSpin)
       s3.set(vc.tracerWidth, vc.tracerLen, vc.tracerWidth)
       m4.compose(b.pos, q, s3)
       m.setMatrixAt(i, m4)
+      const cr = vc.tracerWidth * vc.coreRatio
+      s3.set(cr, cr * (vc.tracerLen / vc.tracerWidth) * 0.6, cr)
+      m4.compose(b.pos, q, s3)
+      cm.setMatrixAt(i, m4)
     })
     m.instanceMatrix.needsUpdate = true
+    cm.instanceMatrix.needsUpdate = true
     // 火花：膨らんで消える
     const sp = sparks.current
     for (let i = sp.length - 1; i >= 0; i--) {
@@ -195,7 +212,11 @@ export function Vulcan() {
     <group>
       <instancedMesh ref={mesh} args={[undefined, undefined, MAX]} frustumCulled={false}>
         <boxGeometry args={[1, 1, 1]} />
-        <meshBasicMaterial color={vc.color} transparent opacity={0.95} blending={THREE.AdditiveBlending} depthWrite={false} />
+        <meshBasicMaterial color={vc.color} transparent opacity={vc.boxOpacity} depthWrite={false} />
+      </instancedMesh>
+      <instancedMesh ref={coreMesh} args={[undefined, undefined, MAX]} frustumCulled={false}>
+        <sphereGeometry args={[0.5, 12, 10]} />
+        <meshBasicMaterial color={vc.coreColor} />
       </instancedMesh>
       <instancedMesh ref={sparkMesh} args={[undefined, undefined, SPARK_MAX]} frustumCulled={false}>
         <sphereGeometry args={[1, 8, 6]} />
