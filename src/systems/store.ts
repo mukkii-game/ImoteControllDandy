@@ -28,6 +28,13 @@ interface GameState {
   setCooldowns: (c: Record<string, number>) => void
   activeSkill: string | null
   setActiveSkill: (s: string | null) => void
+  phase: 'title' | 'play' | 'clear' | 'late'
+  setPhase: (p: 'title' | 'play' | 'clear' | 'late') => void
+  /** 残り秒（HUD 用に 0.1s 刻みで更新） */
+  timeLeft: number
+  setTimeLeft: (t: number) => void
+  clearTime: number
+  setClearTime: (t: number) => void
 }
 
 export const useGame = create<GameState>((set) => ({
@@ -51,4 +58,10 @@ export const useGame = create<GameState>((set) => ({
   setCooldowns: (cooldowns) => set({ cooldowns }),
   activeSkill: null,
   setActiveSkill: (activeSkill) => set({ activeSkill }),
+  phase: 'title',
+  setPhase: (phase) => set({ phase }),
+  timeLeft: 0,
+  setTimeLeft: (timeLeft) => set({ timeLeft }),
+  clearTime: 0,
+  setClearTime: (clearTime) => set({ clearTime }),
 }))

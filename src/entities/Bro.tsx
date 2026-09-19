@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { BRO, SCALE, LOCKON } from '../config/game'
+import { BRO, SCALE, LOCKON, IMOUTO } from '../config/game'
 import { enemies, killEnemy, lock, clearLocks } from '../systems/enemies'
 import { DUMMY_ENEMIES } from '../config/game'
 import { useModels, candidates } from '../systems/models'
@@ -89,8 +89,9 @@ export function Bro() {
     const g = group.current
     const st = useGame.getState()
     const input = useInput.getState()
-    const pressedB = input.consumeB()
-    const pressedA = input.consumeA()
+    const playing = st.phase === 'play'
+    const pressedB = playing && input.consumeB()
+    const pressedA = playing && input.consumeA()
     let moving = 0
 
     switch (st.mode) {
@@ -162,7 +163,7 @@ export function Bro() {
         const m = readMove()
         steer.current = m.y > 0.2 ? (m.x > 0.3 ? 1 : m.x < -0.3 ? -1 : 0) : m.x > 0.3 ? 1 : m.x < -0.3 ? -1 : m.y > 0.2 ? 0 : null
         // A を離した瞬間、ロックがあれば投擲開始
-        const aNow = input.keys.a
+        const aNow = input.keys.a && playing
         if (wasA.current && !aNow && lock.ids.length > 0) {
           const seq = throwSeq.current
           seq.targets = [...lock.ids]
@@ -308,7 +309,7 @@ export function Bro() {
   })
 
   return (
-    <group ref={group} position={[0, 0, 60]}>
+    <group ref={group} position={[IMOUTO.spawn.x, 0, IMOUTO.spawn.z + 60]}>
       {vrm && <primitive object={vrm.scene} scale={scale} />}
     </group>
   )

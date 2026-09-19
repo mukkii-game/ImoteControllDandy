@@ -166,6 +166,20 @@ export function CameraRig() {
       }
     }
 
+    if ((st.phase === 'clear' || st.phase === 'late') && refs.imouto) {
+      // ED：校庭の引き。妹の頭が校舎より上に見える構図
+      const im = refs.imouto.position
+      const tgt = tmp.set(im.x, 28, im.z + 40)
+      const want = new THREE.Vector3(im.x + 150, 55, im.z - 190)
+      camera.position.lerp(want, Math.min(1, 2 * dt))
+      smoothedLook.current.lerp(tgt, Math.min(1, 2 * dt))
+      camera.lookAt(smoothedLook.current)
+      if (Math.abs(cam.fov - 50) > 0.1) {
+        cam.fov = THREE.MathUtils.lerp(cam.fov, 50, Math.min(1, 2 * dt))
+        cam.updateProjectionMatrix()
+      }
+      return
+    }
     if (useInput.getState().overview && refs.imouto) {
       const im = st.mode === 'ground' && refs.bro ? refs.bro.position : refs.imouto.position
       const dist = st.mode === 'ground' ? 0.35 : 1

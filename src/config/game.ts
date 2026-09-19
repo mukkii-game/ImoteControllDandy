@@ -80,7 +80,7 @@ export const BRO = {
 
 export const IMOUTO = {
   name: 'ロロ',
-  spawn: { x: 0, y: 0, z: 0 },
+  spawn: { x: 0, y: 0, z: -1500 },
   /**
    * 服のロゴ。Tops テクスチャに Canvas で描く（VRM ファイルは触らない）。
    * u/v は 0..1 のテクスチャ座標（胸の前面 UV の中心）。
@@ -217,7 +217,7 @@ export const CAMERA = {
 
 export const STAGE = {
   /** 格子状の街。ブロック数（片側）。偶数にすると原点が交差点になる */
-  blocks: 10,
+  blocks: 24,
   blockSize: 140,
   roadWidth: 34,
   groundColor: '#8aa06a',
@@ -228,6 +228,27 @@ export const STAGE = {
   buildingMax: 38,
   towerChance: 0.05,
   towerMax: 95,
+}
+
+/** ゲーム進行（区間・校門・制限時間） */
+export const GAME = {
+  /** 制限時間（秒） */
+  timeLimitSec: 240,
+  /** 残りこの秒数で妹が「こわがる」 */
+  scaredSec: 60,
+  /** 校門の z（妹は +Z へ進む）。スタートは IMOUTO.spawn */
+  gateZ: 1400,
+  gateHalfWidth: 45,
+  /** 校舎・校庭の配置 */
+  school: { z: 1560, width: 220, depth: 60, height: 14, yardDepth: 120 },
+  /** 区間（z の境界）：住宅街 → ビル街 → 航空公園 */
+  sections: [
+    { name: '住宅街', from: -9999, to: -500 },
+    { name: 'ビル街', from: -500, to: 500 },
+    { name: '航空公園', from: 500, to: 9999 },
+  ],
+  /** 公園：この範囲は建物を置かない（|x| < halfWidth, z in [from, to]） */
+  park: { halfWidth: 320, from: 560, to: 1250 },
 }
 
 export const DEBUG = {

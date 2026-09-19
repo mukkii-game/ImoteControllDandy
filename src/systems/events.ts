@@ -18,6 +18,8 @@ export interface GameEvents {
   'imouto.skill': { id: 'skip' | 'shoe' | 'cry' }
   /** 靴が飛ぶ（靴飛ばし） */
   'shoe.launch': { x: number; y: number; z: number; yaw: number }
+  'game.clear': void
+  'game.late': void
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -21,7 +21,7 @@ export function LockonSystem() {
   useFrame(() => {
     const st = useGame.getState()
     const a = useInput.getState().keys.a
-    const charging = st.mode === 'shoulder' && a
+    const charging = st.mode === 'shoulder' && a && st.phase === 'play'
     if (charging !== st.charging) st.setCharging(charging)
 
     lock.screen.clear()

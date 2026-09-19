@@ -10,7 +10,8 @@ import { useGame } from '../systems/store'
 import { readMove } from '../systems/input'
 import { emit, on } from '../systems/events'
 import { HIT } from '../config/waves'
-import { applyWalk, applyFace, applySkillPose, applySkillFace, applyThrowArm } from '../systems/procAnim'
+import { applyWalk, applyFace, applySkillPose, applySkillFace, applyThrowArm, applySitPose } from '../systems/procAnim'
+import { GAME } from '../config/game'
 import { SkillRunner } from '../systems/skills'
 import { SKILLS, type SkillId } from '../config/skills'
 import { useInput } from '../systems/input'
@@ -40,6 +41,7 @@ export function Imouto() {
   const hitTimer = useRef(0)
   const skills = useRef(new SkillRunner())
   const throwK = useRef(-1)
+  const sitK = useRef(0)
   const anchorRef = useRef<THREE.Object3D | null>(null)
   const boneRef = useRef<THREE.Object3D | null>(null)
   const chestRef = useRef<THREE.Object3D | null>(null)
@@ -136,11 +138,13 @@ export function Imouto() {
       vrm.springBoneManager?.reset()
       for (let i = 0; i < IMOUTO.hairWarmupSteps; i++) vrm.update(1 / 30)
     }
-    const mode = useGame.getState().mode
-    const m = mode === 'shoulder' ? readMove() : { x: 0, y: 0 }
+    const game = useGame.getState()
+    const mode = game.mode
+    const playing = game.phase === 'play'
+    const m = mode === 'shoulder' && playing ? readMove() : { x: 0, y: 0 }
     // 技の入力（肩上のみ）
     const inp = useInput.getState()
-    if (mode === 'shoulder') {
+    if (mode === 'shoulder' && playing) {
       for (const id of ['skip', 'shoe', 'cry'] as SkillId[]) {
         const key = SKILLS[id].key
         const action = (`skill${key}`) as 'skill1' | 'skill2' | 'skill3'
@@ -165,10 +169,25 @@ export function Imouto() {
     if (walkRatio > 0.02) phase.current += (dt / IMOUTO.stepPeriod) * Math.PI * 2 * Math.max(0.4, walkRatio)
     applyWalk(vrm, phase.current, walkRatio, IMOUTO.walk, modelHeight)
     clock.current += dt
-    if (sk) {
+    if (game.phase === 'clear') {
+      // ED：校庭で体育座り、にっこり
+      sitK.current = Math.min(1, sitK.current + dt / 1.2)
+      applySitPose(vrm, sitK.current, modelHeight)
+      applyFace(vrm, clock.current, 0, { ...IMOUTO.face, happy: 0.8, mouthOpen: 0.25 })
+    } else if (game.phase === 'late') {
+      // 遅刻：縮こまって泣きそう
+      sitK.current = Math.min(1, sitK.current + dt / 1.2)
+      applySitPose(vrm, sitK.current * 0.6, modelHeight)
+      applySkillFace(vrm, 'cry', clock.current)
+    } else if (sk) {
       applySkillPose(vrm, sk, skT, modelHeight)
       applySkillFace(vrm, sk, skT)
+    } else if (playing && game.timeLeft > 0 && game.timeLeft < GAME.scaredSec && hitTimer.current <= 0) {
+      // 残り1分：こわがる（眉が下がる sad を薄く、口を閉じ気味）
+      applyFace(vrm, clock.current, walkRatio, { ...IMOUTO.face, happy: 0, mouthOpen: 0.15, mouthOpenWalk: 0.25 })
+      vrm.expressionManager?.setValue('sad', 0.7)
     } else {
+      vrm.expressionManager?.setValue('sad', 0)
       applyFace(vrm, clock.current, walkRatio, IMOUTO.face, hitTimer.current > 0)
     }
     // 投げる腕（兄の投擲開始から 0.6 秒）

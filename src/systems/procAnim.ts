@@ -243,3 +243,26 @@ export function applySkillFace(vrm: VRM, id: 'skip' | 'shoe' | 'cry', t: number)
   set('aa', id === 'skip' ? 0.7 : 0.3)
   set('blink', 0)
 }
+
+/** 体育座り（ED）。k: 0..1 で座り込む */
+export function applySitPose(vrm: VRM, k: number, modelHeight: number) {
+  const h = vrm.humanoid
+  const b = (n: VRMHumanBoneName) => h.getNormalizedBoneNode(n)
+  const g = armSign(vrm)
+  const hips = b('hips')
+  if (hips) {
+    const base = (hips.userData.baseY ??= hips.position.y) as number
+    hips.position.y = base - 0.42 * modelHeight * k
+  }
+  b('leftUpperLeg')?.rotation.set(-2.2 * k, 0, 0.12 * k)
+  b('rightUpperLeg')?.rotation.set(-2.2 * k, 0, -0.12 * k)
+  b('leftLowerLeg')?.rotation.set(2.5 * k, 0, 0)
+  b('rightLowerLeg')?.rotation.set(2.5 * k, 0, 0)
+  b('spine')?.rotation.set(0.25 * k, 0, 0)
+  b('head')?.rotation.set(-0.1 * k, 0, 0)
+  // 膝を抱える
+  b('leftUpperArm')?.rotation.set(-1.2 * k * g, 0, -0.9 * g)
+  b('rightUpperArm')?.rotation.set(-1.2 * k * g, 0, 0.9 * g)
+  b('leftLowerArm')?.rotation.set(0, -1.6 * k * g, -0.3 * g)
+  b('rightLowerArm')?.rotation.set(0, 1.6 * k * g, 0.3 * g)
+}

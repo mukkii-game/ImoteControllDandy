@@ -7,7 +7,8 @@ export function SkillBar() {
   const mode = useGame((s) => s.mode)
   const cds = useGame((s) => s.cooldowns)
   const active = useGame((s) => s.activeSkill)
-  if (mode !== 'shoulder' && mode !== 'thrown') return null
+  const phase = useGame((s) => s.phase)
+  if (phase !== 'play' || (mode !== 'shoulder' && mode !== 'thrown')) return null
   const ids = Object.keys(SKILLS) as SkillId[]
   return (
     <div className="skillbar">

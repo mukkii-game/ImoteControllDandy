@@ -9,6 +9,7 @@ import { Explosions, BroTrail } from '../entities/Enemies'
 import { Fighters } from '../entities/Fighters'
 import { GroundEnemies } from '../entities/GroundEnemies'
 import { Shoe } from '../entities/Shoe'
+import { GameFlow } from '../systems/flow'
 import { LockonSystem } from '../systems/lockon'
 
 export function StageScene() {
@@ -35,6 +36,7 @@ export function StageScene() {
       <BroTrail />
       <LockonSystem />
       <CameraRig />
+      <GameFlow />
     </Canvas>
   )
 }

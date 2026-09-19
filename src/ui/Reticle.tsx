@@ -9,6 +9,7 @@ import { LOCKON } from '../config/game'
 export function Reticle() {
   const charging = useGame((s) => s.charging)
   const mode = useGame((s) => s.mode)
+  const phase = useGame((s) => s.phase)
   const layer = useRef<HTMLDivElement>(null)
   const ring = useRef<HTMLDivElement>(null)
   const count = useRef<HTMLDivElement>(null)
@@ -48,7 +49,7 @@ export function Reticle() {
     }
   }, [])
 
-  const show = mode === 'shoulder'
+  const show = mode === 'shoulder' && phase === 'play'
   return (
     <div ref={layer} className={`reticle-layer ${show ? '' : 'hidden'} ${charging ? 'charging' : ''}`}>
       <div ref={ring} className="reticle-ring" />

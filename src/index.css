@@ -57,3 +57,17 @@ canvas { display: block; }
 .skill.cd { color: rgba(255,255,255,.5); border-color: rgba(255,255,255,.25); }
 .skill.cd::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: var(--cd); background: rgba(255,255,255,.18); }
 .skill.active { border-color: #ff4d7a; box-shadow: 0 0 12px rgba(255,77,122,.7); }
+
+.timer { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); text-align: center; }
+.timer .t { font-size: 34px; font-weight: 900; letter-spacing: .05em; }
+.timer .d { font-size: 12px; opacity: .85; }
+.timer.urgent .t { color: #ff5c7a; animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: .4 } }
+.overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: rgba(10,12,20,.55); pointer-events: auto; text-align: center; padding: 20px; }
+.overlay .big { font-size: 44px; font-weight: 900; color: #ffd166; text-shadow: 0 3px 0 #7a1040, 0 0 24px rgba(255,120,60,.6); }
+.overlay .sub { font-size: 16px; opacity: .9; }
+.overlay .howto { font-size: 13px; line-height: 1.8; background: rgba(0,0,0,.35); padding: 10px 18px; border-radius: 10px; }
+.overlay .stats { font-size: 20px; font-weight: 800; }
+.overlay .start { margin-top: 8px; font-size: 20px; font-weight: 900; padding: 12px 28px; border-radius: 12px; border: 0; background: #ff4d7a; color: #fff; cursor: pointer; box-shadow: 0 4px 0 #a41f47; }
+.overlay .start:disabled { background: #666; box-shadow: none; cursor: default; }
+.overlay.late .big { color: #9ad0ff; text-shadow: 0 3px 0 #1a3a6a; }

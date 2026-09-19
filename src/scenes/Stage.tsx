@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import * as THREE from 'three'
-import { STAGE } from '../config/game'
+import { STAGE, GAME } from '../config/game'
 import { toonGradient } from '../systems/toon'
 
 type Building = { x: number; z: number; w: number; h: number; d: number; color: string }
@@ -34,6 +34,11 @@ export function Stage() {
         for (let i = 0; i < cols; i++) {
           for (let j = 0; j < rows; j++) {
             if (rnd() < 0.12) continue // 空き地
+            const cx = ox + cw * (i + 0.5)
+            const cz = oz + cd * (j + 0.5)
+            // 公園と学校の敷地には建てない
+            if (Math.abs(cx) < GAME.park.halfWidth && cz > GAME.park.from && cz < GAME.park.to) continue
+            if (Math.abs(cx) < GAME.school.width / 2 + 60 && cz > GAME.gateZ - 40 && cz < GAME.school.z + 150) continue
             const w = cw * (0.55 + rnd() * 0.3)
             const d = cd * (0.55 + rnd() * 0.3)
             const dist = Math.hypot(ox + cw * (i + 0.5), oz + cd * (j + 0.5)) / half
@@ -90,6 +95,7 @@ export function Stage() {
         )),
       )}
       <Buildings list={buildings} />
+      <School />
     </group>
   )
 }
@@ -115,4 +121,45 @@ function Buildings({ list }: { list: Building[] }) {
     return m
   }, [list])
   return <primitive object={mesh} />
+}
+
+/** 校門・校舎・校庭。妹が校門の線（GAME.gateZ）を越えたらクリア */
+function School() {
+  const grad = toonGradient()
+  const g = GAME
+  const sc = g.school
+  return (
+    <group>
+      {/* 校庭（土） */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.2, (g.gateZ + sc.z) / 2]} receiveShadow>
+        <planeGeometry args={[sc.width + 80, sc.z - g.gateZ + sc.depth]} />
+        <meshToonMaterial color="#c9b58a" gradientMap={grad} />
+      </mesh>
+      {/* 校門：柱2本＋門扉 */}
+      {[-1, 1].map((sgn) => (
+        <mesh key={sgn} position={[sgn * g.gateHalfWidth, 6, g.gateZ]} castShadow>
+          <boxGeometry args={[6, 12, 6]} />
+          <meshToonMaterial color="#9c8f7a" gradientMap={grad} />
+        </mesh>
+      ))}
+      <mesh position={[0, 11, g.gateZ]} castShadow>
+        <boxGeometry args={[g.gateHalfWidth * 2, 1.5, 1.5]} />
+        <meshToonMaterial color="#6b5f4e" gradientMap={grad} />
+      </mesh>
+      {/* 校舎（3 階建て） */}
+      <mesh position={[0, sc.height / 2, sc.z]} castShadow receiveShadow>
+        <boxGeometry args={[sc.width, sc.height, sc.depth]} />
+        <meshToonMaterial color="#e9e4d8" gradientMap={grad} />
+      </mesh>
+      {/* 時計塔 */}
+      <mesh position={[0, sc.height + 8, sc.z]} castShadow>
+        <boxGeometry args={[14, 16, 14]} />
+        <meshToonMaterial color="#d8d0c0" gradientMap={grad} />
+      </mesh>
+      <mesh position={[0, sc.height + 8, sc.z - sc.depth / 2 - 0.5]}>
+        <circleGeometry args={[5, 24]} />
+        <meshBasicMaterial color="#fff" />
+      </mesh>
+    </group>
+  )
 }

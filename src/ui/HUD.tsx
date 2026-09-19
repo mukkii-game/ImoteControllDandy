@@ -4,6 +4,7 @@ import { TunePanel } from './TunePanel'
 import { useModels } from '../systems/models'
 import { Reticle } from './Reticle'
 import { SkillBar } from './SkillBar'
+import { Overlays } from './Overlays'
 import { useEffect, useState } from 'react'
 
 export function HUD() {
@@ -32,6 +33,7 @@ export function HUD() {
       {combo && comboVisible && <div className="combo">{combo.n}機まとめ！</div>}
       <Reticle />
       <SkillBar />
+      <Overlays />
       {!ready && <div className="loading">モデル読み込み中…</div>}
       {credits && <div className="credits">モデル: {credits}</div>}
       <VirtualPad />
