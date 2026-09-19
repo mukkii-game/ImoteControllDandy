@@ -160,6 +160,19 @@ export function Imouto() {
     const skT = skills.current.t
 
     g.rotation.y -= m.x * IMOUTO.turnSpeed * dt
+    // 兄の行き先指示：A D を触っていない間はそちらへ旋回。近づいたら解除
+    const wp = game.waypoint
+    if (wp && playing) {
+      const dx = wp.x - g.position.x
+      const dz = wp.z - g.position.z
+      if (Math.hypot(dx, dz) < GAME.dest.arriveDist) game.setWaypoint(null)
+      else if (Math.abs(m.x) < 0.2) {
+        let diff = Math.atan2(dx, dz) - g.rotation.y
+        diff = Math.atan2(Math.sin(diff), Math.cos(diff))
+        const step = IMOUTO.turnSpeed * dt
+        g.rotation.y += Math.abs(diff) < step ? diff : Math.sign(diff) * step
+      }
+    }
     hitTimer.current = Math.max(0, hitTimer.current - dt)
     let speedMul = 1
     if (sk === 'skip') speedMul = SKILLS.skip.speedMul

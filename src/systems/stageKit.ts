@@ -44,7 +44,9 @@ async function loadOne(url: string, kind: KitType['kind']): Promise<KitType | nu
 export function loadStageKit(): Promise<KitType[]> {
   if (!promise) {
     const k = STAGE.kit
-    promise = k.enabled
+    // ?lite で外部モデルを使わない（低スペック機・自動テスト用）
+    const lite = typeof location !== 'undefined' && location.search.includes('lite')
+    promise = k.enabled && !lite
       ? Promise.all([
           ...k.houses.map((u) => loadOne(u, 'house')),
           ...k.buildings.map((u) => loadOne(u, 'building')),

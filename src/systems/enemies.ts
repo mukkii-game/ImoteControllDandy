@@ -36,10 +36,15 @@ export const lock = {
   ids: [] as number[],
   /** 画面上の敵位置キャッシュ（HUD 用）。id → [x, y, inFront] */
   screen: new Map<number, [number, number, boolean]>(),
+  /** 行き先（▼）をロックしたか。離すと妹に「あそこへ行け」 */
+  dest: false,
+  /** 行き先の画面座標 [x, y, inFront] */
+  destScreen: [0, 0, false] as [number, number, boolean],
 }
 
 export function clearLocks() {
   lock.ids.length = 0
+  lock.dest = false
 }
 
 /** 全敵スタン（泣く）。残り秒数 */

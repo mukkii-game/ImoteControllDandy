@@ -90,8 +90,8 @@ export const POLICE = {
   aheadMax: 520,
   /** 同時に存在する最大数 */
   max: 8,
-  /** 踏み潰し判定：妹の足元からの半径（m） */
-  stompRadius: 26,
+  /** 踏み潰し判定：妹の足元からの半径（m）。妹の横幅より少し大きい程度 */
+  stompRadius: 9,
   size: { w: 7, h: 4, d: 14 },
 }
 

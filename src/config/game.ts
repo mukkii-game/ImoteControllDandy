@@ -254,6 +254,8 @@ export const CAMERA = {
   },
   /** 乗降中にカメラが体を突き抜けないよう外側に膨らませる距離(m) */
   transitionSideBulge: 30,
+  /** 肩に乗った時のカメラの向き（妹の向きからの角度、rad）。-π/2 = 妹の左側から見る */
+  mountViewYaw: -Math.PI / 2,
   followLerp: 7,
   /** シェイク減衰 */
   shakeDecay: 9,
@@ -301,17 +303,36 @@ export const GAME = {
     { name: 'ビル街', from: -500, to: 500 },
     { name: '航空公園', from: 500, to: 9999 },
   ],
-  /** 建物破壊：妹の足元この半径（m）の建物が潰れる。1棟ごとのスコア減 */
-  crushRadius: 34,
+  /** 建物破壊：妹の足元この半径（m）の建物が潰れる（妹の横幅 ≒ 12m より少し大きい程度）。1棟ごとのスコア減 */
+  crushRadius: 8,
   crushPenalty: 30,
   crushSec: 0.35,
   /** 体に当たった建物：胴体の半径（m）と、この高さ以下の建物は踏み潰し、以上はブロックに砕ける */
-  bodyRadius: 22,
+  bodyRadius: 7,
   stompHeight: 26,
   debrisPerBuilding: 10,
   debrisSec: 3.5,
   /** 公園：この範囲は建物を置かない（|x| < halfWidth, z in [from, to]） */
   park: { halfWidth: 320, from: 560, to: 1250 },
+  /** 行き先（▼ で示す）。今は校門。ロックオンすると妹がそこへ向かう。arriveDist 以内で到着扱い */
+  dest: { label: '学校', x: 0, z: 1400, height: 60, arriveDist: 80 },
+}
+
+/** 兄のセリフ（吹き出し）。文言はここで変える */
+export const SPEECH = {
+  /** 表示秒数 */
+  sec: 1.6,
+  /** 旋回のセリフの連発を抑える秒数 */
+  turnCooldownSec: 1.5,
+  lines: {
+    turnRight: '右へまわれ！',
+    turnLeft: '左へ回れ！',
+    skip: 'ロロップだ！',
+    shoe: '蹴れ！',
+    cry: '泣け！',
+    throw: 'オレを投げろ！',
+    goto: 'あそこへ行け！',
+  },
 }
 
 /** 破壊表現：破片・部品・煙。物理エンジン無しの放物運動 */

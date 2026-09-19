@@ -13,13 +13,16 @@ import { Debris } from '../entities/Debris'
 import { GameFlow } from '../systems/flow'
 import { LockonSystem } from '../systems/lockon'
 
+/** ?lite：影なし・解像度 1 倍・外部モデルなし（低スペック機・自動テスト用） */
+const LITE = location.search.includes('lite')
+
 export function StageScene() {
   const H = SCALE.imoutoHeight
   return (
     <Canvas
-      shadows
+      shadows={!LITE}
       camera={{ fov: CAMERA.ground.fov, near: CAMERA.near, far: CAMERA.far, position: [0, 2, 70] }}
-      dpr={[1, 1.5]}
+      dpr={LITE ? 1 : [1, 1.5]}
       gl={{ antialias: true }}
     >
       <color attach="background" args={['#f3e6c8']} />

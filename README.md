@@ -38,6 +38,9 @@ npm run build    # dist/ に出力（itch.io 用）
 ## 引き継ぎメモ（2026-09-19 時点）
 - 遊べる URL：https://mukkii-game.github.io/ImoteControllDandy/ （push で自動デプロイ）
 - 操作：右クリック/Shift=乗降、左クリック長押し=サイトで敵をロックオン→離して攻撃（肩上は妹が投げる・地上は兄が自力で跳ぶ、近い敵はパンチ）、1/2/3（テンキー可）=技、ホイール=技選択・ホイールクリック=発動、Esc/Tab=調整パネル
+- 行き先は ▼（GAME.dest、今は校門）。溜め中に ▼ をサイトに入れて離すと「あそこへ行け！」で妹がそちらへ旋回（A D を触ると上書き）。兄のセリフは吹き出し（SPEECH.lines：右へまわれ／左へ回れ／ロロップだ／蹴れ／泣け／オレを投げろ／あそこへ行け）
+- 肩に乗った瞬間は妹の左側から見るカメラ（CAMERA.mountViewYaw）。妹の踏み潰し半径は横幅より少し大きい程度（GAME.crushRadius 8 / bodyRadius 7 / POLICE.stompRadius 9）
+- URL に `?lite` を付けると街の外部モデルと影を切る（低スペック機・自動テスト用。ヘッドレス Chromium は通常モードだと 1fps 未満）
 - サイトはパンツァードラグーン式：溜め中はマウスでサイト自体が動き、画面端に寄るとカメラがその方向へ回る（LOCKON.reticle）。攻撃中はカメラを変えない（CAMERA.thrown.enabled = false）。1 体目まではベジェ曲線で回り込む（LOCKON.curve）
 - 敵セット（仮）：戦闘機は config/waves.ts の FIGHTERS.passes（前から→左から→右後ろから）を順に回り、次の方向へ抜けていく。編隊は FIGHTERS.formation で上下前後にばらす。戦車は 1 グループごとに左右を入れ替える。本格的なエネセットは別途計画
 - 妹は自動で歩く（W 加速・S 減速・A D 旋回）。歩幅・速度は半分ずつ落とした状態。制限時間 11:00

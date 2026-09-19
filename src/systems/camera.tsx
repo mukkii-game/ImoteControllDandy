@@ -114,8 +114,9 @@ export function CameraRig() {
     // モードが変わった瞬間にピッチをそのモードの既定値へ、yaw は妹の向きに合わせる
     if (st.mode !== lastMode.current) {
       if (st.mode === 'mounting') {
+        // 乗った時は妹の左側から見る（兄が乗る肩と妹の横顔が見える）
         refs.camPitch = CAMERA.shoulder.defaultPitch
-        refs.camYaw = refs.imouto?.rotation.y ?? refs.camYaw
+        refs.camYaw = (refs.imouto?.rotation.y ?? refs.camYaw) + CAMERA.mountViewYaw
       } else if (st.mode === 'dismounting') {
         refs.camPitch = CAMERA.ground.defaultPitch
       } else if (st.mode === 'shoulder' && lastMode.current === 'thrown') {

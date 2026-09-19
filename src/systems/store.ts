@@ -21,6 +21,12 @@ interface GameState {
   /** 今のロックオン攻撃がどこから始まったか（カメラの扱いが変わる） */
   attackFrom: 'shoulder' | 'ground'
   setAttackFrom: (v: 'shoulder' | 'ground') => void
+  /** 兄が指示した行き先。妹はここへ向かって旋回する（A D で上書き） */
+  waypoint: { x: number; z: number } | null
+  setWaypoint: (w: { x: number; z: number } | null) => void
+  /** 兄の吹き出し */
+  speech: { text: string; at: number } | null
+  say: (text: string) => void
   score: number
   addScore: (n: number) => void
   /** 直近のコンボ表示 */
@@ -55,6 +61,10 @@ export const useGame = create<GameState>((set) => ({
   setCharging: (charging) => set({ charging }),
   attackFrom: 'shoulder',
   setAttackFrom: (attackFrom) => set({ attackFrom }),
+  waypoint: null,
+  setWaypoint: (waypoint) => set({ waypoint }),
+  speech: null,
+  say: (text) => set({ speech: { text, at: performance.now() } }),
   score: 0,
   addScore: (n) => set((s) => ({ score: s.score + n })),
   combo: null,
@@ -70,3 +80,6 @@ export const useGame = create<GameState>((set) => ({
   clearTime: 0,
   setClearTime: (clearTime) => set({ clearTime }),
 }))
+
+// デバッグ用：コンソール／Playwright から状態を見る
+;(window as unknown as { __game: typeof useGame }).__game = useGame

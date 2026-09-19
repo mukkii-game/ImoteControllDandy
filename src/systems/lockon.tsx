@@ -1,16 +1,18 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import { LOCKON, CAMERA } from '../config/game'
+import { LOCKON, CAMERA, GAME } from '../config/game'
 import { enemies, lock } from './enemies'
 import { useGame } from './store'
 import { useInput } from './input'
 import { refs } from './refs'
 import { playVoice, seLock } from './audio'
+import { emit } from './events'
 
 // デバッグ用（Playwright から狙いを付ける）
-;(window as unknown as { __dbg: unknown }).__dbg = { refs, lock, enemies }
+;(window as unknown as { __dbg: unknown }).__dbg = { refs, lock, enemies, input: useInput, emit }
 
 const proj = new THREE.Vector3()
+const tmpV = new THREE.Vector3()
 
 /**
  * ロックオン判定。溜め中（A 押下、肩上または地上）にサイト中心近くの敵を順にロックする。
@@ -33,7 +35,7 @@ export function LockonSystem() {
       const hy = size.height / 2
       const nx = refs.reticleX / hx
       const ny = refs.reticleY / hy
-      const push = (n: number) => (Math.abs(n) > rc.edge ? Math.sign(n) * ((Math.abs(n) - rc.edge) / (1 - rc.edge)) : 0)
+      const push = (n: number) => (Math.abs(n) > rc.edge ? Math.sign(n) * Math.min(1, (Math.abs(n) - rc.edge) / (1 - rc.edge)) : 0)
       const px = push(nx)
       const py = push(ny)
       if (px !== 0) refs.camYaw -= px * rc.pushSpeed * dt
@@ -45,6 +47,28 @@ export function LockonSystem() {
     }
     const cx = size.width / 2 + refs.reticleX
     const cy = size.height / 2 + refs.reticleY
+    const toScreen = (p: THREE.Vector3): [number, number, boolean] => {
+      proj.copy(p).project(camera)
+      return [(proj.x * 0.5 + 0.5) * size.width, (-proj.y * 0.5 + 0.5) * size.height, proj.z < 1 && proj.z > -1]
+    }
+    // 兄の頭の画面位置（吹き出し用）
+    if (refs.bro) refs.broScreen = toScreen(tmpV.copy(refs.bro.position).setY(refs.bro.position.y + 2.2))
+    // 行き先（▼）：溜め中にサイトへ入ればロック。描画距離より遠くても同じ方向の近い点で画面位置を出す
+    const d = GAME.dest
+    tmpV.set(d.x, d.height, d.z).sub(camera.position)
+    const far = (camera as THREE.PerspectiveCamera).far * 0.8
+    if (tmpV.length() > far) tmpV.setLength(far)
+    lock.destScreen = toScreen(tmpV.add(camera.position))
+    if (charging && !lock.dest && lock.destScreen[2]) {
+      const dx = (lock.destScreen[0] - cx) / size.height
+      const dy = (lock.destScreen[1] - cy) / size.height
+      if (Math.hypot(dx, dy) < LOCKON.reticleRadius) {
+        lock.dest = true
+        playVoice('se.lock').then((ok) => {
+          if (!ok) seLock(0)
+        })
+      }
+    }
 
     lock.screen.clear()
     const camPos = camera.position

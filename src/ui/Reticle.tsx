@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useGame } from '../systems/store'
 import { lock } from '../systems/enemies'
-import { LOCKON } from '../config/game'
+import { LOCKON, GAME } from '../config/game'
 import { refs } from '../systems/refs'
 
 /**
@@ -15,6 +15,7 @@ export function Reticle() {
   const ring = useRef<HTMLDivElement>(null)
   const count = useRef<HTMLDivElement>(null)
   const sight = useRef<HTMLDivElement>(null)
+  const dest = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     let raf = 0
@@ -42,6 +43,25 @@ export function Reticle() {
         m.textContent = String(i + 1)
       })
       if (count.current) count.current.textContent = lock.ids.length ? `LOCK ${lock.ids.length}` : ''
+      // 行き先マーカー（▼ 学校）。画面外なら端に寄せる
+      const dm = dest.current
+      if (dm) {
+        const [dx, dy, inFront] = lock.destScreen
+        const W = window.innerWidth
+        const H = window.innerHeight
+        let x = dx
+        let y = dy
+        if (!inFront) {
+          x = W - dx
+          y = 80
+        }
+        const off = !inFront || x < 30 || x > W - 30 || y < 60 || y > H - 40
+        x = Math.min(W - 40, Math.max(40, x))
+        y = Math.min(H - 60, Math.max(70, y))
+        dm.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%)`
+        dm.classList.toggle('locked', lock.dest)
+        dm.classList.toggle('offscreen', off)
+      }
       if (ring.current) ring.current.style.height = ring.current.style.width = `${LOCKON.reticleRadius * 2 * window.innerHeight}px`
       // サイトの位置（溜め中はマウスで動く）
       if (sight.current) sight.current.style.transform = `translate(${refs.reticleX}px, ${refs.reticleY}px)`
@@ -60,6 +80,10 @@ export function Reticle() {
         <div ref={ring} className="reticle-ring" />
         <div className="reticle-dot" />
         <div ref={count} className="lock-count" />
+      </div>
+      <div ref={dest} className="dest-marker">
+        <div className="tri">▼</div>
+        <div className="name">{GAME.dest.label}</div>
       </div>
     </div>
   )

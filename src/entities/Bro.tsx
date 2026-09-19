@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { BRO, SCALE, LOCKON, IMOUTO, CAMERA } from '../config/game'
+import { BRO, SCALE, LOCKON, IMOUTO, CAMERA, GAME, SPEECH } from '../config/game'
 import { enemies, killEnemy, lock, clearLocks } from '../systems/enemies'
 import { DUMMY_ENEMIES } from '../config/game'
 import { useModels, candidates } from '../systems/models'
@@ -61,6 +61,20 @@ export function Bro() {
   const wasA = useRef(false)
   /** A を押し続けている秒数（短押し判定用） */
   const aHoldT = useRef(0)
+  const wasLeft = useRef(false)
+  const wasRight = useRef(false)
+  const turnSayT = useRef(0)
+  /** 直前の A 離しで行き先を指示したか（その場合はジャンプしない） */
+  const orderedDest = useRef(false)
+  /** 行き先（▼）をロックしていたら妹に「あそこへ行け」 */
+  const orderDest = () => {
+    if (!lock.dest) return
+    lock.dest = false
+    orderedDest.current = true
+    const d = GAME.dest
+    useGame.getState().setWaypoint({ x: d.x, z: d.z })
+    emit('bro.goto', { x: d.x, z: d.z })
+  }
   const punchT = useRef(0)
   const selected = useModels((s) => s.bro)
   const setResolved = useModels((s) => s.setResolved)
@@ -176,6 +190,7 @@ export function Bro() {
         }
         // 離した瞬間：ロックがあれば自力で跳んで順に体当たり。無ければ短押しはジャンプ
         if (wasA.current && !aNow) {
+          orderDest()
           if (lock.ids.length > 0) {
             const seq = throwSeq.current
             seq.targets = [...lock.ids]
@@ -190,10 +205,11 @@ export function Bro() {
             st.setAttackFrom('ground')
             st.setMode('thrown')
             emit('bro.throw', { count: seq.targets.length, from: seq.origin })
-          } else if (grounded && heldSec < LOCKON.tapSec && punchT.current <= 0) {
+          } else if (grounded && heldSec < LOCKON.tapSec && punchT.current <= 0 && !orderedDest.current) {
             vy.current = BRO.jumpVelocity
             emit('bro.jump', undefined)
           }
+          orderedDest.current = false
         }
         wasA.current = aNow
         punchT.current = Math.max(0, punchT.current - dt)
@@ -239,8 +255,19 @@ export function Bro() {
         // 肩上は常に腕組み（指差しは一旦オフ。BRO.pointWhileSteering で復活）
         const m = readMove()
         steer.current = BRO.pointWhileSteering ? (m.y > 0.2 ? (m.x > 0.3 ? 1 : m.x < -0.3 ? -1 : 0) : m.x > 0.3 ? 1 : m.x < -0.3 ? -1 : m.y > 0.2 ? 0 : null) : null
-        // A を離した瞬間、ロックがあれば投擲開始
+        // 旋回の指示（A D を押した瞬間にセリフ。連発は抑える）
+        turnSayT.current = Math.max(0, turnSayT.current - dt)
+        const leftNow = playing && input.keys.left
+        const rightNow = playing && input.keys.right
+        if (turnSayT.current <= 0 && ((leftNow && !wasLeft.current) || (rightNow && !wasRight.current))) {
+          emit('bro.say', { text: leftNow && !wasLeft.current ? SPEECH.lines.turnLeft : SPEECH.lines.turnRight })
+          turnSayT.current = SPEECH.turnCooldownSec
+        }
+        wasLeft.current = leftNow
+        wasRight.current = rightNow
+        // A を離した瞬間：行き先ロックなら指示、敵ロックがあれば投擲開始
         const aNow = input.keys.a && playing
+        if (wasA.current && !aNow) orderDest()
         if (wasA.current && !aNow && lock.ids.length > 0) {
           const seq = throwSeq.current
           seq.targets = [...lock.ids]

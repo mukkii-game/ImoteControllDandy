@@ -12,6 +12,10 @@ export interface GameEvents {
   /** 兄が敵に着弾 */
   'enemy.hit': { id: number; x: number; y: number; z: number }
   'bro.return': void
+  /** 兄のセリフ（吹き出し） */
+  'bro.say': { text: string }
+  /** 兄が妹に行き先を指示した */
+  'bro.goto': { x: number; z: number }
   /** 妹が被弾（ミサイル・砲弾） */
   'imouto.hit': { x: number; y: number; z: number }
   /** 妹の技 */
