@@ -14,6 +14,10 @@ export interface GameEvents {
   'bro.return': void
   /** 妹が被弾（ミサイル・砲弾） */
   'imouto.hit': { x: number; y: number; z: number }
+  /** 妹の技 */
+  'imouto.skill': { id: 'skip' | 'shoe' | 'cry' }
+  /** 靴が飛ぶ（靴飛ばし） */
+  'shoe.launch': { x: number; y: number; z: number; yaw: number }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

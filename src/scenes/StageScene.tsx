@@ -8,6 +8,7 @@ import { ShadowFollower } from '../systems/shadow'
 import { Explosions, BroTrail } from '../entities/Enemies'
 import { Fighters } from '../entities/Fighters'
 import { GroundEnemies } from '../entities/GroundEnemies'
+import { Shoe } from '../entities/Shoe'
 import { LockonSystem } from '../systems/lockon'
 
 export function StageScene() {
@@ -29,6 +30,7 @@ export function StageScene() {
       <Bro />
       <Fighters />
       <GroundEnemies />
+      <Shoe />
       <Explosions />
       <BroTrail />
       <LockonSystem />

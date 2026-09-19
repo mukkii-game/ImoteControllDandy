@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { POLICE, TANKS, HIT } from '../config/waves'
 import { STAGE } from '../config/game'
-import { addEnemy, killEnemy, type Enemy } from '../systems/enemies'
+import { addEnemy, killEnemy, isStunned, type Enemy } from '../systems/enemies'
 import { refs } from '../systems/refs'
 import { emit, on } from '../systems/events'
 import { toonGradient } from '../systems/toon'
@@ -104,7 +104,7 @@ export function GroundEnemies() {
     }
     // 戦車の砲撃
     shellTimer.current -= dt
-    if (aliveTanks.length > 0 && shellTimer.current <= 0) {
+    if (aliveTanks.length > 0 && shellTimer.current <= 0 && !isStunned()) {
       shellTimer.current = TANKS.shellInterval
       const t = aliveTanks[Math.floor(Math.random() * aliveTanks.length)]
       const target = tmpV.set(im.position.x, im.position.y + 30, im.position.z)

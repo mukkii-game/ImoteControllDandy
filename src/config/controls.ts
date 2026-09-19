@@ -8,6 +8,10 @@ export const KEYS = {
   a: ['Space'],
   /** ボタンB：乗る / 降りる */
   b: ['ShiftLeft', 'ShiftRight', 'KeyE'],
+  /** 妹の技 */
+  skill1: ['Digit1'],
+  skill2: ['Digit2'],
+  skill3: ['Digit3'],
   /** デバッグ：俯瞰カメラ切替 */
   debugCam: ['KeyP'],
 } as const

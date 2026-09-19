@@ -3,6 +3,7 @@ import { VirtualPad } from './VirtualPad'
 import { TunePanel } from './TunePanel'
 import { useModels } from '../systems/models'
 import { Reticle } from './Reticle'
+import { SkillBar } from './SkillBar'
 import { useEffect, useState } from 'react'
 
 export function HUD() {
@@ -30,6 +31,7 @@ export function HUD() {
       <div className="score">SCORE {score}</div>
       {combo && comboVisible && <div className="combo">{combo.n}機まとめ！</div>}
       <Reticle />
+      <SkillBar />
       {!ready && <div className="loading">モデル読み込み中…</div>}
       {credits && <div className="credits">モデル: {credits}</div>}
       <VirtualPad />

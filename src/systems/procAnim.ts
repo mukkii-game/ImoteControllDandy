@@ -156,3 +156,90 @@ export function applyFlyPose(vrm: VRM, dt: number) {
     hips.position.y = base
   }
 }
+
+/**
+ * 技ポーズ（歩行の上から上書き）。t は技開始からの秒数。
+ * skip: 大きく跳ねる（腕を上げて振る）、shoe: 右脚を蹴り上げる、cry: 両手で顔を覆う
+ */
+export function applySkillPose(vrm: VRM, id: 'skip' | 'shoe' | 'cry', t: number, modelHeight: number) {
+  const h = vrm.humanoid
+  const b = (n: VRMHumanBoneName) => h.getNormalizedBoneNode(n)
+  const g = armSign(vrm)
+  const hips = b('hips')
+  const base = hips ? ((hips.userData.baseY ??= hips.position.y) as number) : 0
+  if (id === 'skip') {
+    const ph = t * Math.PI * 2 * 1.8
+    const s = Math.sin(ph)
+    // 大跳ね
+    if (hips) hips.position.y = base + Math.max(0, s) * 0.09 * modelHeight
+    b('leftUpperLeg')?.rotation.set(s * 1.1, 0, 0)
+    b('rightUpperLeg')?.rotation.set(-s * 1.1, 0, 0)
+    b('leftLowerLeg')?.rotation.set(Math.max(0, -s) * 1.6, 0, 0)
+    b('rightLowerLeg')?.rotation.set(Math.max(0, s) * 1.6, 0, 0)
+    // 腕を大きく振る（前後＋やや外）
+    b('leftUpperArm')?.rotation.set(-s * 1.6 * g, 0, -0.6 * g)
+    b('rightUpperArm')?.rotation.set(s * 1.6 * g, 0, 0.6 * g)
+    b('leftLowerArm')?.rotation.set(0, 0, -0.1 * g)
+    b('rightLowerArm')?.rotation.set(0, 0, 0.1 * g)
+    b('spine')?.rotation.set(-0.15 + s * 0.1, 0, 0)
+    return
+  }
+  if (id === 'shoe') {
+    const k = Math.min(1, t / 0.35)
+    const kick = Math.sin(k * Math.PI * 0.5)
+    if (hips) hips.position.y = base
+    b('rightUpperLeg')?.rotation.set(-2.0 * kick, 0, 0)
+    b('rightLowerLeg')?.rotation.set(0.2 * (1 - kick), 0, 0)
+    b('leftUpperLeg')?.rotation.set(0.15 * kick, 0, 0)
+    b('leftLowerLeg')?.rotation.set(0, 0, 0)
+    b('spine')?.rotation.set(0.35 * kick, 0, 0)
+    // 腕でバランス（後ろへ）
+    b('leftUpperArm')?.rotation.set(0.9 * kick * g, 0, -1.2 * g)
+    b('rightUpperArm')?.rotation.set(0.9 * kick * g, 0, 1.2 * g)
+    return
+  }
+  // cry
+  const k = Math.min(1, t / 0.3)
+  if (hips) hips.position.y = base - 0.01 * modelHeight * k
+  b('leftUpperLeg')?.rotation.set(0, 0, 0)
+  b('rightUpperLeg')?.rotation.set(0, 0, 0)
+  b('leftLowerLeg')?.rotation.set(0, 0, 0)
+  b('rightLowerLeg')?.rotation.set(0, 0, 0)
+  b('spine')?.rotation.set(0.25 * k, 0, 0)
+  b('head')?.rotation.set(0.35 * k, 0, 0)
+  // 両手を顔へ：上腕を前上へ、前腕を強く曲げる
+  b('leftUpperArm')?.rotation.set(-1.9 * k * g, 0, -0.5 * g)
+  b('rightUpperArm')?.rotation.set(-1.9 * k * g, 0, 0.5 * g)
+  b('leftLowerArm')?.rotation.set(0, -2.2 * k * g, -0.4 * g)
+  b('rightLowerArm')?.rotation.set(0, 2.2 * k * g, 0.4 * g)
+}
+
+/** 投げる腕：左腕（兄が乗っている側）を後ろから前へ振る。k: 0..1 */
+export function applyThrowArm(vrm: VRM, k: number) {
+  const g = armSign(vrm)
+  const up = vrm.humanoid.getNormalizedBoneNode('leftUpperArm')
+  const lo = vrm.humanoid.getNormalizedBoneNode('leftLowerArm')
+  const swing = Math.sin(k * Math.PI) // 0→1→0
+  up?.rotation.set(-2.6 * swing * g, 0, -0.9 * g)
+  lo?.rotation.set(0, -0.9 * (1 - k) * g, -0.2 * g)
+}
+
+/** 技ごとの表情。t は技開始からの秒数 */
+export function applySkillFace(vrm: VRM, id: 'skip' | 'shoe' | 'cry', t: number) {
+  const em = vrm.expressionManager
+  if (!em) return
+  const set = (n: string, v: number) => em.setValue(n, v)
+  set('surprised', 0)
+  set('Surprised', 0)
+  if (id === 'cry') {
+    set('happy', 0)
+    set('sad', 1)
+    set('aa', 0.55 + Math.sin(t * 9) * 0.15)
+    set('blink', 1)
+    return
+  }
+  set('sad', 0)
+  set('happy', 1)
+  set('aa', id === 'skip' ? 0.7 : 0.3)
+  set('blink', 0)
+}

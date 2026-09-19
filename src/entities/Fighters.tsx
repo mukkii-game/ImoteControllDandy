@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { FIGHTERS, HIT } from '../config/waves'
-import { addEnemy, enemies, type Enemy } from '../systems/enemies'
+import { addEnemy, enemies, isStunned, type Enemy } from '../systems/enemies'
 import { refs } from '../systems/refs'
 import { emit, on } from '../systems/events'
 import { SmokeRibbon } from '../systems/smoke'
@@ -105,7 +105,8 @@ export function Fighters() {
 
   useFrame((_, dt) => {
     // 編隊の位置
-    u.current = (u.current + (FIGHTERS.speed * dt) / len) % 1
+    const stunned = isStunned()
+    u.current = (u.current + ((stunned ? FIGHTERS.speed * 0.15 : FIGHTERS.speed) * dt) / len) % 1
     const alive = ents.current.filter((e) => e.alive)
     ents.current.forEach((e, i) => {
       const g = groups.current[i]
@@ -132,7 +133,7 @@ export function Fighters() {
     // ミサイル
     const im = refs.imouto
     fireTimer.current -= dt
-    if (im && alive.length > 0 && fireTimer.current <= 0) {
+    if (im && alive.length > 0 && fireTimer.current <= 0 && !stunned) {
       fireTimer.current = FIGHTERS.missileInterval
       const shooter = alive[Math.floor(Math.random() * alive.length)]
       const target = new THREE.Vector3(im.position.x, im.position.y + 35, im.position.z)

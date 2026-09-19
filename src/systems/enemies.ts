@@ -41,3 +41,12 @@ export const lock = {
 export function clearLocks() {
   lock.ids.length = 0
 }
+
+/** 全敵スタン（泣く）。残り秒数 */
+export const stun = { until: 0 }
+export function stunAll(sec: number) {
+  stun.until = performance.now() + sec * 1000
+}
+export function isStunned(): boolean {
+  return performance.now() < stun.until
+}

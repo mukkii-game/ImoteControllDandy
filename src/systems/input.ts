@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { KEYS, type Action } from '../config/controls'
 
 type Pressed = Record<Action, boolean>
-const empty = (): Pressed => ({ up: false, down: false, left: false, right: false, a: false, b: false, debugCam: false })
+const empty = (): Pressed => ({ up: false, down: false, left: false, right: false, a: false, b: false, skill1: false, skill2: false, skill3: false, debugCam: false })
 
 interface InputState {
   keys: Pressed
@@ -17,6 +17,11 @@ interface InputState {
   consumeA: () => boolean
   _bEdge: boolean
   _aEdge: boolean
+  /** 汎用の押下エッジ（技など） */
+  _edges: Partial<Record<Action, boolean>>
+  consume: (a: Action) => boolean
+  /** 画面ボタンなどから「押した」を注入 */
+  press: (a: Action) => void
 }
 
 export const useInput = create<InputState>((set, get) => ({
@@ -25,12 +30,14 @@ export const useInput = create<InputState>((set, get) => ({
   stick: { x: 0, y: 0 },
   _bEdge: false,
   _aEdge: false,
+  _edges: {},
   set: (a, v) =>
     set((s) => {
+      const edges = v && !s.keys[a] ? { ...s._edges, [a]: true } : s._edges
       const bEdge = a === 'b' && v && !s.keys.b ? true : s._bEdge
       const aEdge = a === 'a' && v && !s.keys.a ? true : s._aEdge
       const overview = a === 'debugCam' && v && !s.keys.debugCam ? !s.overview : s.overview
-      return { keys: { ...s.keys, [a]: v }, _bEdge: bEdge, _aEdge: aEdge, overview }
+      return { keys: { ...s.keys, [a]: v }, _bEdge: bEdge, _aEdge: aEdge, overview, _edges: edges }
     }),
   setStick: (x, y) => set({ stick: { x, y } }),
   consumeB: () => {
@@ -38,6 +45,12 @@ export const useInput = create<InputState>((set, get) => ({
     if (e) set({ _bEdge: false })
     return e
   },
+  consume: (a) => {
+    const e = !!get()._edges[a]
+    if (e) set((s) => ({ _edges: { ...s._edges, [a]: false } }))
+    return e
+  },
+  press: (a) => set((s) => ({ _edges: { ...s._edges, [a]: true } })),
   consumeA: () => {
     const e = get()._aEdge
     if (e) set({ _aEdge: false })

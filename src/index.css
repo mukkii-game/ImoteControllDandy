@@ -48,3 +48,12 @@ canvas { display: block; }
 .lock-marker { position: absolute; left: 0; top: 0; width: 34px; height: 34px; border: 3px solid #ff4d7a; border-radius: 6px; color: #fff; font-weight: 900; font-size: 13px; line-height: 28px; text-align: center; text-shadow: 0 1px 2px #000; box-shadow: 0 0 8px rgba(255,77,122,.8); animation: lock-in .15s ease-out; }
 @keyframes lock-in { from { transform: scale(2.2); opacity: 0 } }
 .lock-count { position: absolute; left: 50%; top: 50%; transform: translate(-50%, 60px); color: #ff4d7a; font-weight: 900; font-size: 15px; letter-spacing: .1em; }
+
+.skillbar { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); display: flex; gap: 10px; pointer-events: auto; }
+.skill { position: relative; width: 74px; height: 74px; border-radius: 12px; border: 2px solid rgba(255,255,255,.6); background: rgba(20,22,30,.65); color: #fff; font-weight: 800; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer; overflow: hidden; touch-action: none; }
+.skill .key { font-size: 18px; color: #ffd166; }
+.skill .label { font-size: 11px; }
+.skill .time { position: absolute; right: 6px; top: 4px; font-size: 11px; opacity: .8; }
+.skill.cd { color: rgba(255,255,255,.5); border-color: rgba(255,255,255,.25); }
+.skill.cd::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: var(--cd); background: rgba(255,255,255,.18); }
+.skill.active { border-color: #ff4d7a; box-shadow: 0 0 12px rgba(255,77,122,.7); }

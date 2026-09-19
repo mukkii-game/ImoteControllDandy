@@ -10,7 +10,10 @@ import { useGame } from '../systems/store'
 import { readMove } from '../systems/input'
 import { emit, on } from '../systems/events'
 import { HIT } from '../config/waves'
-import { applyWalk, applyFace } from '../systems/procAnim'
+import { applyWalk, applyFace, applySkillPose, applySkillFace, applyThrowArm } from '../systems/procAnim'
+import { SkillRunner } from '../systems/skills'
+import { SKILLS, type SkillId } from '../config/skills'
+import { useInput } from '../systems/input'
 import { applyLogo } from '../systems/logo'
 
 const raycaster = new THREE.Raycaster()
@@ -35,6 +38,8 @@ export function Imouto() {
   const probeTimer = useRef(0)
   const clock = useRef(0)
   const hitTimer = useRef(0)
+  const skills = useRef(new SkillRunner())
+  const throwK = useRef(-1)
   const anchorRef = useRef<THREE.Object3D | null>(null)
   const boneRef = useRef<THREE.Object3D | null>(null)
   const chestRef = useRef<THREE.Object3D | null>(null)
@@ -119,6 +124,7 @@ export function Imouto() {
   }, [vrm, choice, setLoaded, setResolved, scale])
 
   useEffect(() => on('imouto.hit', () => { hitTimer.current = HIT.slowSec }), [])
+  useEffect(() => on('bro.throw', () => { throwK.current = 0 }), [])
 
   useFrame((_, dt) => {
     if (!vrm) return
@@ -132,10 +138,25 @@ export function Imouto() {
     }
     const mode = useGame.getState().mode
     const m = mode === 'shoulder' ? readMove() : { x: 0, y: 0 }
+    // 技の入力（肩上のみ）
+    const inp = useInput.getState()
+    if (mode === 'shoulder') {
+      for (const id of ['skip', 'shoe', 'cry'] as SkillId[]) {
+        const key = SKILLS[id].key
+        const action = (`skill${key}`) as 'skill1' | 'skill2' | 'skill3'
+        if (inp.consume(action)) skills.current.start(id, g.position, g.rotation.y)
+      }
+    }
+    skills.current.tick(dt, g.position)
+    const sk = skills.current.active
+    const skT = skills.current.t
 
     g.rotation.y -= m.x * IMOUTO.turnSpeed * dt
     hitTimer.current = Math.max(0, hitTimer.current - dt)
-    const targetSpeed = Math.max(0, m.y) * IMOUTO.walkSpeed * (hitTimer.current > 0 ? HIT.slowFactor : 1)
+    let speedMul = hitTimer.current > 0 ? HIT.slowFactor : 1
+    if (sk === 'skip') speedMul = SKILLS.skip.speedMul
+    if (sk === 'shoe' || sk === 'cry') speedMul = 0
+    const targetSpeed = (sk === 'skip' ? 1 : Math.max(0, m.y)) * IMOUTO.walkSpeed * speedMul
     speed.current += (targetSpeed - speed.current) * Math.min(1, IMOUTO.accel * dt)
     g.position.x += Math.sin(g.rotation.y) * speed.current * dt
     g.position.z += Math.cos(g.rotation.y) * speed.current * dt
@@ -144,7 +165,18 @@ export function Imouto() {
     if (walkRatio > 0.02) phase.current += (dt / IMOUTO.stepPeriod) * Math.PI * 2 * Math.max(0.4, walkRatio)
     applyWalk(vrm, phase.current, walkRatio, IMOUTO.walk, modelHeight)
     clock.current += dt
-    applyFace(vrm, clock.current, walkRatio, IMOUTO.face, hitTimer.current > 0)
+    if (sk) {
+      applySkillPose(vrm, sk, skT, modelHeight)
+      applySkillFace(vrm, sk, skT)
+    } else {
+      applyFace(vrm, clock.current, walkRatio, IMOUTO.face, hitTimer.current > 0)
+    }
+    // 投げる腕（兄の投擲開始から 0.6 秒）
+    if (throwK.current >= 0) {
+      throwK.current += dt / 0.6
+      if (throwK.current >= 1) throwK.current = -1
+      else applyThrowArm(vrm, throwK.current)
+    }
 
     const side = Math.sign(Math.sin(phase.current))
     if (side !== 0 && side !== lastStepSide.current) {

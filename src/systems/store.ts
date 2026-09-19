@@ -23,6 +23,11 @@ interface GameState {
   /** 直近のコンボ表示 */
   combo: { n: number; at: number } | null
   setCombo: (n: number) => void
+  /** 技のクールダウン残り（秒）。HUD 表示用に低頻度で更新 */
+  cooldowns: Record<string, number>
+  setCooldowns: (c: Record<string, number>) => void
+  activeSkill: string | null
+  setActiveSkill: (s: string | null) => void
 }
 
 export const useGame = create<GameState>((set) => ({
@@ -42,4 +47,8 @@ export const useGame = create<GameState>((set) => ({
   addScore: (n) => set((s) => ({ score: s.score + n })),
   combo: null,
   setCombo: (n) => set({ combo: { n, at: performance.now() } }),
+  cooldowns: {},
+  setCooldowns: (cooldowns) => set({ cooldowns }),
+  activeSkill: null,
+  setActiveSkill: (activeSkill) => set({ activeSkill }),
 }))
