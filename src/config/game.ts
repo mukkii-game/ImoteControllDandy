@@ -109,12 +109,12 @@ export const IMOUTO = {
     flipY: false,
   },
   /** 歩行速度（m/s）。1歩で車数台分。妹は自動で歩き続ける */
-  walkSpeed: 22,
+  walkSpeed: 11,
   /** W で加速、S で減速（倍率） */
   boostMul: 1.4,
   slowMul: 0.5,
   /** 1歩の周期（秒） */
-  stepPeriod: 1.15,
+  stepPeriod: 2.3,
   /** 旋回速度（rad/s） */
   turnSpeed: 0.55,
   /** 加減速のなめらかさ */
@@ -224,8 +224,8 @@ export const CAMERA = {
   transitionSideBulge: 30,
   followLerp: 7,
   /** シェイク減衰 */
-  shakeDecay: 4.5,
-  shakeAmp: 0, // 一旦停止（後で調整）
+  shakeDecay: 9,
+  shakeAmp: 0.3,
 }
 
 export const STAGE = {
@@ -246,7 +246,7 @@ export const STAGE = {
 /** ゲーム進行（区間・校門・制限時間） */
 export const GAME = {
   /** 制限時間（秒） */
-  timeLimitSec: 240,
+  timeLimitSec: 390,
   /** 残りこの秒数で妹が「こわがる」 */
   scaredSec: 60,
   /** 校門の z（妹は +Z へ進む）。スタートは IMOUTO.spawn */

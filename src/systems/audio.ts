@@ -95,49 +95,111 @@ function noise(c: AudioContext, sec: number): AudioBuffer {
   return b
 }
 
-/** ズシーン：サブベース＋短いノイズ */
+/** ズシーン：巨大ロボの足音。サブの衝撃＋金属的な軋み＋余韻の地響き */
 export function seStomp(strength = 1) {
   const c = ac()
   if (!c || c.state !== 'running') return
   const t = c.currentTime
+  const master = c.createGain()
+  master.gain.value = 1.2 * strength
+  master.connect(c.destination)
+  // 1) 衝撃：ピッチが急落するサブ
   const o = c.createOscillator()
   o.type = 'sine'
-  o.frequency.setValueAtTime(70, t)
-  o.frequency.exponentialRampToValueAtTime(28, t + 0.35)
+  o.frequency.setValueAtTime(110, t)
+  o.frequency.exponentialRampToValueAtTime(22, t + 0.5)
   const g = c.createGain()
-  g.gain.setValueAtTime(0.9 * strength, t)
-  g.gain.exponentialRampToValueAtTime(0.001, t + 0.6)
-  o.connect(g).connect(c.destination)
+  g.gain.setValueAtTime(1.0, t)
+  g.gain.exponentialRampToValueAtTime(0.001, t + 1.1)
+  o.connect(g).connect(master)
   o.start(t)
-  o.stop(t + 0.65)
+  o.stop(t + 1.2)
+  // 2) 打撃の芯：短いローパスノイズ
   const n = c.createBufferSource()
-  n.buffer = noise(c, 0.25)
+  n.buffer = noise(c, 0.3)
   const f = c.createBiquadFilter()
   f.type = 'lowpass'
-  f.frequency.value = 400
+  f.frequency.setValueAtTime(900, t)
+  f.frequency.exponentialRampToValueAtTime(120, t + 0.25)
   const ng = c.createGain()
-  ng.gain.setValueAtTime(0.35 * strength, t)
-  ng.gain.exponentialRampToValueAtTime(0.001, t + 0.25)
-  n.connect(f).connect(ng).connect(c.destination)
+  ng.gain.setValueAtTime(0.7, t)
+  ng.gain.exponentialRampToValueAtTime(0.001, t + 0.3)
+  n.connect(f).connect(ng).connect(master)
   n.start(t)
+  // 3) 金属の軋み：矩形波の短い唸り
+  const m = c.createOscillator()
+  m.type = 'sawtooth'
+  m.frequency.setValueAtTime(180, t + 0.02)
+  m.frequency.exponentialRampToValueAtTime(60, t + 0.35)
+  const mf = c.createBiquadFilter()
+  mf.type = 'bandpass'
+  mf.Q.value = 6
+  mf.frequency.value = 320
+  const mg = c.createGain()
+  mg.gain.setValueAtTime(0.18, t + 0.02)
+  mg.gain.exponentialRampToValueAtTime(0.001, t + 0.4)
+  m.connect(mf).connect(mg).connect(master)
+  m.start(t + 0.02)
+  m.stop(t + 0.45)
+  // 4) 地響きの余韻：長いローノイズ
+  const r = c.createBufferSource()
+  r.buffer = noise(c, 1.4)
+  const rf = c.createBiquadFilter()
+  rf.type = 'lowpass'
+  rf.frequency.value = 90
+  const rg = c.createGain()
+  rg.gain.setValueAtTime(0.5, t + 0.05)
+  rg.gain.exponentialRampToValueAtTime(0.001, t + 1.4)
+  r.connect(rf).connect(rg).connect(master)
+  r.start(t + 0.05)
 }
 
-/** 爆発：ノイズのバースト */
+/** 爆発・崩壊：低音の炸裂＋瓦礫のパラパラ */
 export function seBoom() {
   const c = ac()
   if (!c || c.state !== 'running') return
   const t = c.currentTime
+  const master = c.createGain()
+  master.gain.value = 0.9
+  master.connect(c.destination)
+  // 炸裂
   const n = c.createBufferSource()
-  n.buffer = noise(c, 0.7)
+  n.buffer = noise(c, 0.9)
   const f = c.createBiquadFilter()
   f.type = 'lowpass'
-  f.frequency.setValueAtTime(2500, t)
-  f.frequency.exponentialRampToValueAtTime(120, t + 0.6)
+  f.frequency.setValueAtTime(3200, t)
+  f.frequency.exponentialRampToValueAtTime(90, t + 0.8)
   const g = c.createGain()
-  g.gain.setValueAtTime(0.6, t)
-  g.gain.exponentialRampToValueAtTime(0.001, t + 0.7)
-  n.connect(f).connect(g).connect(c.destination)
+  g.gain.setValueAtTime(0.9, t)
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.9)
+  n.connect(f).connect(g).connect(master)
   n.start(t)
+  // サブの衝撃
+  const o = c.createOscillator()
+  o.type = 'sine'
+  o.frequency.setValueAtTime(90, t)
+  o.frequency.exponentialRampToValueAtTime(30, t + 0.4)
+  const og = c.createGain()
+  og.gain.setValueAtTime(0.8, t)
+  og.gain.exponentialRampToValueAtTime(0.001, t + 0.6)
+  o.connect(og).connect(master)
+  o.start(t)
+  o.stop(t + 0.65)
+  // 瓦礫：短いクリックをランダムに
+  for (let i = 0; i < 7; i++) {
+    const tt = t + 0.15 + Math.random() * 0.6
+    const d = c.createBufferSource()
+    d.buffer = noise(c, 0.04)
+    const df = c.createBiquadFilter()
+    df.type = 'bandpass'
+    df.frequency.value = 800 + Math.random() * 2500
+    df.Q.value = 3
+    const dg = c.createGain()
+    dg.gain.setValueAtTime(0.25, tt)
+    dg.gain.exponentialRampToValueAtTime(0.001, tt + 0.06)
+    d.connect(df).connect(dg).connect(master)
+    d.start(tt)
+  }
 }
 
 /** ヒュン：投擲・ジャンプ */
