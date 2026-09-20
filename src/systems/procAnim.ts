@@ -161,6 +161,15 @@ export function applyFlyPose(vrm: VRM, dt: number) {
   }
 }
 
+/** 電撃を撃つ構え（歩行の上から右腕だけ上書き）：右腕を前へ伸ばす */
+export function applyAimPose(vrm: VRM, dt: number) {
+  const h = vrm.humanoid
+  const k = Math.min(1, 14 * dt)
+  const g = armSign(vrm)
+  lerpTo(h.getNormalizedBoneNode('rightUpperArm'), -1.5 * g, 0, 0.15 * g, k)
+  lerpTo(h.getNormalizedBoneNode('rightLowerArm'), 0, 0, 0, k)
+}
+
 /**
  * 技ポーズ（歩行の上から上書き）。t は技開始からの秒数。
  * skip: 大きく跳ねる（腕を上げて振る）、shoe: 右脚を蹴り上げる、cry: 両手で顔を覆う

@@ -13,7 +13,7 @@ npm run build    # dist/ に出力（itch.io 用）
 |---|---|---|
 | WASD / 矢印 / 左スティック | カメラ基準で走る | W 妹を前進・A D 旋回（リモコン） |
 | マウス（クリックでロック）/ 画面右タッチ（仮想スティック：置いた所からずらした分が回る速さ） | カメラ回転 | 妹の頭を中心に回転（顔が見える） |
-| 左クリック / Space | サイトの向きへ高速タックル（連打で高速移動） | 長押しでサイトをロック → 離して投擲 |
+| 左クリック / Space | 敵にサイトが重なっていればタックル、建物なら屋上へジャンプ、空中の敵・弾なら長押しで電撃、何も無ければサイトの向きへタックル（連打で高速移動） | 長押しでサイトをロック → 離して投擲 |
 | 右クリック / Shift / E | どこからでも妹の肩へ飛び乗る | 飛び降りる |
 | P | デバッグ俯瞰カメラ | 同左 |
 
@@ -41,6 +41,7 @@ npm run build    # dist/ に出力（itch.io 用）
 - 打撃（タックル）と遠隔（投擲）の効果の差をどう付けるか（案は会話ログ参照：戦車は打撃のみ、遠隔はまとめ倍率、打撃で技ゲージ、など）
 - 満洲・山田うどんの画像の権利（公開前に確認）
 - ゲーム中 BGM（GiantLOLO）は仮。公開前に必ず差し替える（public/audio/bgm/play.mp3）
+- 屋上ジャンプで複数の建物がサイトに重なった時の選び方：今は「見えている中で高い方」（BRO.roofJump.pick='tallest'）。手前優先（'nearest'）にするかは要検討
 - ▼ をロックして「あそこへ行け」で行き先を指示する仕組み（製品版で入れるかも。今はオフ：GAME.dest.lockEnabled）。プロトは妹が自動で学校へ向かう（GAME.dest.autoNavigate）
 - ネイティブアプリ化（スマホの重さ対策）。ブラウザ内では Three.js が既に最軽量級で、エンジンを替えても速くならない。速くなるのはネイティブ（Unity＝UniVRM で VRM がそのまま使える／Godot＝無料）に移した時で、目安 2〜5 倍。移すなら「遊びの設計が固まってから」。数値が src/config に集まっているので移植時にそのまま持っていける
 - 肩上から玉（兄）を発射したあと、妹の体で玉が隠れる問題。暫定は「兄が戻るまで妹を消したまま」（CAMERA.aim.hideDuringThrow）。別案：地上のダッシュと同じく、カメラが兄を遅れて追いかける（CAMERA.thrown.enabled と dashFollowLerp 相当の値で試せる）
@@ -65,9 +66,10 @@ npm run build    # dist/ に出力（itch.io 用）
 - 地上の移動速度は 21 m/s（BRO.runSpeed）。ダッシュ後のカメラは dashRecoverLerp（8）でゆっくり追いつき、dashRecoverSec（1 秒）かけて通常の速さ（followLerp 18）に戻る
 - 右上の「地上／肩上」の下に fps 表示（ui/HUD.tsx の Fps）。カクつきの切り分け用：fps が低ければ描画の重さ、60 なのにカクつくなら動きの作り方
 - 毎フレームの new THREE.Vector3 / Quaternion を減らした（Fighters の right、BroGlow の粒）。GC による周期的なカクつき対策
-- 地上の上下の見回しは肩上より広め（CAMERA.ground.pitchMin/pitchMax。上 77° まで。頭上の敵をバルカンで狙える）
-- 地上のバルカン（entities/Vulcan.tsx、BRO.vulcan）：兄はサイトの方向へ自動で連射。サイトが敵（空中でも）を捉えると（refs.aimTarget、サイトが赤く光る）その敵へ吸い付く。弾速 1800、3 発ずつ「ダダダッ」のリズム（burst / interval / burstGap。撃ち始めたら途中でサイトから外れても 3 発撃ち切る）、弾は発射時の狙いへホーミングして必ず当たる（homing）、曳光弾は太さ 48m・長さ 60m の半透明の黄色い四角の中に赤い丸（coreColor / coreRatio）。進行方向まわりに高速回転しながら横にも回って飛ぶ（spin / tumble）。2 発で倒す（hitsToKill）。タックルと違って一撃死ではない。サイトが敵を捉えている時だけ撃つ（fireAlways=false）。音は audio/se/vulcan.mp3（雷魔法4）
+- 地上の上下の見回しは肩上より広め（CAMERA.ground.pitchMin/pitchMax。上 77° まで。頭上の敵を電撃で狙える）
+- 地上の電撃（entities/Lightning.tsx、BRO.lightning。旧バルカンの置き換え）：A を押している間、兄の右手（refs.broHand＝生ボーン rightHand）からサイトが捉えている敵（弾）1 体へ山なりの電撃が伸びる。当て続けた秒数で倒す（killSec 0.35、エネミービルのロック点 bossKillSec 1.2、敵の弾 projectileSec 0.12）。敵が動いても着弾点はついていき、倒れるまで続く。倒れたら次にサイトに入った敵へ。離すと消える。見た目は 2 次ベジェ（中点を上へ arcUp、横へ arcSide × sin で揺れる）を segments 本の箱でつなぎ、各点を jitter でギザギザにずらす（jitterEverySec ごとに取り直し）。手元 nearWidth → 遠く farWidth に太くなる（thickenFrom〜thickenTo m）ので画面が塞がれない。外側は半透明の水色、芯は白（coreRatio）。俯瞰で見ないので隙間は気にしない。音は se.lightning（雷魔法3）を出ている間ループ（audio.ts の startLoop / stopLoop、lightning.start / stop イベント）。兄はその方向を向いて右腕を伸ばす（procAnim.applyAimPose）。A を押した時にサイトが「タックルの届く地上の敵」に重なっていればタックルが優先、空中の敵・遠い敵・敵の弾ならタックルせず電撃
 - タックルの速さは 120 m/s（BRO.tackle.speed）
+- 屋上ジャンプ（BRO.roofJump）：地上で A を押した時、サイトに倒せる敵も電撃の的も無く、建物が重なっていれば（サイトが黄色く光る、refs.roofTarget）その建物の中心の真上へ山なりに跳んで屋上に着地。重力無視で距離によらず sec 秒（1.5）。判定は lockon.tsx がサイト中心と周り（aimRadius）の rays 本のレイで建物の箱（colliders.rayBuildings）を探し、レイごとに一番手前の建物だけを候補にして高い方（pick='tallest'）を選ぶ。minHeight 未満の低い家は対象外。屋上の床は colliders.floorAt（その点を含む一番高い建物）で、歩いて縁から出れば落ちる、建物が壊れれば落ちる。壁は buildingAt(…, aboveY) で「自分より高い建物」だけ。飛び降り・地上発の攻撃からの着地も床の高さへ
 - 爆撃（FIGHTERS.bomb）：黒い爆弾が黄色い光をまとって、妹の胴体へゆっくり曲がりながら飛んでくる（speed / homing / gravity）。当たると被弾エフェクト＋減速。上空集合の旋回は半径 135m・高さ 210m（loiter.kinds.overhead）
 - 吹っ飛び：地上の敵は上へ 160m/s、空中の敵は上へ 75m/s で勢いよく散ってから半分の重力で落ちる（DEBRIS.knockback / DEBRIS.air）
 - 空の敵：戦闘機は 2 編隊（FIGHTERS.squadrons、各 7 機）が同時に別方向から。ヘリは 2 編隊 × 4 機（HELIS.groups / perGroup / formation）でまとまって妹の周りを回る。全体的に前より遠め（loiter.kinds の center、HELIS.keepDist 260）。戦闘機の速度は 220 m/s
@@ -76,7 +78,7 @@ npm run build    # dist/ に出力（itch.io 用）
 - 敵の弾（ミサイル・砲弾）の速さは 14〜15 m/s（爆弾は 14）
 - 被弾：SPEC 通り 0.5 秒減速（HIT.slowSec / slowFactor）＋驚き顔＋「いたっ」の声（line_imouto_hit、SOUND.hitVoiceMinGapSec で連呼を抑える）。ダメージは無い
 - 敵の弾はミサイル型（灰色の胴体＋赤い先端、PROJECTILE.bodyRadius 0.9m）で黄色い光をまとい、速さは 28〜30 m/s。爆弾は黒い玉（FIGHTERS.bomb）。見た目は entities/Projectiles.tsx が登録簿（systems/projectiles.ts）からまとめて描く。妹の体への着弾は体の表面の点（imoutoImpact）で、爆発は兄と同じくらい（HIT.explosionRadius 5m）＋赤っぽい煙（HIT.puffs、オレンジ→赤→暗い赤）と、少し遅れて出る灰色の煙（HIT.grayPuffs / grayDelaySec）の 2 段。「痛っ」は効果音ラボの SE 5 種からランダム、鳴ったら 3 秒は鳴らさない（SOUND.hitVoiceMinGapSec）。タックル音は 2 種を順繰り（SOUND.tackleSounds）
-- 敵の弾（爆弾・ミサイル・砲弾）は systems/projectiles.ts に登録され、地上のバルカンで撃ち落とせる（サイトに入れば自動照準の対象、敵より優先。撃ち落とすと爆発＋BRO.vulcan.projectileScore）
+- 敵の弾（爆弾・ミサイル・砲弾）は systems/projectiles.ts に登録され、地上の電撃で撃ち落とせる（サイトに入れば自動照準の対象、敵より優先。撃ち落とすと爆発＋BRO.vulcan.projectileScore）
 - 「なぎ払え」（靴飛ばし、SKILLS.shoe）：右脚を後ろへ振りかぶって（windBackSec）から前へ蹴り出し（kickSec）、蹴り切った瞬間に靴が飛ぶ（skills.ts の tick で発射）。靴の真下には一定距離ごとに地面から火柱（pillar：高さ 85m、加算合成の円柱 2 重）。通り道の敵と建物（breakRadius）を壊し、破片と本体は通常の 2 倍の高さへ（power。enemy.hit / building.* の power で Debris が上向き速度を倍にする）
 - 「泣け」（TEARS、entities/Tears.tsx）：「うえーんうえーん」の声と吹き出し、目から水色の涙の玉 70 個が四方へ一度に飛び散り、当たった敵は一撃（従来の全敵スタンもそのまま）
 - 学校は超巨大（GAME.school：幅 900・高さ 220・時計塔 180）でフォグを受けない（fog={false}）。カメラ far 3400
@@ -95,6 +97,7 @@ npm run build    # dist/ に出力（itch.io 用）
 - 敵セット（仮）：戦闘機は config/waves.ts の FIGHTERS.passes（前から→左から→右後ろから）を順に回り、次の方向へ抜けていく。編隊は FIGHTERS.formation で上下前後にばらす。戦車は 1 グループごとに左右を入れ替える。本格的なエネセットは別途計画
 - 妹は自動で歩く（W 加速・S 減速・A D 旋回）。歩幅・速度は半分ずつ落とした状態。制限時間 11:00
 - 揺れは停止中（CAMERA.shakeAmp = 0）。後で調整する
+- 兄の声（作者提供、2026-09-20）：溜め開始「ねらえ！」（line.bro.throw → line_bro_nerae.wav、吹き出しも SPEECH.lines.throw）、飛び乗り「さあいくぞ」（bro.mount → bro_ikuzo.mp3）、飛び降り「お相手しましょう」（bro.dismount → bro_oaite.mp3）。ファイル名は添付順から推定したので、入れ違っていたら voices.json の 2 行を入れ替える
 - 音：public/audio/se/ に効果音ラボの SE（出典は public/audio/se/SOURCES.md）。無ければ合成音。ロックオン＝決定ボタンを押す26、玉の発射（肩上）＝雷魔法4、建物が壊れた＝2 種類をランダム（一歩で何軒も潰れるので SOUND.building.minGapSec より短い間隔では鳴らさない）。ゲーム中 BGM は public/audio/bgm/play.mp3（GiantLOLO。知人からもらった仮の曲で、公開時に差し替え必須）。音量は SOUND（game.ts。masterVolume 0.5 が全体に掛かる）
 - 射撃モードで妹と兄を消す処理は今はオフ（CAMERA.aim.vanish=false。true に戻すと短いフェードで消える：fadeSec / showFadeSec、systems/silhouette.ts の blend）。代わりに X 線輪郭（CAMERA.aim.xray、systems/xray.tsx）：溜め中・攻撃中は、妹の体や建物の向こうに隠れている敵の「隠れた部分の縁」だけが緑に光る。仕組みは敵メッシュの複製を深度テスト逆（GreaterDepth）＋リムライトで描く。対象は XrayRoot で包んだまとまり（戦闘機・ヘリ・パトカー/戦車。エネミービルは大きすぎて縁が変に見えるので対象外）。見せるのは「カメラ→敵の線が妹の体（半径 occluderRadius・高さ occluderHeight の円柱）を通る敵」だけ。建物に隠れた敵や隠れていない敵には出ない
 - 掴んで投げる（LOCKON.grab / windupSec）：ロックオンのボタンを押すと妹が右手で兄を掴む（肘をへそ辺りで曲げた構え、兄は手のひらの上：refs.rightHand）。離して発射すると振りかぶり→振り抜きの投げモーション（windupSec 0.45 秒）の間は手に握られたままで、終わった瞬間に手から発射。腕は returnSec で歩きに戻る。ポーズの数値は grab.hold / windBack / release（lower の y はマイナスで肘が体の前に曲がる）。兄は手首と中指の付け根の間（palmRatio）＝手のひらの上に乗り、そこから妹の向き基準で前・右・上へずらせる（grab.broSeat）。指は fingerCurl で握る（投げ切る瞬間に開く）。Esc パネルの「掴み」で兄の位置・腕の構えを見ながら調整でき、「変更をコピー」の JSON をそのまま渡せば反映する

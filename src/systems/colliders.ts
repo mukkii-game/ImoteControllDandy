@@ -52,14 +52,56 @@ export function nearbyBuildings(x: number, z: number): number[] {
   return out
 }
 
-/** 半径 r の円が重なる（生きている）建物。無ければ null */
-export function buildingAt(x: number, z: number, r: number): Collider | null {
+/** 半径 r の円が重なる（生きている）建物。無ければ null。aboveY を渡すと、その高さより高い建物だけ（屋上にいる時は自分の屋上を壁扱いしない） */
+export function buildingAt(x: number, z: number, r: number, aboveY = -Infinity): Collider | null {
   for (const i of nearbyBuildings(x, z)) {
     const b = colliders.list[i]
-    if (b.dead) continue
+    if (b.dead || b.h <= aboveY) continue
     const dx = Math.max(Math.abs(x - b.x) - b.w / 2, 0)
     const dz = Math.max(Math.abs(z - b.z) - b.d / 2, 0)
     if (Math.hypot(dx, dz) < r) return b
   }
   return null
+}
+
+/** (x, z) の床の高さ：その点を含む（生きている）建物のうち一番高い屋上。建物が無ければ 0（地面） */
+export function floorAt(x: number, z: number): number {
+  let h = 0
+  for (const i of nearbyBuildings(x, z)) {
+    const b = colliders.list[i]
+    if (b.dead || b.h <= h) continue
+    if (Math.abs(x - b.x) <= b.w / 2 && Math.abs(z - b.z) <= b.d / 2) h = b.h
+  }
+  return h
+}
+
+/**
+ * レイ（origin から dir 方向）に当たる（生きている）建物の添字と距離。箱（AABB）のスラブ判定。
+ * 全棟をなめるが数千棟 × 数本なら毎フレームでも軽い。minH 未満の低い建物は無視
+ */
+export function rayBuildings(ox: number, oy: number, oz: number, dx: number, dy: number, dz: number, maxDist: number, minH: number, out: { i: number; t: number }[]) {
+  const list = colliders.list
+  const ix = 1 / dx
+  const iy = 1 / dy
+  const iz = 1 / dz
+  for (let i = 0; i < list.length; i++) {
+    const b = list[i]
+    if (b.dead || b.h < minH) continue
+    const hw = b.w / 2
+    const hd = b.d / 2
+    let t1 = (b.x - hw - ox) * ix
+    let t2 = (b.x + hw - ox) * ix
+    let tmin = Math.min(t1, t2)
+    let tmax = Math.max(t1, t2)
+    t1 = (0 - oy) * iy
+    t2 = (b.h - oy) * iy
+    tmin = Math.max(tmin, Math.min(t1, t2))
+    tmax = Math.min(tmax, Math.max(t1, t2))
+    t1 = (b.z - hd - oz) * iz
+    t2 = (b.z + hd - oz) * iz
+    tmin = Math.max(tmin, Math.min(t1, t2))
+    tmax = Math.min(tmax, Math.max(t1, t2))
+    if (tmax < Math.max(tmin, 0) || tmin > maxDist) continue
+    out.push({ i, t: Math.max(tmin, 0) })
+  }
 }

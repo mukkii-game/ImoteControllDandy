@@ -82,47 +82,66 @@ export const BRO = {
     missDistanceMul: 0.5,
   },
   /**
-   * 地上のバルカン：サイトの方向へ自動で連射する。サイトが敵（空中でも）を捉えていればその敵へ吸い付く（自動照準）。
-   * fireAlways=false なら敵を捉えている時だけ撃つ。タックルと違って一撃死ではなく hitsToKill 発で倒す
+   * 地上の電撃：A（攻撃ボタン）を押している間、兄の手からサイトが捉えている敵（弾）1 体へ山なりの電撃が伸び、当て続けてダメージ。
+   * 敵が動いても着弾点は追いかけ、倒れるまで続く（次にサイトに入った敵へ移る）。離すと消える。
+   * タックルの届く地上の敵がサイトに重なっている時は A でタックルが優先（電撃は空中の敵・遠い敵・敵の弾向け）
    */
-  vulcan: {
-    fireAlways: false,
-    /**
-     * 連射：3 発ずつ「ダダダッ」のリズム。burst=1 回に撃つ発数、interval=その中の間隔（秒）、burstGap=次の 3 発までの間（秒）。
-     * 弾速（m/s。ほぼ一瞬で届く）、弾の寿命（秒）、当たり判定の半径（m）
-     */
-    burst: 3,
-    interval: 0.05,
-    burstGap: 0.24,
-    speed: 1800,
-    lifeSec: 1.0,
-    /** ホーミング：発射時にサイトが捉えていた敵（弾）へ曲がって必ず当たる。1 秒あたりの向き直しの強さ */
-    homing: 14,
-    hitRadius: 10,
-    hitsToKill: 2,
-    /** エネミービルのロック点は硬い（1 点あたりの必要発数） */
-    bossHitsToKill: 6,
-    /** 自動照準：サイトからこの半径（画面高さ比）に入った敵を狙う。ばらつき（rad） */
+  lightning: {
+    /** 自動照準：サイトからこの半径（画面高さ比）に入った敵（弾）を狙う */
     aimRadius: 0.1,
-    spread: 0.012,
-    /** 銃口の高さ（m、兄の足元から）。曳光弾の長さ・太さ（m）と色。発射時はサイトの円と同じくらいの大きさに見える太さ */
-    muzzleHeight: 2.6,
-    tracerLen: 60,
-    tracerWidth: 48,
-    color: '#ffd166',
-    /** 弾の見た目：半透明の四角（color）の中に別の色の丸（coreColor、coreRatio=四角の幅に対する丸の直径）。spin=進行方向まわりの回転（rad/s）、tumble=横回転（rad/s） */
-    boxOpacity: 0.55,
-    coreColor: '#ff3b6b',
-    coreRatio: 0.45,
-    spin: 28,
-    tumble: 9,
-    /** 1 発当てた時と倒した時のスコア。敵の弾を撃ち落とした時のスコア */
-    hitScore: 10,
+    /** 倒すのに当て続ける秒数：通常の敵／エネミービルのロック点／敵の弾 */
+    killSec: 0.35,
+    bossKillSec: 1.2,
+    projectileSec: 0.12,
+    /** 当てている間のスコア（1 秒あたり）、倒した時、弾を撃ち落とした時 */
+    hitScorePerSec: 40,
     killScore: 100,
     projectileScore: 30,
-    /** 着弾の火花の大きさ（m）と秒数 */
-    sparkSize: 5,
-    sparkSec: 0.18,
+    /** 見た目：分割数（箱をつなげて描く）。手元の太さ（m）→遠くの太さ（m）、太くなり始める距離と太くなりきる距離（m。手元が細いと画面が塞がれない） */
+    segments: 28,
+    nearWidth: 1.0,
+    farWidth: 22,
+    thickenFrom: 25,
+    thickenTo: 200,
+    /** 山なり：弧の高さ（距離比）と横のふくらみ（距離比）、ふくらみが揺れる速さ（rad/s） */
+    arcUp: 0.28,
+    arcSide: 0.08,
+    swaySpeed: 2.2,
+    /** ギザギザ：各点のずれ（その位置の太さ比）と、ずれを取り直す間隔（秒） */
+    jitter: 0.4,
+    jitterEverySec: 0.04,
+    /** 色：外側（半透明の水色）と芯（白、外側の太さ比） */
+    color: '#4fd8ff',
+    coreColor: '#ffffff',
+    coreRatio: 0.22,
+    opacity: 0.55,
+    /** 着弾の火花の大きさ（m）と秒数、出す間隔（秒） */
+    sparkSize: 7,
+    sparkSec: 0.15,
+    sparkEverySec: 0.05,
+    /** 手の骨が取れない時の発射高さ（m、足元から） */
+    muzzleHeight: 2.6,
+  },
+  /**
+   * 地上：サイトに建物が重なっている時に A を押すと、その屋上へ山なりに跳んで着地する（重力無視、距離によらず一定秒数）。
+   * サイトに倒せる地上の敵が重なっていればタックルが優先。空中の敵・敵の弾を捉えていれば電撃（跳ばない）
+   */
+  roofJump: {
+    enabled: true,
+    /** 着地までの秒数（距離によらず一定。タックル 1 回＝distance/speed と同じくらい） */
+    sec: 1.5,
+    /** 弧の高さ：屋上より上にこの分（m）＋距離比 */
+    arcUp: 12,
+    arcUpDistRatio: 0.15,
+    /** 複数の建物がサイトに重なった時：'tallest'＝高い方、'nearest'＝手前（検討事項） */
+    pick: 'tallest' as 'tallest' | 'nearest',
+    /** サイト内判定：サイト中心と、その周り（半径＝画面高さ比）に放つレイの本数 */
+    aimRadius: 0.06,
+    rays: 5,
+    /** この高さ未満の建物（低い家）には飛び乗らない（m） */
+    minHeight: 4,
+    /** 屋上を歩く時、この高さ差までは段差として登れる（m） */
+    stepUp: 0.5,
   },
   /** 建物との当たり半径（m）。建物は貫通できない */
   bodyRadius: 1.2,
@@ -524,7 +543,7 @@ export const SPEECH = {
     skip: 'ロロップだ！',
     shoe: 'なぎ払え！',
     cry: '泣け！',
-    throw: 'オレを投げろ！',
+    throw: 'ねらえ！',
     goto: 'あそこへ行け！',
   },
   /** 妹のセリフ */
@@ -627,8 +646,8 @@ export const SOUND = {
   building: { volume: 0.7, minGapSec: 0.35 },
   /** ロックオン音の音量 */
   lockVolume: 0.8,
-  /** バルカン 1 発の音量（連射なので小さめ） */
-  vulcanVolume: 0.25,
+  /** 電撃（雷魔法3 をループ）の音量 */
+  lightningVolume: 0.5,
   /** 被弾の「痛っ」：何回に 1 回鳴らすか、鳴ったあと鳴らさない秒数、用意した声の種類数（voices.json の imouto.hit.1..N からランダム） */
   hitVoiceEvery: 1,
   hitVoiceMinGapSec: 3,

@@ -6,7 +6,7 @@ import { useGame } from '../systems/store'
 import { Helis } from '../entities/Helis'
 import { BossBuildings } from '../entities/BossBuildings'
 import { BroGlow } from '../entities/BroGlow'
-import { Vulcan } from '../entities/Vulcan'
+import { Lightning } from '../entities/Lightning'
 import { Tears } from '../entities/Tears'
 import { Projectiles } from '../entities/Projectiles'
 import { XrayLayer } from '../systems/xray'
@@ -164,7 +164,7 @@ export function StageScene() {
       <GroundEnemies />
       <BossBuildings />
       <BroGlow />
-      <Vulcan />
+      <Lightning />
       <Tears />
       <Projectiles />
       <XrayLayer />

@@ -89,6 +89,38 @@ export async function playBgm(name: string, volume = 0.5) {
   bgm.start()
 }
 
+/* ---------- ループ音（電撃など。鳴っている間だけ回す） ---------- */
+let loopSrc: AudioBufferSourceNode | null = null
+let loopToken = 0
+export async function startLoop(name: string, volume = 1) {
+  const url = (voices as Record<string, string>)[name]
+  const c = ac()
+  if (!c || !url) return
+  const token = ++loopToken
+  stopLoop()
+  loopToken = token
+  const buf = await load(url)
+  // 読み込み待ちの間に stop されていたら鳴らさない
+  if (!buf || loopToken !== token) return
+  const src = c.createBufferSource()
+  src.buffer = buf
+  src.loop = true
+  const g = c.createGain()
+  g.gain.value = volume
+  src.connect(g).connect(dest(c))
+  src.start()
+  loopSrc = src
+}
+export function stopLoop() {
+  loopToken++
+  try {
+    loopSrc?.stop()
+  } catch {
+    /* ignore */
+  }
+  loopSrc = null
+}
+
 export function stopBgm() {
   try {
     bgm?.stop()
@@ -234,34 +266,6 @@ export function seWhoosh(pitch = 1) {
   n.start(t)
 }
 
-/** タタタ：バルカン 1 発（短いノイズ＋低いクリック） */
-export function seVulcan() {
-  const c = ac()
-  if (!c || c.state !== 'running') return
-  const t = c.currentTime
-  const n = c.createBufferSource()
-  n.buffer = noise(c, 0.05)
-  const f = c.createBiquadFilter()
-  f.type = 'bandpass'
-  f.frequency.value = 1400
-  f.Q.value = 1.2
-  const g = c.createGain()
-  g.gain.setValueAtTime(0.16, t)
-  g.gain.exponentialRampToValueAtTime(0.001, t + 0.05)
-  n.connect(f).connect(g).connect(dest(c))
-  n.start(t)
-  const o = c.createOscillator()
-  o.type = 'square'
-  o.frequency.setValueAtTime(220, t)
-  o.frequency.exponentialRampToValueAtTime(90, t + 0.04)
-  const og = c.createGain()
-  og.gain.setValueAtTime(0.08, t)
-  og.gain.exponentialRampToValueAtTime(0.001, t + 0.045)
-  o.connect(og).connect(dest(c))
-  o.start(t)
-  o.stop(t + 0.05)
-}
-
 /** ピッ：ロックオン */
 export function seLock(index = 0) {
   const c = ac()
@@ -348,17 +352,16 @@ export function bindAudio(): () => void {
       playVoice('se.land').then((ok) => {
         if (!ok) seWhoosh(0.8)
       })
+      playVoice('bro.dismount')
     }),
     on('bomb.burst', () => {
       playVoice('se.boom', 0.6).then((ok) => {
         if (!ok) seBoom()
       })
     }),
-    on('vulcan.shot', () => {
-      playVoice('se.vulcan', SOUND.vulcanVolume).then((ok) => {
-        if (!ok) seVulcan()
-      })
-    }),
+    // 電撃：出ている間だけ雷魔法3 をループ
+    on('lightning.start', () => startLoop('se.lightning', SOUND.lightningVolume)),
+    on('lightning.stop', () => stopLoop()),
     on('bro.tackle', () => {
       // タックル：2 種類の音を順繰りに
       tackleIdx = (tackleIdx % SOUND.tackleSounds) + 1

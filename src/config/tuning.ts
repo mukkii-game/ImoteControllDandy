@@ -49,7 +49,7 @@ export const TUNE_GROUPS: { title: string; items: TuneItem[] }[] = [
     ],
   },
   {
-    title: '掴み（オレを投げろ）：兄の位置と右腕の構え',
+    title: '掴み（ねらえ！）：兄の位置と右腕の構え',
     items: [
       { path: 'LOCKON.grab.palmRatio', label: '手首→中指の付け根（0=手首）', min: -0.5, max: 1.5, step: 0.05 },
       { path: 'LOCKON.grab.broSeat.forward', label: '兄 前後 m', min: -6, max: 6, step: 0.1 },

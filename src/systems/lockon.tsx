@@ -8,13 +8,16 @@ import { refs } from './refs'
 import { playVoice, seLock } from './audio'
 import { emit } from './events'
 import { projectiles } from './projectiles'
+import { colliders, rayBuildings } from './colliders'
 import { touchLookTick } from './mouse'
 
 // デバッグ用（Playwright から狙いを付ける）
-;(window as unknown as { __dbg: unknown }).__dbg = { refs, lock, enemies, input: useInput, emit, projectiles }
+;(window as unknown as { __dbg: unknown }).__dbg = { refs, lock, enemies, input: useInput, emit, projectiles, colliders, cfg: { BRO, LOCKON, CAMERA, GAME } }
 
 const proj = new THREE.Vector3()
 const tmpV = new THREE.Vector3()
+const ndc = new THREE.Vector3()
+const rayHits: { i: number; t: number }[] = []
 
 /**
  * ロックオン判定。溜め中（A 押下、肩上または地上）にサイト中心近くの敵を順にロックする。
@@ -103,8 +106,8 @@ export function LockonSystem() {
       lock.screen.set(e.id, [sx, sy, inFront])
       if (groundAim && inFront && bro) {
         const d = Math.hypot((sx - cx) / size.height, (sy - cy) / size.height)
-        // バルカンの自動照準：高さ・距離を問わずサイトに一番近い敵
-        if (d < BRO.vulcan.aimRadius && d < aimBest) {
+        // 電撃の自動照準：高さ・距離を問わずサイトに一番近い敵
+        if (d < BRO.lightning.aimRadius && d < aimBest) {
           aimBest = d
           aimId = e.id
         }
@@ -129,7 +132,7 @@ export function LockonSystem() {
     }
     refs.groundTarget = groundAim ? gtId : -1
     refs.aimTarget = groundAim ? aimId : -1
-    // 敵の弾（爆弾・ミサイル）もバルカンの自動照準の対象。敵より弾の方がサイトに近ければ弾
+    // 敵の弾（爆弾・ミサイル）も電撃の自動照準の対象。敵より弾の方がサイトに近ければ弾
     let pjIdx = -1
     if (groundAim) {
       let best = aimBest
@@ -141,13 +144,38 @@ export function LockonSystem() {
         const sx = (proj.x * 0.5 + 0.5) * size.width
         const sy = (-proj.y * 0.5 + 0.5) * size.height
         const d = Math.hypot((sx - cx) / size.height, (sy - cy) / size.height)
-        if (d < BRO.vulcan.aimRadius && d < best) {
+        if (d < BRO.lightning.aimRadius && d < best) {
           best = d
           pjIdx = i
         }
       }
     }
     refs.aimProjectile = pjIdx
+    // 建物：倒せる敵も電撃の的も無い時だけ、サイト中心と周りから何本かレイを放って当たった建物を探す（A で屋上へ跳ぶ）
+    let roofIdx = -1
+    const rj = BRO.roofJump
+    if (rj.enabled && groundAim && gtId < 0 && aimId < 0 && pjIdx < 0) {
+      // レイごとに「一番手前の建物」（見えている建物）だけを候補にし、候補の中から高い方（pick）を選ぶ。奥に隠れた建物は候補にしない
+      const nRays = Math.max(1, Math.floor(rj.rays))
+      let best = rj.pick === 'tallest' ? -Infinity : Infinity
+      for (let r = 0; r < nRays; r++) {
+        const ang = ((r - 1) / Math.max(1, nRays - 1)) * Math.PI * 2
+        const ox = r === 0 ? 0 : Math.cos(ang) * rj.aimRadius * size.height
+        const oy = r === 0 ? 0 : Math.sin(ang) * rj.aimRadius * size.height
+        ndc.set(((cx + ox) / size.width) * 2 - 1, -(((cy + oy) / size.height) * 2 - 1), 0.5).unproject(camera).sub(camera.position).normalize()
+        rayHits.length = 0
+        rayBuildings(camera.position.x, camera.position.y, camera.position.z, ndc.x, ndc.y, ndc.z, 1e9, rj.minHeight, rayHits)
+        let near: { i: number; t: number } | null = null
+        for (const h of rayHits) if (!near || h.t < near.t) near = h
+        if (!near) continue
+        const v = rj.pick === 'tallest' ? colliders.list[near.i].h : -near.t
+        if (v > best) {
+          best = v
+          roofIdx = near.i
+        }
+      }
+    }
+    refs.roofTarget = roofIdx
     // ロック中の敵が死んだら外す
     for (let i = lock.ids.length - 1; i >= 0; i--) {
       const e = enemies.find((x) => x.id === lock.ids[i])
