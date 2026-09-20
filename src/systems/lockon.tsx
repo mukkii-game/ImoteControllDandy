@@ -26,6 +26,8 @@ const rayHits: { i: number; t: number }[] = []
  */
 export function LockonSystem() {
   const { camera, size } = useThree()
+  // デバッグ用：カメラも見せる
+  ;(window as unknown as { __dbg: { camera?: unknown } }).__dbg.camera = camera
 
   useFrame((_, dt) => {
     // タッチの仮想スティック（押している間、速さで回す）
@@ -39,6 +41,8 @@ export function LockonSystem() {
     // サイトの位置：溜め中（と地上）は画面端でカメラを押す。それ以外は中央へ戻る
     const rc = LOCKON.reticle
     const groundAim = st.mode === 'ground' && st.phase === 'play' && rc.groundHorizontalOnly
+    // 電撃の自動照準は地上と、肩上で溜めていない間（A を押して掴まれたら止まる）
+    const aimOn = st.phase === 'play' && !charging && (st.mode === 'ground' || st.mode === 'shoulder')
     if (charging || groundAim) {
       const hx = size.width / 2
       const hy = size.height / 2
@@ -104,15 +108,15 @@ export function LockonSystem() {
       const sx = (proj.x * 0.5 + 0.5) * size.width
       const sy = (-proj.y * 0.5 + 0.5) * size.height
       lock.screen.set(e.id, [sx, sy, inFront])
-      if (groundAim && inFront && bro && e.id !== refs.riding) {
+      if (aimOn && inFront && bro && e.id !== refs.riding) {
         const d = Math.hypot((sx - cx) / size.height, (sy - cy) / size.height)
         // 電撃の自動照準：高さ・距離を問わずサイトに一番近い敵
         if (d < BRO.lightning.aimRadius && d < aimBest) {
           aimBest = d
           aimId = e.id
         }
-        // 乗る対象：エネミービル以外
-        if (BRO.ride.enabled && e.kind !== 'boss' && d < BRO.ride.aimRadius && d < gtBest) {
+        // 乗る対象（地上だけ）：エネミービル以外
+        if (groundAim && BRO.ride.enabled && e.kind !== 'boss' && d < BRO.ride.aimRadius && d < gtBest) {
           gtBest = d
           gtId = e.id
         }
@@ -131,10 +135,10 @@ export function LockonSystem() {
       }
     }
     refs.rideTarget = groundAim ? gtId : -1
-    refs.aimTarget = groundAim ? aimId : -1
+    refs.aimTarget = aimOn ? aimId : -1
     // 敵の弾（爆弾・ミサイル）も電撃の自動照準の対象。サイトに入っていれば敵より弾を優先
     let pjIdx = -1
-    if (groundAim) {
+    if (aimOn) {
       let best = BRO.lightning.aimRadius
       for (let i = 0; i < projectiles.length; i++) {
         const p = projectiles[i]

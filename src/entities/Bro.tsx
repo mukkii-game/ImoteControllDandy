@@ -389,6 +389,8 @@ export function Bro() {
         }
         g.position.copy(v)
         yawRef.current = refs.imouto?.rotation.y ?? 0
+        // 肩上で電撃を撃っている間はその方向を向く
+        if (refs.lightningOn) yawRef.current = Math.atan2(refs.lightningAim.x - g.position.x, refs.lightningAim.z - g.position.z)
         g.rotation.y = yawRef.current
         // 肩上は常に腕組み（指差しは一旦オフ。BRO.pointWhileSteering で復活）
         const m = readMove()
@@ -627,6 +629,7 @@ export function Bro() {
       } else if (poseBlend.current > 0.5) {
         g.rotation.x = 0
         applyShoulderPose(vrm, steer.current, dt)
+        if (refs.lightningOn) applyAimPose(vrm, dt)
       } else if (tackle.current.active) {
         // タックル：頭から突っ込む
         applyFlyPose(vrm, dt)

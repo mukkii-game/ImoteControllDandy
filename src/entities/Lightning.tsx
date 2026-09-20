@@ -79,7 +79,8 @@ export function Lightning() {
     const bro = refs.bro
     time.current += dt
     // ボタン不要：地上（敵の上に乗っている時も）でサイトが敵（弾）を捉えていれば撃つ。ダッシュ中は撃たない
-    const firing = !!bro && st.mode === 'ground' && st.phase === 'play' && !refs.broDash
+    // 肩上でも撃てる（A を押して掴まれる＝溜め中は止まる）
+    const firing = !!bro && st.phase === 'play' && !refs.broDash && (st.mode === 'ground' || (st.mode === 'shoulder' && !st.charging))
     // 狙い：今の的が生きていて、まだ円形サイトの中にいればそのまま。外へ出たら追うのをやめる。
     // 追っている最中でもサイトに敵の弾が入ってきたら弾を優先し、落としたらまた狙い先を決め直す
     let tg = target.current
