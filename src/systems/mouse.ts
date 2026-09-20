@@ -67,7 +67,7 @@ export function bindMouse(el: HTMLElement): () => void {
     else if (dragging) apply(e.movementX, e.movementY, CAMERA.mouseSensitivity)
   }
   const onMouseDown = (e: MouseEvent) => {
-    if ((e.target as HTMLElement).closest('.stick, .buttons, .tune, .overlay, .skillbar')) return
+    if ((e.target as HTMLElement).closest('.stick, .buttons, .tune, .overlay, .skillbar, .menu-btn')) return
     if (useGame.getState().tuneOpen) return
     dragging = true
     if (document.pointerLockElement !== el) el.requestPointerLock?.()
@@ -97,7 +97,7 @@ export function bindMouse(el: HTMLElement): () => void {
   const onTouchStart = (e: TouchEvent) => {
     for (const t of Array.from(e.changedTouches)) {
       const target = document.elementFromPoint(t.clientX, t.clientY)
-      if (target?.closest('.stick, .buttons, .tune')) continue
+      if (target?.closest('.stick, .buttons, .tune, .skillbar, .menu-btn, .overlay')) continue
       if (touchId === null) {
         touchId = t.identifier
         lastX = touchX0 = t.clientX

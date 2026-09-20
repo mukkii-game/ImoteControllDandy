@@ -33,10 +33,24 @@ export function VirtualPad() {
 
   const set = useInput((s) => s.set)
   const phase = useGame((s) => s.phase)
+  const tuneOpen = useGame((s) => s.tuneOpen)
+  const setTuneOpen = useGame((s) => s.setTuneOpen)
   // タイトル中はパッドを出さない（タイトルの文字やボタンに被る）
   if (!coarse || phase === 'title') return null
   return (
     <>
+      {/* スマホには Esc キーが無いので、左上のボタンでポーズ＋調整パネルを開閉 */}
+      <button
+        className="menu-btn"
+        aria-label="ポーズ／調整パネル"
+        onPointerDown={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          setTuneOpen(!tuneOpen)
+        }}
+      >
+        {tuneOpen ? '▶' : '≡'}
+      </button>
       <div
         ref={base}
         className="stick"

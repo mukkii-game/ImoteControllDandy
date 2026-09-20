@@ -63,7 +63,10 @@ export function TunePanel() {
     <div className="tune" onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
       <div className="tune-head">
         <b>調整パネル</b>
-        <span className="tune-note">ポーズ中。Esc / Tab で再開。値は自動保存</span>
+        <span className="tune-note">ポーズ中。Esc / Tab か「再開」で戻る。値は自動保存</span>
+        <button className="tune-resume" onClick={() => setOpen(false)}>
+          ▶ 再開
+        </button>
         <button onClick={copy}>{copied ? 'コピーした' : '変更をコピー'}</button>
         <button
           onClick={() => {
@@ -82,7 +85,7 @@ export function TunePanel() {
             <span>プリセット</span>
             <select value={quality.choice} onChange={(e) => quality.setChoice(e.target.value as QualityChoice)}>
               <option value="auto">自動（今：{QUALITY.presets[quality.level].label}）</option>
-              <option value="low">低（影なし・解像度 0.75・街は箱・敵少なめ）</option>
+              <option value="low">低（影なし・解像度 0.6・輪郭線なし・30fps・街は箱・敵少なめ）</option>
               <option value="mid">中（影なし・解像度 1）</option>
               <option value="high">高（影あり）</option>
             </select>
