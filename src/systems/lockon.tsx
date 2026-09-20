@@ -8,6 +8,7 @@ import { refs } from './refs'
 import { playVoice, seLock } from './audio'
 import { emit } from './events'
 import { projectiles } from './projectiles'
+import { touchLookTick } from './mouse'
 
 // デバッグ用（Playwright から狙いを付ける）
 ;(window as unknown as { __dbg: unknown }).__dbg = { refs, lock, enemies, input: useInput, emit, projectiles }
@@ -24,6 +25,8 @@ export function LockonSystem() {
   const { camera, size } = useThree()
 
   useFrame((_, dt) => {
+    // タッチの仮想スティック（押している間、速さで回す）
+    if (useGame.getState().phase === 'play') touchLookTick(dt)
     const st = useGame.getState()
     const a = useInput.getState().keys.a
     // ロックオンは肩上だけ（地上は高速タックル）

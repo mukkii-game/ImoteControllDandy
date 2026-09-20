@@ -10,29 +10,57 @@ import * as THREE from 'three'
  * 溜め中（サイト表示中）はカメラではなくサイト自体が画面内を動く（画面端でカメラが押される処理は lockon 側）。
  * タッチ：画面右半分（仮想パッド以外）をドラッグ。
  */
-export function bindMouse(el: HTMLElement): () => void {
-  const apply = (dx: number, dy: number, sens: number) => {
-    if (dx !== 0 || dy !== 0) refs.lastLookInput = performance.now()
-    const g = useGame.getState()
-    if (g.charging) {
-      const k = LOCKON.reticle.sensitivity
-      refs.reticleX = THREE.MathUtils.clamp(refs.reticleX + dx * k, -window.innerWidth / 2, window.innerWidth / 2)
-      refs.reticleY = THREE.MathUtils.clamp(refs.reticleY + dy * k, -window.innerHeight / 2, window.innerHeight / 2)
-      return
-    }
-    if (g.mode === 'ground' && g.phase === 'play' && LOCKON.reticle.groundHorizontalOnly) {
-      // 地上：サイトは左右にだけ動く（タックルの向き）。上下はカメラ
-      refs.reticleX = THREE.MathUtils.clamp(refs.reticleX + dx * LOCKON.reticle.sensitivity, -window.innerWidth / 2, window.innerWidth / 2)
-      refs.camPitch = THREE.MathUtils.clamp(refs.camPitch + dy * sens, CAMERA.ground.pitchMin, CAMERA.ground.pitchMax)
-      return
-    }
-    refs.camYaw -= dx * sens
-    refs.camPitch = THREE.MathUtils.clamp(refs.camPitch + dy * sens, CAMERA.pitchMin, CAMERA.pitchMax)
+/**
+ * 視点入力を反映する。dx/dy は「マウスが動いた px」、rdx/rdy は「サイトを動かす px」。
+ * マウスは両方同じ値（reticle.sensitivity 倍）、タッチのスティックは速さ×dt で別々に渡す
+ */
+function applyLook(dx: number, dy: number, sens: number, rdx = dx * LOCKON.reticle.sensitivity, rdy = dy * LOCKON.reticle.sensitivity) {
+  if (dx !== 0 || dy !== 0) refs.lastLookInput = performance.now()
+  const g = useGame.getState()
+  if (g.charging) {
+    refs.reticleX = THREE.MathUtils.clamp(refs.reticleX + rdx, -window.innerWidth / 2, window.innerWidth / 2)
+    refs.reticleY = THREE.MathUtils.clamp(refs.reticleY + rdy, -window.innerHeight / 2, window.innerHeight / 2)
+    return
   }
+  if (g.mode === 'ground' && g.phase === 'play' && LOCKON.reticle.groundHorizontalOnly) {
+    // 地上：サイトは左右にだけ動く（タックルの向き）。上下はカメラ
+    refs.reticleX = THREE.MathUtils.clamp(refs.reticleX + rdx, -window.innerWidth / 2, window.innerWidth / 2)
+    refs.camPitch = THREE.MathUtils.clamp(refs.camPitch + dy * sens, CAMERA.ground.pitchMin, CAMERA.ground.pitchMax)
+    return
+  }
+  refs.camYaw -= dx * sens
+  refs.camPitch = THREE.MathUtils.clamp(refs.camPitch + dy * sens, CAMERA.pitchMin, CAMERA.pitchMax)
+}
+
+/** タッチの仮想右スティック：指を置いた点からのずれ（-1..1） */
+const touchStick = { active: false, nx: 0, ny: 0 }
+
+/**
+ * 毎フレーム呼ぶ：スティックの倒し量を「速さ」にして視点／サイトを動かす（マウスと違い指を止めても回り続ける）
+ */
+export function touchLookTick(dt: number) {
+  const c = CAMERA.touchStick
+  if (!c.enabled || !touchStick.active) return
+  const len = Math.hypot(touchStick.nx, touchStick.ny)
+  if (len < c.deadZone) return
+  // あそびを引いた上で 0..1 に直し、カーブをかける
+  const k = Math.pow(Math.min(1, (len - c.deadZone) / (1 - c.deadZone)), c.curve) / len
+  const sx = touchStick.nx * k
+  const sy = touchStick.ny * k
+  // dx/dy は「マウス px 相当」：sens を掛けると rad になるよう逆算
+  const yawPx = (sx * c.yawSpeed * dt) / CAMERA.touchSensitivity
+  const pitchPx = (sy * c.pitchSpeed * dt) / CAMERA.touchSensitivity
+  applyLook(yawPx, pitchPx, CAMERA.touchSensitivity, sx * c.reticleSpeed * dt, sy * c.reticleSpeed * dt)
+}
+
+export function bindMouse(el: HTMLElement): () => void {
+  const apply = (dx: number, dy: number, sens: number) => applyLook(dx, dy, sens)
   let dragging = false
   let lastX = 0
   let lastY = 0
   let touchId: number | null = null
+  let touchX0 = 0
+  let touchY0 = 0
 
   const onMouseMove = (e: MouseEvent) => {
     if (document.pointerLockElement === el) apply(e.movementX, e.movementY, CAMERA.mouseSensitivity)
@@ -72,21 +100,43 @@ export function bindMouse(el: HTMLElement): () => void {
       if (target?.closest('.stick, .buttons, .tune')) continue
       if (touchId === null) {
         touchId = t.identifier
-        lastX = t.clientX
-        lastY = t.clientY
+        lastX = touchX0 = t.clientX
+        lastY = touchY0 = t.clientY
+        touchStick.active = true
+        touchStick.nx = touchStick.ny = 0
+        refs.lastLookInput = performance.now()
       }
     }
   }
   const onTouchMove = (e: TouchEvent) => {
     for (const t of Array.from(e.changedTouches)) {
       if (t.identifier !== touchId) continue
-      apply(t.clientX - lastX, t.clientY - lastY, CAMERA.touchSensitivity)
+      if (CAMERA.touchStick.enabled) {
+        // 仮想スティック：置いた点からのずれを -1..1 に（円の外は 1）
+        const r = CAMERA.touchStick.radius
+        let nx = (t.clientX - touchX0) / r
+        let ny = (t.clientY - touchY0) / r
+        const len = Math.hypot(nx, ny)
+        if (len > 1) {
+          nx /= len
+          ny /= len
+        }
+        touchStick.nx = nx
+        touchStick.ny = ny
+      } else {
+        apply(t.clientX - lastX, t.clientY - lastY, CAMERA.touchSensitivity)
+      }
       lastX = t.clientX
       lastY = t.clientY
     }
   }
   const onTouchEnd = (e: TouchEvent) => {
-    for (const t of Array.from(e.changedTouches)) if (t.identifier === touchId) touchId = null
+    for (const t of Array.from(e.changedTouches)) {
+      if (t.identifier !== touchId) continue
+      touchId = null
+      touchStick.active = false
+      touchStick.nx = touchStick.ny = 0
+    }
   }
 
   el.addEventListener('mousedown', onMouseDown)
