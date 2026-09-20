@@ -39,12 +39,36 @@ function computeGround(pos: THREE.Vector3, look: THREE.Vector3) {
   if (pos.y < 0.6) pos.y = 0.6
 }
 
+/** サイトの左右位置に応じた妹のずらし（m、カメラの右方向が正）。updateCursorShift でなめらかに追従 */
+let cursorShift = 0
+function updateCursorShift(dt: number, screenWidth: number) {
+  const c = CAMERA.shoulder.cursorShift
+  const st = useGame.getState()
+  let want = 0
+  if (c.enabled && st.mode === 'shoulder' && st.phase === 'play') {
+    const nx = refs.reticleX / (screenWidth / 2)
+    const a = Math.abs(nx)
+    if (a > c.deadZone) want = Math.sign(nx) * Math.min(1, (a - c.deadZone) / (1 - c.deadZone)) * c.max
+  }
+  cursorShift += (want - cursorShift) * Math.min(1, dt / c.smoothSec)
+}
+
 function computeShoulder(pos: THREE.Vector3, look: THREE.Vector3) {
   // 頭を中心に回す（パンツァードラグーン式）。横や後ろに回すと妹の顔が画面に入る
   if (refs.head) refs.head.getWorldPosition(tmp)
   else shoulderWorld(tmp)
   look.set(tmp.x, tmp.y + CAMERA.shoulder.targetHeight, tmp.z)
   orbit(look, CAMERA.shoulder.distance, pos)
+  // サイトが画面の右にある時はカメラと注視点を右へ平行移動（妹は画面の左へ寄る）。左なら逆
+  if (cursorShift !== 0) {
+    // カメラの右方向 = 前方向 (sin yaw, 0, cos yaw) × 上 = (-cos yaw, 0, sin yaw)
+    const rx = -Math.cos(refs.camYaw) * cursorShift
+    const rz = Math.sin(refs.camYaw) * cursorShift
+    look.x += rx
+    look.z += rz
+    pos.x += rx
+    pos.z += rz
+  }
 }
 
 /** 投擲中：兄と妹の頭の中間（兄寄り）を、二人を結ぶ線の横から見る。妹が必ず画面に入る */
@@ -83,7 +107,7 @@ function bulge(pos: THREE.Vector3, t: number) {
  * カメラシステム。地上／肩上ともマウスオービット。乗降時は両者を補間。妹の一歩でシェイク。
  */
 export function CameraRig() {
-  const { camera } = useThree()
+  const { camera, size } = useThree()
   const init = useRef(false)
   const smoothedLook = useRef(new THREE.Vector3())
   const shake = useRef(0)
@@ -170,6 +194,7 @@ export function CameraRig() {
       refs.camPitch += (wantPitch - refs.camPitch) * k
     }
     computeGround(groundPos, groundLook)
+    updateCursorShift(dt, size.width)
     computeShoulder(shoulderPos, shoulderLook)
     // 溜め中（左クリック）は兄の近くへ寄る照準カメラ
     const aimWant = CAMERA.aim.cameraEnabled && st.charging && st.mode === 'shoulder' ? 1 : 0

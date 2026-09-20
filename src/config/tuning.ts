@@ -105,6 +105,8 @@ export const TUNE_GROUPS: { title: string; items: TuneItem[] }[] = [
       { path: 'CAMERA.shoulder.fov', label: '肩上 FOV', min: 30, max: 100, step: 1 },
       { path: 'CAMERA.shoulder.distance', label: '肩上 距離', min: 5, max: 120, step: 1 },
       { path: 'CAMERA.shoulder.targetHeight', label: '肩上 注視高さ', min: -20, max: 20, step: 0.5 },
+      { path: 'CAMERA.shoulder.cursorShift.max', label: '肩上 サイト逆側ずらし', min: 0, max: 30, step: 0.5 },
+      { path: 'CAMERA.shoulder.cursorShift.smoothSec', label: '肩上 ずらし追従秒', min: 0.05, max: 1.5, step: 0.05 },
       { path: 'CAMERA.mouseSensitivity', label: 'マウス感度', min: 0.0005, max: 0.01, step: 0.0005 },
       { path: 'CAMERA.touchStick.yawSpeed', label: 'タッチ 左右回転速度', min: 0.5, max: 6, step: 0.1 },
       { path: 'CAMERA.touchStick.pitchSpeed', label: 'タッチ 上下回転速度', min: 0.5, max: 6, step: 0.1 },
