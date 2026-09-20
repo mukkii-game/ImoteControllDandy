@@ -88,9 +88,9 @@ export const BRO = {
   lightning: {
     /** 自動照準：サイトからこの半径（画面高さ比）に入った敵（弾）を狙う */
     aimRadius: 0.1,
-    /** 倒すのに当て続ける秒数：通常の敵（弱め＝2 秒）／エネミービルのロック点／敵の弾（すぐ落ちる） */
-    killSec: 2.0,
-    bossKillSec: 4.0,
+    /** 倒すのに当て続ける秒数：通常の敵（前は 2 秒。倒せなさすぎたので 1/3 に）／エネミービルのロック点／敵の弾（すぐ落ちる） */
+    killSec: 0.67,
+    bossKillSec: 1.35,
     projectileSec: 0.12,
     /** 当てている間のスコア（1 秒あたり）、倒した時、弾を撃ち落とした時 */
     hitScorePerSec: 40,
@@ -681,6 +681,13 @@ export const SOUND = {
   bgmVolume: 0.45,
   /** 兄の玉の発射音（雷）の音量 */
   fireVolume: 0.9,
+  /** 敵を倒した爆発音の音量（デカすぎたので半分） */
+  boomVolume: 0.5,
+  /**
+   * 同じ音の重なり：同じファイルがまだ鳴っている間にもう一度鳴らす時、重なっている数ごとに音量を duck 倍にする（2 回目 0.5、3 回目 0.25…）。
+   * max 個以上重なっていたら鳴らさない（まとめ撃破で爆発音が積み上がってデカくならないように）
+   */
+  overlap: { duck: 0.5, max: 3 },
   /** 建物が壊れた音：音量と、連続で鳴らすときの最短間隔（秒。妹の一歩で何軒も潰れるので鳴りすぎ防止） */
   building: { volume: 0.7, minGapSec: 0.35 },
   /** ロックオン音の音量 */
@@ -694,6 +701,13 @@ export const SOUND = {
   /** タックル音の種類数（voices.json の se.tackle.1..N を順繰り） */
   tackleSounds: 2,
 }
+
+/** ゲーム中 BGM の候補（Esc パネルで切替、選択は保存）。key は config/voices.json のキー。先頭が既定 */
+export const BGM_CHOICES = [
+  { id: 'inst', label: 'BGM歌なし', key: 'bgm.playInst' },
+  { id: 'vocal', label: 'BGM歌あり', key: 'bgm.play' },
+] as const
+export type BgmChoice = (typeof BGM_CHOICES)[number]['id']
 
 /** 「泣け」：水色の涙の玉が目から四方へ一度に大量に飛び散る。当たった敵は一撃 */
 export const TEARS = {

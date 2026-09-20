@@ -42,5 +42,6 @@
   "se.chime": "audio/se/chime.mp3",
   "bgm.title": "audio/bgm/title.mp3",
   "bgm.play": "audio/bgm/play.mp3",
+  "bgm.playInst": "audio/bgm/play_inst.mp3",
   "bgm.ed": "audio/bgm/ed.mp3"
 }

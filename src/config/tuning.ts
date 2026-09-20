@@ -80,6 +80,8 @@ export const TUNE_GROUPS: { title: string; items: TuneItem[] }[] = [
       { path: 'BRO.jumpVelocity', label: 'ジャンプ力', min: 3, max: 30, step: 0.5 },
       { path: 'BRO.gravity', label: '重力', min: 5, max: 60, step: 1 },
       { path: 'BRO.mountArc', label: '飛び乗りの弧', min: 0, max: 0.6, step: 0.02 },
+      { path: 'BRO.lightning.killSec', label: '電撃で敵を倒す秒数', min: 0.1, max: 4, step: 0.05 },
+      { path: 'BRO.lightning.bossKillSec', label: '電撃でロック点を壊す秒数', min: 0.2, max: 8, step: 0.05 },
     ],
   },
   {

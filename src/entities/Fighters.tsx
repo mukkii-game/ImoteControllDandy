@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { FIGHTERS } from '../config/waves'
 import { addEnemy, enemies, enemyObjects, isStunned, type Enemy } from '../systems/enemies'
+import { canFire, fireRateMul } from '../systems/fireSchedule'
 import { refs } from '../systems/refs'
 import { emit, on } from '../systems/events'
 import { SmokeRibbon } from '../systems/smoke'
@@ -266,8 +267,8 @@ export function Fighters({ squad = 0 }: { squad?: number }) {
     const im = refs.imouto
     const bc = FIGHTERS.bomb
     bombTimer.current -= dt
-    if (im && overhead && L.active && L.k > 0.5 && alive.length > 0 && bombTimer.current <= 0 && !stunned) {
-      bombTimer.current = bc.interval
+    if (im && overhead && L.active && L.k > 0.5 && alive.length > 0 && bombTimer.current <= 0 && !stunned && canFire('fighter')) {
+      bombTimer.current = bc.interval * fireRateMul('fighter')
       const b = alive[Math.floor(Math.random() * alive.length)]
       // 妹の胴体へ向けてゆっくり飛ぶ
       const start = b.pos.clone().setY(b.pos.y - 3)
@@ -301,8 +302,8 @@ export function Fighters({ squad = 0 }: { squad?: number }) {
     // （爆弾とミサイルの見た目は entities/Projectiles.tsx が登録簿から描く）
     // ミサイル
     fireTimer.current -= dt
-    if (im && alive.length > 0 && fireTimer.current <= 0 && !stunned) {
-      fireTimer.current = FIGHTERS.missileInterval
+    if (im && alive.length > 0 && fireTimer.current <= 0 && !stunned && canFire('fighter')) {
+      fireTimer.current = FIGHTERS.missileInterval * fireRateMul('fighter')
       const shooter = alive[Math.floor(Math.random() * alive.length)]
       const target = new THREE.Vector3(im.position.x + (Math.random() - 0.5) * 10, im.position.y + 6 + Math.random() * 48, im.position.z + (Math.random() - 0.5) * 8)
       const vel = target.sub(shooter.pos).normalize().multiplyScalar(FIGHTERS.missileSpeed)

@@ -4,6 +4,7 @@ import * as THREE from 'three'
 import { POLICE, TANKS } from '../config/waves'
 import { STAGE } from '../config/game'
 import { addEnemy, killEnemy, isStunned, enemyObjects, type Enemy } from '../systems/enemies'
+import { canFire, fireRateMul } from '../systems/fireSchedule'
 import { refs } from '../systems/refs'
 import { emit, on } from '../systems/events'
 import { toonGradient } from '../systems/toon'
@@ -133,8 +134,8 @@ export function GroundEnemies() {
       }
     }
     policeShot.current -= dt
-    if (alivePolice.length > 0 && policeShot.current <= 0 && !stunned) {
-      policeShot.current = POLICE.shotInterval
+    if (alivePolice.length > 0 && policeShot.current <= 0 && !stunned && canFire('police')) {
+      policeShot.current = POLICE.shotInterval * fireRateMul('police')
       const near = alivePolice.filter((e) => Math.hypot(e.pos.x - im.position.x, e.pos.z - im.position.z) < POLICE.keepDist + 80)
       if (near.length) {
         const s = near[Math.floor(Math.random() * near.length)]
@@ -153,8 +154,8 @@ export function GroundEnemies() {
     }
     // 戦車の砲撃
     shellTimer.current -= dt
-    if (aliveTanks.length > 0 && shellTimer.current <= 0 && !isStunned()) {
-      shellTimer.current = TANKS.shellInterval
+    if (aliveTanks.length > 0 && shellTimer.current <= 0 && !isStunned() && canFire('tank')) {
+      shellTimer.current = TANKS.shellInterval * fireRateMul('tank')
       const t = aliveTanks[Math.floor(Math.random() * aliveTanks.length)]
       const target = tmpV.set(im.position.x + (Math.random() - 0.5) * 10, 4 + Math.random() * 40, im.position.z + (Math.random() - 0.5) * 8)
       const vel = target.clone().sub(t.pos).normalize().multiplyScalar(TANKS.shellSpeed)

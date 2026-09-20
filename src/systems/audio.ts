@@ -2,6 +2,7 @@ import voices from '../config/voices.json'
 import { SOUND } from '../config/game'
 import { on } from './events'
 import { useGame } from './store'
+import { bgmKey, useBgm } from './bgm'
 
 /**
  * 音：voices.json のファイルがあれば再生、無ければ WebAudio で合成 SE。
@@ -56,17 +57,31 @@ async function load(url: string): Promise<AudioBuffer | null> {
   }
 }
 
-/** イベント名に対応する音声を鳴らす。無ければ false */
+/** 同じファイルの鳴り終わり時刻（AudioContext 時間）。重なり数を数えるのに使う */
+const playingUntil = new Map<string, number[]>()
+function overlapCount(c: AudioContext, url: string): number {
+  const list = playingUntil.get(url)
+  if (!list) return 0
+  const now = c.currentTime
+  for (let i = list.length - 1; i >= 0; i--) if (list[i] <= now) list.splice(i, 1)
+  return list.length
+}
+
+/** イベント名に対応する音声を鳴らす。無ければ false。同じ音が重なっている時は SOUND.overlap に従って小さく（または鳴らさない） */
 export async function playVoice(name: string, volume = 1): Promise<boolean> {
   const url = (voices as Record<string, string>)[name]
   if (!url) return false
   const c = ac()
   const buf = await load(url)
   if (!c || !buf) return false
+  const n = overlapCount(c, url)
+  if (n >= SOUND.overlap.max) return true
   const src = c.createBufferSource()
   src.buffer = buf
   const g = c.createGain()
-  g.gain.value = volume
+  g.gain.value = volume * Math.pow(SOUND.overlap.duck, n)
+  if (!playingUntil.has(url)) playingUntil.set(url, [])
+  playingUntil.get(url)!.push(c.currentTime + buf.duration)
   src.connect(g).connect(dest(c))
   src.start()
   return true
@@ -327,7 +342,7 @@ export function bindAudio(): () => void {
     on('enemy.hit', ({ id }) => {
       // id -1 は建物（音は building.* 側で鳴らす）
       if (id === -1) return
-      playVoice('se.boom').then((ok) => {
+      playVoice('se.boom', SOUND.boomVolume).then((ok) => {
         if (!ok) seBoom()
       })
     }),
@@ -355,7 +370,7 @@ export function bindAudio(): () => void {
       playVoice('bro.dismount')
     }),
     on('bomb.burst', () => {
-      playVoice('se.boom', 0.6).then((ok) => {
+      playVoice('se.boom', SOUND.boomVolume * 0.6).then((ok) => {
         if (!ok) seBoom()
       })
     }),
@@ -412,12 +427,17 @@ export function bindAudio(): () => void {
       if (s.phase === 'play') {
         ac()?.resume()
         playVoice('game.start')
-        playBgm('bgm.play', SOUND.bgmVolume)
+        playBgm(bgmKey(), SOUND.bgmVolume)
       }
     }
+  })
+  // Esc パネルで BGM を切り替えたら、ゲーム中ならその場で曲を替える
+  const unsubBgm = useBgm.subscribe((s, prev) => {
+    if (s.choice !== prev.choice && useGame.getState().phase === 'play') playBgm(bgmKey(), SOUND.bgmVolume)
   })
   return () => {
     offs.forEach((f) => f())
     unsub()
+    unsubBgm()
   }
 }

@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { TUNE_GROUPS, getTune, setTune, resetTune, diffTune, saveTune, loadTune } from '../config/tuning'
 import { useGame } from '../systems/store'
 import { useModels } from '../systems/models'
-import { MODEL_CHOICES, QUALITY } from '../config/game'
+import { BGM_CHOICES, MODEL_CHOICES, QUALITY, type BgmChoice } from '../config/game'
+import { useBgm } from '../systems/bgm'
 import { useQuality, type QualityChoice } from '../systems/quality'
 
 /** Esc で開閉。スライダーで config の数値をその場で書き換える。変更分は JSON でコピーできる */
@@ -14,6 +15,7 @@ export function TunePanel() {
   const [copied, setCopied] = useState(false)
   const models = useModels()
   const quality = useQuality()
+  const bgm = useBgm()
 
   useEffect(() => {
     loadTune()
@@ -108,6 +110,20 @@ export function TunePanel() {
             </label>
           ))}
           <div className="tune-note">ファイルが無い候補は次の候補に自動で切り替わります</div>
+        </div>
+        <div className="tune-group">
+          <div className="tune-title">BGM</div>
+          <label className="tune-row tune-row-select">
+            <span>ゲーム中</span>
+            <select value={bgm.choice} onChange={(e) => bgm.setChoice(e.target.value as BgmChoice)}>
+              {BGM_CHOICES.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="tune-note">選択は保存されます。ゲーム中に替えるとその場で曲が替わります</div>
         </div>
         {TUNE_GROUPS.map((g) => (
           <div key={g.title} className="tune-group">

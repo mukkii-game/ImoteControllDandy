@@ -198,15 +198,37 @@ export const BOSS = {
 }
 /**
  * エネミービルの配置（進行方向 +z を向いて右＝-x、左＝+x）。
- * 1 組目：スタート（z=-1000）の先、ビル街（z=-500）の手前。2 組目：学校（z=1400）との中間あたり、道から左右にそこそこ離れた所。
+ * ぎょうざの満洲：スタート（z=-1000）の先、ビル街（z=-500）の手前に 1 体と、学校との中間（道から左に離れた所）に 1 体。
+ * 山田うどん：学校前（校門 z=1400 の手前、航空公園の中）に左右 1 体ずつ。
  * どれも遠く（BOSS.aggroDist）からゆっくり（creepSpeed）妹へ近づいてくる
  */
 export const BOSSES = [
   { name: 'ぎょうざの満洲', image: 'textures/boss_manshu.png', imageAspect: 350 / 381, x: -70, z: -720, w: 46, h: 62, d: 46, color: '#ffe873', signBg: '#e5322d', signColor: '#ffffff' },
-  { name: '山田うどん', image: 'textures/boss_yamada.png', imageAspect: 248 / 449, x: 70, z: -660, w: 48, h: 58, d: 48, color: '#fff4dc', signBg: '#d0301f', signColor: '#ffffff' },
   { name: 'ぎょうざの満洲', image: 'textures/boss_manshu.png', imageAspect: 350 / 381, x: -230, z: 160, w: 46, h: 62, d: 46, color: '#ffe873', signBg: '#e5322d', signColor: '#ffffff' },
-  { name: '山田うどん', image: 'textures/boss_yamada.png', imageAspect: 248 / 449, x: 230, z: 260, w: 48, h: 58, d: 48, color: '#fff4dc', signBg: '#d0301f', signColor: '#ffffff' },
+  { name: '山田うどん', image: 'textures/boss_yamada.png', imageAspect: 248 / 449, x: -150, z: 1180, w: 48, h: 58, d: 48, color: '#fff4dc', signBg: '#d0301f', signColor: '#ffffff' },
+  { name: '山田うどん', image: 'textures/boss_yamada.png', imageAspect: 248 / 449, x: 170, z: 1260, w: 48, h: 58, d: 48, color: '#fff4dc', signBg: '#d0301f', signColor: '#ffffff' },
 ]
+
+/**
+ * 敵の弾の時間帯（たま消しの時間を絞る）。
+ * 撃ってよい敵の種類を時間帯で順に回し、同時に撃つのは基本 1 方向だけにする。sources が空の時間帯は誰も撃たない（敵を倒す時間）。
+ * fighter=編隊のミサイルと爆弾（来る方向はパス順で変わる）、heli=ヘリ（時間帯ごとに 1 編隊だけ）、police/tank=下のパトカー・戦車。
+ * sec=長さ（秒）、rateMul=その間の発射間隔の倍率（小さいほど密に「たくさん」来る）。
+ * 撃てる敵が 1 体もいない時間帯は飛ばす（skipEmpty）。enabled=false で今までどおり全員が常時撃つ
+ */
+export const FIRE_SCHEDULE = {
+  enabled: true,
+  skipEmpty: true,
+  phases: [
+    { sources: ['fighter'], sec: 8, rateMul: 0.5 },
+    { sources: [], sec: 7, rateMul: 1 },
+    { sources: ['heli'], sec: 7, rateMul: 0.5 },
+    { sources: [], sec: 7, rateMul: 1 },
+    { sources: ['police', 'tank'], sec: 8, rateMul: 0.7 },
+    { sources: [], sec: 7, rateMul: 1 },
+  ] as { sources: FireSource[]; sec: number; rateMul: number }[],
+}
+export type FireSource = 'fighter' | 'heli' | 'police' | 'tank'
 
 export const TANKS = {
   fromZ: -500,

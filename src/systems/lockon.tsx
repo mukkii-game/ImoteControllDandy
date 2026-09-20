@@ -10,9 +10,10 @@ import { emit } from './events'
 import { projectiles } from './projectiles'
 import { colliders, rayBuildings } from './colliders'
 import { touchLookTick } from './mouse'
+import { fireSchedule, fireScheduleTick } from './fireSchedule'
 
 // デバッグ用（Playwright から狙いを付ける）
-;(window as unknown as { __dbg: unknown }).__dbg = { refs, lock, enemies, input: useInput, emit, projectiles, colliders, cfg: { BRO, LOCKON, CAMERA, GAME } }
+;(window as unknown as { __dbg: unknown }).__dbg = { refs, lock, enemies, input: useInput, emit, projectiles, colliders, cfg: { BRO, LOCKON, CAMERA, GAME }, fireSchedule }
 
 const proj = new THREE.Vector3()
 const tmpV = new THREE.Vector3()
@@ -31,7 +32,11 @@ export function LockonSystem() {
 
   useFrame((_, dt) => {
     // タッチの仮想スティック（押している間、速さで回す）
-    if (useGame.getState().phase === 'play') touchLookTick(dt)
+    if (useGame.getState().phase === 'play') {
+      touchLookTick(dt)
+      // 敵の弾の時間帯（どの敵が撃ってよいか）を進める
+      fireScheduleTick(dt)
+    }
     const st = useGame.getState()
     const a = useInput.getState().keys.a
     // ロックオンは肩上だけ（地上は高速タックル）

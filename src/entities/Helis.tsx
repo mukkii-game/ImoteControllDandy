@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { HELIS } from '../config/waves'
 import { addEnemy, enemies, enemyObjects, isStunned, type Enemy } from '../systems/enemies'
+import { canFire, firePick, fireRateMul } from '../systems/fireSchedule'
 import { refs } from '../systems/refs'
 import { emit } from '../systems/events'
 import { toonGradient } from '../systems/toon'
@@ -169,9 +170,13 @@ export function Helis() {
     }
     // ミサイル
     fireTimer.current -= dt
-    if (playing && alive.length > 0 && fireTimer.current <= 0 && !stunned) {
-      fireTimer.current = HELIS.shotInterval
-      const shooter = alive[Math.floor(Math.random() * alive.length)]
+    if (playing && alive.length > 0 && fireTimer.current <= 0 && !stunned && canFire('heli')) {
+      fireTimer.current = HELIS.shotInterval * fireRateMul('heli')
+      // 時間帯ごとに 1 編隊だけが撃つ（弾が来る方向を 1 つに絞る）。その編隊が全滅していれば生きている機から
+      const gPick = firePick(HELIS.groups)
+      const pool = alive.filter((e) => Math.floor(ents.current.indexOf(e) / HELIS.perGroup) === gPick)
+      const shooters = pool.length > 0 ? pool : alive
+      const shooter = shooters[Math.floor(Math.random() * shooters.length)]
       const target = new THREE.Vector3(im.position.x + (Math.random() - 0.5) * 10, im.position.y + 10 + Math.random() * 45, im.position.z + (Math.random() - 0.5) * 8)
       const v = target.sub(shooter.pos).normalize().multiplyScalar(HELIS.shotSpeed)
       const mp = shooter.pos.clone()
