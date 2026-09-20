@@ -126,6 +126,9 @@ export function CameraRig() {
   const sinceDash = useRef(10)
   /** 照準カメラへの寄り具合 0..1 */
   const aimK = useRef(0)
+  /** 飛び降りを始めた時刻と着地した時刻（ms）。降下中の自動回転はマウスを動かしたらやめ、着地後は少ししてから角度を戻す */
+  const dismountStart = useRef(0)
+  const landedAt = useRef(-1)
 
   useEffect(
     () =>
@@ -155,6 +158,9 @@ export function CameraRig() {
         refs.camYaw = (refs.imouto?.rotation.y ?? refs.camYaw) + CAMERA.mountViewYaw
       } else if (st.mode === 'dismounting') {
         refs.camPitch = CAMERA.ground.defaultPitch
+        dismountStart.current = performance.now()
+      } else if (st.mode === 'ground' && lastMode.current === 'dismounting') {
+        landedAt.current = performance.now()
       } else if (st.mode === 'shoulder' && lastMode.current === 'thrown') {
         if (CAMERA.thrown.enabled) {
           // 帰還直後：妹の正面向き・既定ピッチへ、なめらかに戻す
@@ -174,6 +180,13 @@ export function CameraRig() {
       lastMode.current = st.mode
     }
 
+    // 飛び降りの着地後：holdSec 経ったら見上げ角を地上の既定へ戻す（その間に視点を動かしていれば何もしない）
+    if (st.mode === 'ground' && landedAt.current >= 0) {
+      const dc = CAMERA.dismount
+      const since = (performance.now() - landedAt.current) / 1000
+      if (refs.lastLookInput > landedAt.current || since > dc.holdSec + dc.restoreSec + 0.5) landedAt.current = -1
+      else if (since > dc.holdSec) refs.camPitch += (CAMERA.ground.defaultPitch - refs.camPitch) * Math.min(1, (dt / dc.restoreSec) * 3)
+    }
     // 地上：しばらくカメラを触らないと妹の方へゆっくり向く（妹が心配な兄）
     if (CAMERA.ground.pullEnabled && st.mode === 'ground' && refs.bro && refs.imouto && performance.now() - refs.lastLookInput > CAMERA.ground.pullDelaySec * 1000) {
       const dx = refs.imouto.position.x - refs.bro.position.x
@@ -262,8 +275,8 @@ export function CameraRig() {
         break
       }
       case 'dismounting': {
-        // 降下中にカメラを回して、着地では兄の背中越しに妹の正面を見上げる構図にする
-        if (refs.bro && refs.imouto) {
+        // 降下中にカメラを回して、着地では兄の背中越しに妹の正面を見上げる構図にする（マウスを動かしたらやめる）
+        if (refs.bro && refs.imouto && refs.lastLookInput < dismountStart.current) {
           const dc = CAMERA.dismount
           const im = refs.imouto
           const yaw = im.rotation.y

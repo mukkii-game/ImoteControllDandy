@@ -88,6 +88,7 @@ export const TUNE_GROUPS: { title: string; items: TuneItem[] }[] = [
       { path: 'BRO.mountJump.aimRadius', label: 'A 飛び乗りのサイト判定', min: 0, max: 0.3, step: 0.01 },
       { path: 'CAMERA.dismount.pitch', label: '飛び降り後の見上げ角（マイナスが上）', min: -1.3, max: 0.5, step: 0.05 },
       { path: 'CAMERA.dismount.turnLerp', label: '飛び降り中のカメラの回る速さ', min: 0.5, max: 15, step: 0.5 },
+      { path: 'CAMERA.dismount.holdSec', label: '着地後、見上げを保つ秒数', min: 0, max: 5, step: 0.1 },
     ],
   },
   {

@@ -455,9 +455,10 @@ export const CAMERA = {
   mountViewYaw: -Math.PI / 2,
   /**
    * 飛び降り：着地が終わる時に、兄が妹の正面で妹を見上げている構図になるようカメラを回す。
-   * pitch=見上げる角度（rad、マイナスが上）、turnLerp=降下中にカメラの向きを合わせていく速さ、faceImouto=兄も妹の方を向く
+   * pitch=見上げる角度（rad、マイナスが上）、turnLerp=降下中にカメラの向きを合わせていく速さ、faceImouto=兄も妹の方を向く。
+   * 降下中にマウス（視点入力）を動かしたら自動で回すのをやめる。着地後 holdSec 経ったら restoreSec かけて地上の既定の角度へ戻す（その前に視点を動かせば戻さない）
    */
-  dismount: { pitch: -0.8, turnLerp: 5, faceImouto: true },
+  dismount: { pitch: -0.8, turnLerp: 5, faceImouto: true, holdSec: 1.0, restoreSec: 0.8 },
   /**
    * 射撃モード（肩上で溜め中）：妹も兄も一瞬で同じ色のシルエットになりながら消える。カメラはそのまま。
    * cameraEnabled=true にすると兄の近くへ寄る照準カメラも使う（今はオフ）
