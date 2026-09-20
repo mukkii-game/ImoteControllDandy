@@ -48,7 +48,8 @@ export function Imouto() {
   const speed = useRef(0)
   const phase = useRef(0)
   const lastStepSide = useRef(0)
-  const probeTimer = useRef(0)
+  const probeTimer = useRef(Infinity)
+  const lastProbeMode = useRef('')
   const clock = useRef(0)
   const hitTimer = useRef(0)
   /** 射撃モードの消え具合（0=表示、1=消えている） */
@@ -337,10 +338,15 @@ export function Imouto() {
     }
     vrmUpdate(vrm, dt)
 
-    // 肩の表面をレイキャストで探し、アンカーをそこへ（兄がめり込まず・浮かず乗る）
-    probeTimer.current -= dt
-    if (probeTimer.current <= 0 && boneRef.current && anchorRef.current && refs.head) {
-      probeTimer.current = IMOUTO.shoulderProbeInterval
+    // 肩の表面をレイキャストで探し、アンカーをそこへ（兄がめり込まず・浮かず乗る）。
+    // スキンメッシュへのレイキャストは全頂点をボーン変形する重い処理（数万頂点で 30ms 超）なので、
+    // 飛び乗り開始の瞬間だけ撃つ。shoulderProbeInterval > 0 なら肩上にいる間だけその間隔で撃ち直す
+    const pm = game.mode
+    const wantProbe = pm === 'mounting' && lastProbeMode.current !== 'mounting'
+    lastProbeMode.current = pm
+    if (IMOUTO.shoulderProbeInterval > 0 && (pm === 'mounting' || pm === 'shoulder')) probeTimer.current -= dt
+    if ((wantProbe || probeTimer.current <= 0) && boneRef.current && anchorRef.current && refs.head) {
+      probeTimer.current = IMOUTO.shoulderProbeInterval > 0 ? IMOUTO.shoulderProbeInterval : Infinity
       const bone = boneRef.current
       const H = SCALE.imoutoHeight
       const pr = IMOUTO.shoulderProbe

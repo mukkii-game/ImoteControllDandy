@@ -30,6 +30,7 @@ canvas { display: block; }
   .tune { width: min(340px, calc(100% - 24px)); top: 58px; max-height: calc(100% - 70px); }
 }
 .tune-head .tune-resume { background: #2f9e44; }
+.gpu-note { font-size: 11px; opacity: .6; margin-top: -8px; margin-bottom: 8px; max-width: 90vw; overflow-wrap: anywhere; }
 .loading { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,.6); padding: 12px 24px; border-radius: 8px; font-size: 18px; }
 
 .tune { position: absolute; top: 44px; right: 12px; width: 340px; max-height: calc(100% - 60px); background: rgba(20,22,30,.92); color: #eee; border-radius: 10px; pointer-events: auto; text-shadow: none; font-size: 12px; display: flex; flex-direction: column; box-shadow: 0 4px 24px rgba(0,0,0,.5); }

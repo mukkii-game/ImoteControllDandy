@@ -17,8 +17,23 @@ import { BroAfterimage } from '../entities/BroAfterimage'
  */
 function AutoQuality() {
   const gl = useThree((s) => s.gl)
+  const scene = useThree((s) => s.scene)
   const setDpr = useThree((s) => s.setDpr)
   const version = useQuality((s) => s.version)
+  // デバッグ用（描画回数・三角形数を Playwright から読む）と、使っている GPU 名の取得（タイトル画面・Esc パネルに出す）
+  useEffect(() => {
+    ;(window as unknown as { __gl: unknown; __scene: unknown }).__gl = gl
+    ;(window as unknown as { __gl: unknown; __scene: unknown }).__scene = scene
+    try {
+      const ctx = gl.getContext()
+      const ext = ctx.getExtension('WEBGL_debug_renderer_info')
+      const name = String(ext ? ctx.getParameter(ext.UNMASKED_RENDERER_WEBGL) : ctx.getParameter(ctx.RENDERER))
+      useQuality.setState({ gpu: name })
+      console.info('GPU:', name)
+    } catch {
+      /* ignore */
+    }
+  }, [gl, scene])
   const acc = useRef({ t: 0, n: 0, warm: 0 })
   // プリセットが変わったら影と解像度を反映
   useEffect(() => {
@@ -46,6 +61,27 @@ function AutoQuality() {
       console.info(`fps ${fps.toFixed(0)}：品質を「${QUALITY.presets[level].label}」にしました`)
     }
   })
+  return null
+}
+
+/**
+ * シェーダーの先読みコンパイル：three.js は「初めて画面に映った」マテリアルをその場でコンパイルするので、
+ * 最初に肩へ乗った時や敵が出た時に 0.5 秒くらい止まる。モデルが読めた時点（タイトル画面）でまとめてコンパイルしておく
+ */
+function Precompile() {
+  const gl = useThree((s) => s.gl)
+  const scene = useThree((s) => s.scene)
+  const camera = useThree((s) => s.camera)
+  const loaded = useGame((s) => s.loaded)
+  const done = useRef(false)
+  useEffect(() => {
+    if (done.current || !loaded.imouto || !loaded.bro) return
+    done.current = true
+    const t0 = performance.now()
+    gl.compileAsync(scene, camera)
+      .then(() => console.info(`シェーダー先読み ${(performance.now() - t0).toFixed(0)} ms`))
+      .catch(() => {})
+  }, [loaded, gl, scene, camera])
   return null
 }
 
@@ -141,6 +177,7 @@ export function StageScene() {
       <GameFlow />
       <FrameLimiter />
       <AutoQuality />
+      <Precompile />
     </Canvas>
   )
 }

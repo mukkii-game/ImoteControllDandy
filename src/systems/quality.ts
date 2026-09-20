@@ -16,6 +16,8 @@ interface QualityState {
   /** 自動判定が終わったか */
   autoDone: boolean
   version: number
+  /** ブラウザが使っている GPU の名前（診断用。内蔵 GPU や SwiftShader＝ソフト描画だと重い） */
+  gpu: string
   setChoice: (c: QualityChoice, persist?: boolean) => void
   applyLevel: (l: QualityLevel) => void
 }
@@ -56,6 +58,7 @@ export const useQuality = create<QualityState>((set, get) => ({
   level: 'high',
   autoDone: false,
   version: 0,
+  gpu: '',
   setChoice: (choice, persist = true) => {
     if (persist) {
       try {

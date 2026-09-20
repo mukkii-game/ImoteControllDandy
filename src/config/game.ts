@@ -193,7 +193,8 @@ export const IMOUTO = {
   shoulderProbe: { inward: 0.012, up: 0.08, far: 0.2, belowHead: 0.01, maxAbove: 0.05 },
   /** レイが当たらない時の高さ（肩関節から、身長比） */
   shoulderFallbackUp: 0.025,
-  shoulderProbeInterval: 0.2,
+  /** 肩の表面を探すレイキャストの間隔（秒）。0＝飛び乗り開始の 1 回だけ（レイキャストは 30ms 超かかるので繰り返すとカクつく） */
+  shoulderProbeInterval: 0,
   /** アンカーがレイ結果へ寄る速さ */
   shoulderFollowLerp: 6,
   /** 兄の立ち位置の微調整（m、妹の向き基準）：forward=前、outward=肩先側、up=上 */

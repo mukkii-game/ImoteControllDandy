@@ -91,6 +91,7 @@ export function TunePanel() {
             </select>
           </label>
           <div className="tune-note">描画解像度は最大でもフルHD（1920×1080）。URL に ?q=low を付けても同じ。選択は保存されます</div>
+          {quality.gpu && <div className="tune-note">GPU: {quality.gpu}</div>}
         </div>
         <div className="tune-group">
           <div className="tune-title">モデル</div>

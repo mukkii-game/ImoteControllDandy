@@ -97,6 +97,8 @@ export function Overlays() {
             ))}
             <span className="q-note">{quality.choice === 'auto' ? `（今：${QUALITY.presets[quality.level].label}。開始後に自動判定）` : '重いときは「低」'}</span>
           </div>
+          {/* 診断：ブラウザが使っている GPU。内蔵 GPU や SwiftShader（ソフト描画）だと重い */}
+          {quality.gpu && <div className="gpu-note">GPU: {quality.gpu}</div>}
           <button className="start" disabled={!ready} onClick={() => setPhase('play')}>
             {ready ? 'いってきまーす' : 'モデル読み込み中…'}
           </button>
