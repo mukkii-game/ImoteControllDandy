@@ -369,6 +369,12 @@ export function bindAudio(): () => void {
       })
       playVoice('bro.dismount')
     }),
+    // 弾を電撃で撃ち落とした：「パパッ」
+    on('projectile.shot', () => {
+      playVoice('se.shootdown', SOUND.shootdownVolume).then((ok) => {
+        if (!ok) seWhoosh(2)
+      })
+    }),
     on('bomb.burst', () => {
       playVoice('se.boom', SOUND.boomVolume * 0.6).then((ok) => {
         if (!ok) seBoom()

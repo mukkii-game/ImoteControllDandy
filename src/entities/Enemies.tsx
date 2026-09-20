@@ -132,11 +132,13 @@ export function Explosions() {
     }
     const off4 = on('building.crush', ({ x, z, w }) => pushDust(x, z, Math.max(0.5, w / DEBRIS.dustSize)))
     const off5 = on('building.break', ({ x, z, w }) => pushDust(x, z, Math.max(0.8, (w * 1.5) / DEBRIS.dustSize)))
-    const off6 = on('bomb.burst', ({ x, y, z }) => {
+    const burst = ({ x, y, z }: { x: number; y: number; z: number }) => {
       list.current.push({ pos: new THREE.Vector3(x, y, z), t: 0, dust: false })
       if (list.current.length > pool.length) list.current.shift()
       pushDust(x, z, 1)
-    })
+    }
+    const off6 = on('bomb.burst', burst)
+    const off7 = on('projectile.shot', burst)
     const off3 = on('imouto.hit', ({ x, y, z }) => {
       // 妹の体への着弾：兄と同じくらいの小さな爆発（着弾点は体の表面）＋火の玉から黒煙になる粒
       list.current.push({ pos: new THREE.Vector3(x, y, z), t: 0, dust: false, radius: HIT.explosionRadius })
@@ -174,6 +176,7 @@ export function Explosions() {
       off4()
       off5()
       off6()
+      off7()
     }
   }, [pool])
 

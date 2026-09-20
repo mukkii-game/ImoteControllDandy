@@ -18,6 +18,7 @@
 | tackle_1.mp3 / tackle_2.mp3 | （作者提供、効果音ラボ） | 兄のタックルで順繰りに鳴る | https://soundeffect-lab.info/ | - |
 | ../voice/bro_ikuzo.mp3 / bro_oaite.mp3 / line_bro_nerae.wav | （作者提供、兄の声：VOICEVOX 青山龍星 想定・要確認） | 飛び乗り「さあいくぞ」／飛び降り「お相手しましょう」／溜め開始「ねらえ！」 | - | - |
 | ../voice/imouto_hit_1〜5.mp3 | （作者提供、効果音ラボ） | 妹の被弾「痛っ」。ランダムで 1 つ、鳴ったら 3 秒は鳴らさない | https://soundeffect-lab.info/ | - |
+| papa.mp3 | パパッ（作者提供） | 敵の弾を電撃で撃ち落とした時 | - | - |
 | chime.mp3 | 学校のチャイム | キンコンカンコン（約 26 秒） | https://soundeffect-lab.info/sound/anime/ | https://soundeffect-lab.info/sound/anime/mp3/school-chime1.mp3 |
 
 ## BGM（public/audio/bgm/play.mp3）

@@ -30,11 +30,17 @@ function orbit(center: THREE.Vector3, distance: number, pos: THREE.Vector3) {
   pos.set(center.x - Math.sin(yaw) * cp * distance, center.y + Math.sin(pitch) * distance, center.z - Math.cos(yaw) * cp * distance)
 }
 
+/** 着地の瞬間に少し上から見せるための、一時的なピッチの上乗せ（rad） */
+let groundPitchPeek = 0
 function computeGround(pos: THREE.Vector3, look: THREE.Vector3) {
   const b = refs.bro
   if (!b) return
-  look.set(b.position.x, b.position.y + CAMERA.ground.targetHeight, b.position.z)
+  // ダッシュ中は兄ではなく着地地点を中心にする（角度は変えず、位置だけ遅れて寄る）
+  const c = refs.broDash && CAMERA.ground.dashCam.toLanding ? refs.dashTarget : b.position
+  look.set(c.x, c.y + CAMERA.ground.targetHeight, c.z)
+  refs.camPitch += groundPitchPeek
   orbit(look, CAMERA.ground.distance, pos)
+  refs.camPitch -= groundPitchPeek
   // 地面にめり込まない
   if (pos.y < 0.6) pos.y = 0.6
 }
@@ -124,6 +130,7 @@ export function CameraRig() {
   const holdPos = useRef(new THREE.Vector3())
   /** 最後のダッシュが終わってからの秒数（追いつきの速さの切り替え用） */
   const sinceDash = useRef(10)
+  const wasDash = useRef(false)
   /** 照準カメラへの寄り具合 0..1 */
   const aimK = useRef(0)
   /** 飛び降りを始めた時刻と着地した時刻（ms）。降下中の自動回転はマウスを動かしたらやめ、着地後は少ししてから角度を戻す */
@@ -211,6 +218,14 @@ export function CameraRig() {
       const dy = refs.imouto.position.y + SCALE.imoutoHeight * 0.85 - refs.bro.position.y
       const wantPitch = THREE.MathUtils.clamp(-Math.atan2(dy, Math.hypot(dx, dz)) * 0.7, CAMERA.ground.pitchMin, CAMERA.ground.pitchMax)
       refs.camPitch += (wantPitch - refs.camPitch) * k
+    }
+    // 着地の瞬間：少し上から見せて（peekPitch）、すぐ既定の横向きへ戻す
+    {
+      const dc = CAMERA.ground.dashCam
+      if (wasDash.current && !refs.broDash && st.mode === 'ground') sinceDash.current = 0
+      wasDash.current = refs.broDash
+      const s = sinceDash.current
+      groundPitchPeek = refs.broDash ? 0 : s < dc.peekSec ? dc.peekPitch : s < dc.peekSec + dc.peekRecoverSec ? dc.peekPitch * (1 - (s - dc.peekSec) / dc.peekRecoverSec) : 0
     }
     computeGround(groundPos, groundLook)
     updateCursorShift(dt, size.width)
@@ -368,7 +383,8 @@ export function CameraRig() {
       else sinceDash.current += dt
       const rec = Math.min(1, sinceDash.current / gc.dashRecoverSec)
       const posLerp = dash ? gc.dashFollowLerp : THREE.MathUtils.lerp(gc.dashRecoverLerp, gc.followLerp, rec)
-      const lookLerp = dash ? gc.dashLookLerp : THREE.MathUtils.lerp(gc.dashLookLerp, 14, rec)
+      // ダッシュ中に着地地点へ寄る時は位置と注視点を同じ速さで動かす（平行移動＝角度が変わらない）
+      const lookLerp = dash ? (gc.dashCam.toLanding ? gc.dashFollowLerp : gc.dashLookLerp) : THREE.MathUtils.lerp(gc.dashLookLerp, 14, rec)
       camera.position.lerp(desiredPos, Math.min(1, posLerp * dt))
       smoothedLook.current.lerp(desiredLook, Math.min(1, lookLerp * dt))
     } else {

@@ -254,6 +254,9 @@ export function Bro() {
           }
           tk.dir.set(Math.sin(aimYaw), 0, Math.cos(aimYaw))
           tk.from.copy(g.position)
+          // カメラが寄る着地地点（敵は毎フレーム取り直す）
+          if (tk.roof) refs.dashTarget.set(tk.roof.x, tk.roof.h, tk.roof.z)
+          else if (!tk.rideTo) refs.dashTarget.set(g.position.x + tk.dir.x * tk.dist, g.position.y, g.position.z + tk.dir.z * tk.dist)
           yawRef.current = aimYaw
           if (!tk.roof && !tk.rideTo) emit('bro.tackle', undefined)
         }
@@ -271,6 +274,7 @@ export function Bro() {
             vy.current = 0
           } else {
             target.set(e.pos.x, e.pos.y + rideTop(e), e.pos.z)
+            refs.dashTarget.copy(target)
             g.position.x = THREE.MathUtils.lerp(tk.from.x, target.x, ez)
             g.position.z = THREE.MathUtils.lerp(tk.from.z, target.z, ez)
             g.position.y = THREE.MathUtils.lerp(tk.from.y, target.y, ez) + Math.sin(k * Math.PI) * rd.arcUp

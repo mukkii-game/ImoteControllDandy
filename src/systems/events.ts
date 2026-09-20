@@ -31,6 +31,8 @@ export interface GameEvents {
   'bro.goto': { x: number; z: number }
   /** 爆弾が地面や建物で爆発（演出） */
   'bomb.burst': { x: number; y: number; z: number }
+  /** 敵の弾を電撃で撃ち落とした（演出は bomb.burst と同じ、音は「パパッ」） */
+  'projectile.shot': { x: number; y: number; z: number }
   /** 妹が被弾（ミサイル・砲弾） */
   'imouto.hit': { x: number; y: number; z: number }
   /** 妹の技 */

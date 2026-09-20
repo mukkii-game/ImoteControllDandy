@@ -75,6 +75,8 @@ canvas { display: block; }
 .dest-marker .tri { font-size: 34px; line-height: 1; animation: dest-bob 1s ease-in-out infinite; }
 .dest-marker .name { font-size: 14px; background: rgba(0,0,0,.45); padding: 1px 8px; border-radius: 6px; color: #fff; text-shadow: none; }
 .dest-marker.locked { color: #ff4d7a; }
+.dest-marker.imouto-marker { color: #ff7fc8; }
+.dest-marker.imouto-marker .name { background: rgba(255,45,138,.55); }
 .dest-marker.locked .name { background: #ff4d7a; }
 .dest-marker.offscreen .tri { animation: none; }
 @keyframes dest-bob { 50% { transform: translateY(-8px) } }

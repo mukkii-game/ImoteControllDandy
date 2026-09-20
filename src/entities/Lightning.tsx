@@ -130,7 +130,7 @@ export function Lightning() {
           st.addScore(lc.killScore)
         } else {
           tg.dead = true
-          emit('bomb.burst', { x: tg.pos.x, y: tg.pos.y, z: tg.pos.z })
+          emit('projectile.shot', { x: tg.pos.x, y: tg.pos.y, z: tg.pos.z })
           st.addScore(lc.projectileScore)
         }
         target.current = null

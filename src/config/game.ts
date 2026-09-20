@@ -412,8 +412,14 @@ export const CAMERA = {
     pitchMax: 1.2,
     /** カメラの追従の速さ（通常／ダッシュ中）。ダッシュ中は遅らせて、兄が先に飛び出しカメラが後から追いつく（目に優しく） */
     followLerp: 18,
-    dashFollowLerp: 3.2,
+    dashFollowLerp: 2.2,
     dashLookLerp: 6,
+    /**
+     * ダッシュ（タックル・屋上ジャンプ・敵へ跳び乗り）中のカメラ：角度は変えず、着地地点（refs.dashTarget）を中心にした位置へ
+     * バネのように遅れて平行移動する（toLanding）。兄が弧を描いても上を向かない。
+     * 着地の瞬間は少し上から見せる：peekPitch（rad、プラスが上から見下ろす）を peekSec 保ち、peekRecoverSec で既定の横向きに戻す
+     */
+    dashCam: { toLanding: true, peekPitch: 0.3, peekSec: 0.15, peekRecoverSec: 0.35 },
     /** ダッシュが終わったあと、カメラが追いつく速さ（followLerp の半分くらい）と、その状態から通常の速さへ戻すまでの秒数 */
     dashRecoverLerp: 8,
     dashRecoverSec: 1.0,
@@ -578,6 +584,8 @@ export const GAME = {
   /** 行き先（▼ で示す）。今は校門。ロックオンすると妹がそこへ向かう。arriveDist 以内で到着扱い */
   /** autoNavigate：A D を触っていない間、妹は自動で行き先へ向かう（プロト）。lockEnabled：▼ をロックして指示する仕組み（製品版候補、今はオフ） */
   dest: { label: '学校', x: 0, z: 1400, height: 60, arriveDist: 80, autoNavigate: true, lockEnabled: false },
+  /** 妹の ▼（地上で妹を見失わないように）：兄と妹の距離がタックル 1 回の距離（BRO.tackle.distance）× distMul より遠い時だけ出す */
+  imoutoMarker: { enabled: true, label: 'ロロ', distMul: 1.0 },
 }
 
 /** セリフ（吹き出し）。文言はここで変える。音声は config/voices.json の line.bro.* / line.imouto.* */
@@ -698,6 +706,8 @@ export const SOUND = {
   fireVolume: 0.9,
   /** 敵を倒した爆発音の音量（デカすぎたので半分） */
   boomVolume: 0.5,
+  /** 弾を撃ち落とした音（パパッ）の音量 */
+  shootdownVolume: 0.8,
   /**
    * 同じ音の重なり：同じファイルがまだ鳴っている間にもう一度鳴らす時、重なっている数ごとに音量を duck 倍にする（2 回目 0.5、3 回目 0.25…）。
    * max 個以上重なっていたら鳴らさない（まとめ撃破で爆発音が積み上がってデカくならないように）

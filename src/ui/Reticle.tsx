@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useGame } from '../systems/store'
 import { lock } from '../systems/enemies'
-import { LOCKON, GAME } from '../config/game'
+import { LOCKON, GAME, BRO } from '../config/game'
 import { refs } from '../systems/refs'
 
 /**
@@ -16,6 +16,7 @@ export function Reticle() {
   const count = useRef<HTMLDivElement>(null)
   const sight = useRef<HTMLDivElement>(null)
   const dest = useRef<HTMLDivElement>(null)
+  const imoutoMk = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     let raf = 0
@@ -43,10 +44,9 @@ export function Reticle() {
         m.textContent = String(i + 1)
       })
       if (count.current) count.current.textContent = lock.ids.length ? `LOCK ${lock.ids.length}` : ''
-      // 行き先マーカー（▼ 学校）。画面外なら端に寄せる
-      const dm = dest.current
-      if (dm) {
-        const [dx, dy, inFront] = lock.destScreen
+      // ▼ マーカーを画面座標に置く。画面外なら端に寄せる
+      const place = (el: HTMLDivElement, sc: [number, number, boolean]) => {
+        const [dx, dy, inFront] = sc
         const W = window.innerWidth
         const H = window.innerHeight
         let x = dx
@@ -58,9 +58,23 @@ export function Reticle() {
         const off = !inFront || x < 30 || x > W - 30 || y < 60 || y > H - 40
         x = Math.min(W - 40, Math.max(40, x))
         y = Math.min(H - 60, Math.max(70, y))
-        dm.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%)`
+        el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%)`
+        el.classList.toggle('offscreen', off)
+      }
+      // 行き先マーカー（▼ 学校）
+      const dm = dest.current
+      if (dm) {
+        place(dm, lock.destScreen)
         dm.classList.toggle('locked', lock.dest)
-        dm.classList.toggle('offscreen', off)
+      }
+      // 妹のマーカー（▼ ロロ）：地上で、タックル 1 回では届かないほど妹が遠い時だけ
+      const im = imoutoMk.current
+      if (im) {
+        const mk = GAME.imoutoMarker
+        const st = useGame.getState()
+        const far = mk.enabled && st.mode === 'ground' && refs.bro && refs.imouto && Math.hypot(refs.imouto.position.x - refs.bro.position.x, refs.imouto.position.z - refs.bro.position.z) > BRO.tackle.distance * mk.distMul
+        im.style.display = far ? 'flex' : 'none'
+        if (far) place(im, refs.imoutoScreen)
       }
       if (ring.current) ring.current.style.height = ring.current.style.width = `${LOCKON.reticleRadius * 2 * window.innerHeight}px`
       // 地上：倒せる敵にサイトが重なっていると赤く太く光る
@@ -90,6 +104,10 @@ export function Reticle() {
       <div ref={dest} className="dest-marker">
         <div className="tri">▼</div>
         <div className="name">{GAME.dest.label}</div>
+      </div>
+      <div ref={imoutoMk} className="dest-marker imouto-marker" style={{ display: 'none' }}>
+        <div className="tri">▼</div>
+        <div className="name">{GAME.imoutoMarker.label}</div>
       </div>
     </div>
   )

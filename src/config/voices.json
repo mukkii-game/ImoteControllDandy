@@ -37,6 +37,7 @@
   "se.lock": "audio/se/lock.mp3",
   "se.fire": "audio/se/fire.mp3",
   "se.lightning": "audio/se/lightning.mp3",
+  "se.shootdown": "audio/se/papa.mp3",
   "se.building1": "audio/se/building1.mp3",
   "se.building2": "audio/se/building2.mp3",
   "se.chime": "audio/se/chime.mp3",
