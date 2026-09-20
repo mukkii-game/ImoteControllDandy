@@ -104,16 +104,22 @@ export const BRO = {
     thickenTo: 200,
     /** 山なり：弧の高さ（距離比）と横のふくらみ（距離比）、ふくらみが揺れる速さ（rad/s） */
     arcUp: 0.28,
-    arcSide: 0.08,
-    swaySpeed: 2.2,
+    arcSide: 0.14,
+    swaySpeed: 3.0,
+    /** うねり：ビームに沿った波の山の数、流れる速さ（rad/s）、振幅（距離比） */
+    waveFreq: 2.5,
+    waveSpeed: 7,
+    waveAmp: 0.035,
+    /** 追従をやめる判定：円形サイトの半径（LOCKON.reticleRadius）× この倍率の外へ出たら */
+    ringLeeway: 1.15,
     /** ギザギザ：各点のずれ（その位置の太さ比）と、ずれを取り直す間隔（秒） */
     jitter: 0.4,
     jitterEverySec: 0.04,
-    /** 色：外側（半透明の水色）と芯（白、外側の太さ比） */
-    color: '#4fd8ff',
-    coreColor: '#ffffff',
-    coreRatio: 0.22,
-    opacity: 0.55,
+    /** 色：外側（半透明の黄色）と芯（明るい黄白、外側の太さ比） */
+    color: '#ffd93d',
+    coreColor: '#fff8c8',
+    coreRatio: 0.24,
+    opacity: 0.6,
     /** 着弾の火花の大きさ（m）と秒数、出す間隔（秒） */
     sparkSize: 7,
     sparkSec: 0.15,
@@ -129,9 +135,15 @@ export const BRO = {
     enabled: true,
     /** 着地までの秒数（距離によらず一定。タックル 1 回＝distance/speed と同じくらい） */
     sec: 1.5,
-    /** 弧の高さ：屋上より上にこの分（m）＋距離比 */
-    arcUp: 12,
-    arcUpDistRatio: 0.15,
+    /** 弧の高さ：屋上より上にこの分（m）＋距離比（高く上がる） */
+    arcUp: 22,
+    arcUpDistRatio: 0.22,
+    /** 上りにかける時間の割合（0.6＝下りは上りの 1.5 倍速く落ちる） */
+    riseRatio: 0.6,
+    /** 自分が乗っている建物と、この距離（m）より近い建物は対象にしない（後で調整） */
+    minDist: 10,
+    /** 着地エフェクト（黄色い波しぶきの輪）：半径（m）、秒数、輪の太さ（半径比） */
+    landFx: { radius: 9, sec: 0.45, ring: 0.35, color: '#ffe066' },
     /** 複数の建物がサイトに重なった時：'tallest'＝高い方、'nearest'＝手前（検討事項） */
     pick: 'tallest' as 'tallest' | 'nearest',
     /** サイト内判定：サイト中心と、その周り（半径＝画面高さ比）に放つレイの本数 */

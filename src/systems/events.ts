@@ -7,6 +7,8 @@ export interface GameEvents {
   'bro.mount': void
   'bro.dismount': void
   'bro.jump': void
+  /** 屋上ジャンプの着地（黄色い波しぶき＋着地音） */
+  'bro.land': { x: number; y: number; z: number }
   /** ロックオン攻撃開始。from: 肩上（妹が掴んで投げる）か地上（兄が自力で跳ぶ）か */
   'bro.throw': { count: number; from: 'shoulder' | 'ground' }
   /** 兄が敵に着弾。dir があれば兄の攻撃（その方向へノックバックして吹っ飛ぶ）。power=吹っ飛ぶ高さの倍率（省略で 1） */

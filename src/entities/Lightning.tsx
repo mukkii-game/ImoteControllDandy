@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import { BRO, DUMMY_ENEMIES } from '../config/game'
+import { BRO, DUMMY_ENEMIES, LOCKON } from '../config/game'
 import { enemies, killEnemy, type Enemy } from '../systems/enemies'
 import { projectiles, type Projectile } from '../systems/projectiles'
 import { refs } from '../systems/refs'
@@ -28,6 +28,7 @@ const a = new THREE.Vector3()
 const b = new THREE.Vector3()
 const seg = new THREE.Vector3()
 const mid = new THREE.Vector3()
+const ndc = new THREE.Vector3()
 
 type Target = Enemy | Projectile
 const alive = (t: Target) => ('alive' in t ? t.alive : !t.dead)
@@ -39,6 +40,7 @@ const alive = (t: Target) => ('alive' in t ? t.alive : !t.dead)
  * 手元は細く遠くで太くなる（画面が塞がれない）
  */
 export function Lightning() {
+  const { camera, size } = useThree()
   const outer = useRef<THREE.InstancedMesh>(null!)
   const core = useRef<THREE.InstancedMesh>(null!)
   const sparkMesh = useRef<THREE.InstancedMesh>(null!)
@@ -61,19 +63,36 @@ export function Lightning() {
     }
   }, [])
 
+  /** 点が円形サイト（LOCKON.reticleRadius、画面高さ比）の中か */
+  const inRing = (p: THREE.Vector3) => {
+    ndc.copy(p).project(camera)
+    if (!(ndc.z < 1 && ndc.z > -1)) return false
+    const sx = (ndc.x * 0.5 + 0.5) * size.width
+    const sy = (-ndc.y * 0.5 + 0.5) * size.height
+    const cx = size.width / 2 + refs.reticleX
+    const cy = size.height / 2 + refs.reticleY
+    return Math.hypot((sx - cx) / size.height, (sy - cy) / size.height) < LOCKON.reticleRadius * lc.ringLeeway
+  }
+
   useFrame((_, dt) => {
     const st = useGame.getState()
     const bro = refs.bro
     time.current += dt
     // ボタン不要：地上（敵の上に乗っている時も）でサイトが敵（弾）を捉えていれば撃つ。ダッシュ中は撃たない
     const firing = !!bro && st.mode === 'ground' && st.phase === 'play' && !refs.broDash
-    // 狙い：今の的が生きていればそのまま。いなければサイトが捉えている敵の弾 → 敵
+    // 狙い：今の的が生きていて、まだ円形サイトの中にいればそのまま。外へ出たら追うのをやめる。
+    // 追っている最中でもサイトに敵の弾が入ってきたら弾を優先し、落としたらまた狙い先を決め直す
     let tg = target.current
     if (tg && !alive(tg)) tg = null
+    if (tg && !inRing(tg.pos)) tg = null
+    const pj = refs.aimProjectile >= 0 ? projectiles[refs.aimProjectile] : undefined
+    if (firing && pj && !pj.dead && tg !== pj) {
+      tg = pj
+      held.current = 0
+    }
     if (firing && !tg) {
-      const pj = refs.aimProjectile >= 0 ? projectiles[refs.aimProjectile] : undefined
       const en = refs.aimTarget >= 0 ? enemies.find((e) => e.id === refs.aimTarget && e.alive) : undefined
-      tg = (pj && !pj.dead ? pj : en) ?? null
+      tg = en ?? null
       held.current = 0
     }
     if (!firing) tg = null
@@ -159,6 +178,9 @@ export function Lightning() {
             u * u * p0.z + 2 * u * s * p1.z + s * s * p2.z,
           )
           out.addScaledVector(jit.current[i], width(s * dist) * lc.jitter)
+          // うねり：進行方向に沿った波（時間で流れる）。両端は 0
+          const wv = Math.sin(s * Math.PI * lc.waveFreq + time.current * lc.waveSpeed) * Math.sin(s * Math.PI) * lc.waveAmp * dist
+          out.addScaledVector(side, wv).addScaledVector(up, wv * 0.5)
           return out
         }
         const om = outer.current

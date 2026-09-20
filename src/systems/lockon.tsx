@@ -168,6 +168,13 @@ export function LockonSystem() {
         let near: { i: number; t: number } | null = null
         for (const h of rayHits) if (!near || h.t < near.t) near = h
         if (!near) continue
+        // 自分が乗っている建物と、近すぎる建物（minDist 以内）は対象外
+        if (bro) {
+          const c = colliders.list[near.i]
+          const ddx = Math.max(Math.abs(bro.position.x - c.x) - c.w / 2, 0)
+          const ddz = Math.max(Math.abs(bro.position.z - c.z) - c.d / 2, 0)
+          if (Math.hypot(ddx, ddz) < rj.minDist) continue
+        }
         const v = rj.pick === 'tallest' ? colliders.list[near.i].h : -near.t
         if (v > best) {
           best = v

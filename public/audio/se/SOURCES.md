@@ -14,6 +14,7 @@
 | fire.mp3 | 雷魔法4 | 兄の玉の発射音（肩上から） | https://soundeffect-lab.info/sound/battle/ | - |
 | building1.mp3 / building2.mp3 | 建物が壊れる音 ×2 | 建物が潰れた・砕けたときにランダムで片方 | https://soundeffect-lab.info/sound/battle/ | - |
 | lightning.mp3 | 雷魔法3（作者提供） | 地上の電撃。出ている間ループ | https://soundeffect-lab.info/sound/battle/ | - |
+| land_jump.mp3 | ジャンプの着地（作者提供） | 屋上ジャンプの着地 | https://soundeffect-lab.info/sound/battle/ | - |
 | tackle_1.mp3 / tackle_2.mp3 | （作者提供、効果音ラボ） | 兄のタックルで順繰りに鳴る | https://soundeffect-lab.info/ | - |
 | ../voice/bro_ikuzo.mp3 / bro_oaite.mp3 / line_bro_nerae.wav | （作者提供、兄の声：VOICEVOX 青山龍星 想定・要確認） | 飛び乗り「さあいくぞ」／飛び降り「お相手しましょう」／溜め開始「ねらえ！」 | - | - |
 | ../voice/imouto_hit_1〜5.mp3 | （作者提供、効果音ラボ） | 妹の被弾「痛っ」。ランダムで 1 つ、鳴ったら 3 秒は鳴らさない | https://soundeffect-lab.info/ | - |

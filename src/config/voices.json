@@ -33,6 +33,7 @@
   "se.throw": "audio/se/whoosh.mp3",
   "se.jump": "audio/se/jump.mp3",
   "se.land": "audio/se/land.mp3",
+  "se.jumpLand": "audio/se/land_jump.mp3",
   "se.lock": "audio/se/lock.mp3",
   "se.fire": "audio/se/fire.mp3",
   "se.lightning": "audio/se/lightning.mp3",

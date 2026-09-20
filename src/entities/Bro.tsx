@@ -280,20 +280,24 @@ export function Bro() {
           const rj = BRO.roofJump
           tk.t += dt
           const k = Math.min(1, tk.t / rj.sec)
-          const e = easeInOut(k)
+          // 上りは riseRatio の時間、下りは残り（速く落ちる）。弧の位相 ph は 0..1
+          const ph = k < rj.riseRatio ? (k / rj.riseRatio) * 0.5 : 0.5 + ((k - rj.riseRatio) / (1 - rj.riseRatio)) * 0.5
+          const e = easeInOut(ph)
           const roof = tk.roof
           g.position.x = THREE.MathUtils.lerp(tk.from.x, roof.x, e)
           g.position.z = THREE.MathUtils.lerp(tk.from.z, roof.z, e)
           const arc = rj.arcUp + tk.dist * rj.arcUpDistRatio
-          g.position.y = THREE.MathUtils.lerp(tk.from.y, roof.h, e) + Math.sin(k * Math.PI) * arc
+          g.position.y = THREE.MathUtils.lerp(tk.from.y, roof.h, e) + Math.sin(ph * Math.PI) * arc
           moving = 1
           if (k >= 1 || roof.dead) {
             tk.active = false
             tk.roof = null
             tackleCd.current = tc.cooldownSec
             vy.current = 0
-            if (!roof.dead) g.position.y = roof.h
-            emit('bro.tackle', undefined)
+            if (!roof.dead) {
+              g.position.y = roof.h
+              emit('bro.land', { x: g.position.x, y: g.position.y, z: g.position.z })
+            }
           }
         } else if (tk.active) {
           const dur = tk.dist / tc.speed
