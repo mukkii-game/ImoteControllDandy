@@ -398,6 +398,11 @@ export function bindAudio(): () => void {
   ]
   // フェーズ遷移で BGM
   const unsub = useGame.subscribe((s, prev) => {
+    // ポーズ（Esc）中は音を全部止める（BGM・ループ音・鳴っている途中の SE も）。解除で続きから
+    if (s.tuneOpen !== prev.tuneOpen) {
+      const c = ac()
+      if (c) void (s.tuneOpen ? c.suspend() : c.resume())
+    }
     if (s.phase !== prev.phase) {
       if (s.phase === 'play') {
         ac()?.resume()

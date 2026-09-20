@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import { CAMERA } from '../config/game'
+import { CAMERA, BRO, SCALE } from '../config/game'
 import { refs, shoulderWorld } from './refs'
 import { useGame } from './store'
 import { on } from './events'
@@ -154,6 +154,20 @@ export function CameraRig() {
       refs.camYaw += diff * Math.min(1, CAMERA.ground.pullLerp * dt)
       const wantPitch = -0.25
       refs.camPitch += (wantPitch - refs.camPitch) * Math.min(1, CAMERA.ground.pullLerp * 0.5 * dt)
+    }
+    // 敵の上に乗っている：視点は妹の方（自分で動かせるが、手を離すとしばらくして妹の方へ戻る）
+    if (st.mode === 'ground' && refs.riding >= 0 && refs.bro && refs.imouto && performance.now() - refs.lastLookInput > BRO.ride.lookReturnDelaySec * 1000) {
+      const dx = refs.imouto.position.x - refs.bro.position.x
+      const dz = refs.imouto.position.z - refs.bro.position.z
+      const want = Math.atan2(dx, dz)
+      let diff = want - refs.camYaw
+      diff = Math.atan2(Math.sin(diff), Math.cos(diff))
+      const k = Math.min(1, BRO.ride.lookReturnLerp * dt)
+      refs.camYaw += diff * k
+      // 妹の頭の高さへ（pitch は正が下向き）
+      const dy = refs.imouto.position.y + SCALE.imoutoHeight * 0.85 - refs.bro.position.y
+      const wantPitch = THREE.MathUtils.clamp(-Math.atan2(dy, Math.hypot(dx, dz)) * 0.7, CAMERA.ground.pitchMin, CAMERA.ground.pitchMax)
+      refs.camPitch += (wantPitch - refs.camPitch) * k
     }
     computeGround(groundPos, groundLook)
     computeShoulder(shoulderPos, shoulderLook)

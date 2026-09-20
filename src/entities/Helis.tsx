@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { HELIS } from '../config/waves'
-import { addEnemy, enemies, isStunned, type Enemy } from '../systems/enemies'
+import { addEnemy, enemies, enemyObjects, isStunned, type Enemy } from '../systems/enemies'
 import { refs } from '../systems/refs'
 import { emit } from '../systems/events'
 import { toonGradient } from '../systems/toon'
@@ -130,6 +130,7 @@ export function Helis() {
         const e = ents.current[i]
         const g = groups.current[i]
         if (!e || !g) continue
+        enemyObjects.set(e.id, g)
         if (!e.alive) {
           // 再出現：遠くに置いて飛んでくる
           if (playing) respawn.current[i] -= dt

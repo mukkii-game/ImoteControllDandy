@@ -91,7 +91,7 @@ export function LockonSystem() {
 
     lock.screen.clear()
     const camPos = camera.position
-    // 地上：サイトが重なっている「倒せる敵」（タックルの届く高さ・距離）を探す。一番サイトに近い 1 体
+    // 地上：サイトが重なっている敵を探す（乗る用 rideTarget と電撃用 aimTarget）。一番サイトに近い 1 体。乗っている敵は除く
     let gtId = -1
     let gtBest = Infinity
     let aimId = -1
@@ -104,15 +104,15 @@ export function LockonSystem() {
       const sx = (proj.x * 0.5 + 0.5) * size.width
       const sy = (-proj.y * 0.5 + 0.5) * size.height
       lock.screen.set(e.id, [sx, sy, inFront])
-      if (groundAim && inFront && bro) {
+      if (groundAim && inFront && bro && e.id !== refs.riding) {
         const d = Math.hypot((sx - cx) / size.height, (sy - cy) / size.height)
         // 電撃の自動照準：高さ・距離を問わずサイトに一番近い敵
         if (d < BRO.lightning.aimRadius && d < aimBest) {
           aimBest = d
           aimId = e.id
         }
-        // タックルの狙い：届く高さ・距離の敵だけ
-        if (e.pos.y <= BRO.tackle.maxHeight && Math.hypot(e.pos.x - bro.position.x, e.pos.z - bro.position.z) <= BRO.tackle.distance && d < BRO.tackle.aimRadius && d < gtBest) {
+        // 乗る対象：エネミービル以外
+        if (BRO.ride.enabled && e.kind !== 'boss' && d < BRO.ride.aimRadius && d < gtBest) {
           gtBest = d
           gtId = e.id
         }
@@ -130,12 +130,12 @@ export function LockonSystem() {
         })
       }
     }
-    refs.groundTarget = groundAim ? gtId : -1
+    refs.rideTarget = groundAim ? gtId : -1
     refs.aimTarget = groundAim ? aimId : -1
-    // 敵の弾（爆弾・ミサイル）も電撃の自動照準の対象。敵より弾の方がサイトに近ければ弾
+    // 敵の弾（爆弾・ミサイル）も電撃の自動照準の対象。サイトに入っていれば敵より弾を優先
     let pjIdx = -1
     if (groundAim) {
-      let best = aimBest
+      let best = BRO.lightning.aimRadius
       for (let i = 0; i < projectiles.length; i++) {
         const p = projectiles[i]
         if (p.dead) continue
@@ -151,10 +151,10 @@ export function LockonSystem() {
       }
     }
     refs.aimProjectile = pjIdx
-    // 建物：倒せる敵も電撃の的も無い時だけ、サイト中心と周りから何本かレイを放って当たった建物を探す（A で屋上へ跳ぶ）
+    // ビル：乗れる敵が無い時だけ、サイト中心と周りから何本かレイを放って当たったビルを探す（A で屋上へ跳ぶ）。minHeight 未満の住宅は対象外
     let roofIdx = -1
     const rj = BRO.roofJump
-    if (rj.enabled && groundAim && gtId < 0 && aimId < 0 && pjIdx < 0) {
+    if (rj.enabled && groundAim && gtId < 0) {
       // レイごとに「一番手前の建物」（見えている建物）だけを候補にし、候補の中から高い方（pick）を選ぶ。奥に隠れた建物は候補にしない
       const nRays = Math.max(1, Math.floor(rj.rays))
       let best = rj.pick === 'tallest' ? -Infinity : Infinity

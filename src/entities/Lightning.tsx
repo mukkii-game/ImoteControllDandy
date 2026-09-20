@@ -7,7 +7,6 @@ import { projectiles, type Projectile } from '../systems/projectiles'
 import { refs } from '../systems/refs'
 import { emit } from '../systems/events'
 import { useGame } from '../systems/store'
-import { useInput } from '../systems/input'
 
 interface Spark {
   pos: THREE.Vector3
@@ -34,8 +33,8 @@ type Target = Enemy | Projectile
 const alive = (t: Target) => ('alive' in t ? t.alive : !t.dead)
 
 /**
- * 地上の電撃（BRO.lightning）：A を押している間、兄の右手からサイトが捉えている敵（弾）1 体へ山なりの電撃が伸びる。
- * 当て続けた秒数で倒す。敵が動いても着弾点はついていき、倒れるまで続く（次にサイトに入った敵へ移る）。離すと消える。
+ * 地上の電撃（BRO.lightning）：ボタン不要。サイトが敵の弾か敵を捉えると、兄の右手からそこへ山なりの電撃が伸びる（弾が優先）。
+ * 当て続けた秒数で倒す。敵が動いても着弾点はついていき、倒れるまで続く（次にサイトに入った敵へ移る）。サイトから外れると消える。
  * 見た目は 2 次ベジェ（上へふくらみ＋横揺れ）を segments 本の箱でつなぎ、各点をギザギザにずらす（処理が軽い。俯瞰で見ないので隙間は気にしない）。
  * 手元は細く遠くで太くなる（画面が塞がれない）
  */
@@ -66,7 +65,8 @@ export function Lightning() {
     const st = useGame.getState()
     const bro = refs.bro
     time.current += dt
-    const firing = !!bro && st.mode === 'ground' && st.phase === 'play' && !refs.broDash && useInput.getState().keys.a
+    // ボタン不要：地上（敵の上に乗っている時も）でサイトが敵（弾）を捉えていれば撃つ。ダッシュ中は撃たない
+    const firing = !!bro && st.mode === 'ground' && st.phase === 'play' && !refs.broDash
     // 狙い：今の的が生きていればそのまま。いなければサイトが捉えている敵の弾 → 敵
     let tg = target.current
     if (tg && !alive(tg)) tg = null

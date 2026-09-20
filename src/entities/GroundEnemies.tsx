@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { POLICE, TANKS } from '../config/waves'
 import { STAGE } from '../config/game'
-import { addEnemy, killEnemy, isStunned, type Enemy } from '../systems/enemies'
+import { addEnemy, killEnemy, isStunned, enemyObjects, type Enemy } from '../systems/enemies'
 import { refs } from '../systems/refs'
 import { emit, on } from '../systems/events'
 import { toonGradient } from '../systems/toon'
@@ -192,6 +192,7 @@ export function GroundEnemies() {
         const e = alive[i]
         g.visible = !!e
         if (e) {
+          enemyObjects.set(e.id, g)
           g.position.set(e.pos.x, 0, e.pos.z)
           g.rotation.y = policeYaw.current.get(e.id) ?? (snapToRoad(e.pos.x, e.pos.z).alongX ? Math.PI / 2 : 0)
         }
@@ -207,6 +208,7 @@ export function GroundEnemies() {
         const e = alive[i]
         g.visible = !!e
         if (e) {
+          enemyObjects.set(e.id, g)
           g.position.set(e.pos.x, 0, e.pos.z)
           g.rotation.y = yaw + Math.PI
         }

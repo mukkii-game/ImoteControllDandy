@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { BRO, SCALE, LOCKON, IMOUTO, CAMERA, GAME, SPEECH } from '../config/game'
-import { enemies, killEnemy, lock, clearLocks } from '../systems/enemies'
+import { enemies, killEnemy, lock, clearLocks, type Enemy } from '../systems/enemies'
 import { DUMMY_ENEMIES } from '../config/game'
 import { useModels, candidates } from '../systems/models'
 import { readMove, useInput } from '../systems/input'
@@ -76,7 +76,12 @@ export function Bro() {
     from: new THREE.Vector3(),
     /** 屋上ジャンプの行き先（建物）。null なら通常のタックル */
     roof: null as Collider | null,
+    /** 敵に跳び乗る途中の行き先 */
+    rideTo: null as Enemy | null,
   })
+  /** 乗っている敵（敵と一緒に動く。死ねば落ちる） */
+  const ride = useRef<Enemy | null>(null)
+  const rideTop = (e: Enemy) => BRO.ride.topOffset[e.kind] ?? 2
   /** 肩上で妹の右手に掴まれている度合い（0=肩、1=手の上） */
   const grabK = useRef(0)
   const tackleCd = useRef(0)
@@ -163,6 +168,16 @@ export function Bro() {
     switch (st.mode) {
       case 'ground': {
         const m = readMove()
+        // 敵に乗っている：敵と一緒に動く。敵が死んだらそのまま落ちる（重力へ）
+        if (ride.current && !ride.current.alive) {
+          ride.current = null
+          vy.current = 0
+        }
+        if (ride.current) {
+          const e = ride.current
+          g.position.set(e.pos.x, e.pos.y + rideTop(e), e.pos.z)
+        }
+        refs.riding = ride.current?.id ?? -1
         // カメラ基準：camYaw の向きが「前」
         const camYaw = refs.camYaw
         const fx = Math.sin(camYaw)
@@ -175,7 +190,7 @@ export function Bro() {
         const mag = Math.hypot(dx, dz)
         const tk = tackle.current
         const tc = BRO.tackle
-        if (mag > 0.001 && !tk.active) {
+        if (mag > 0.001 && !tk.active && !ride.current) {
           const sp = BRO.runSpeed * Math.min(1, mag)
           const nx = g.position.x + (dx / mag) * sp * dt
           const nz = g.position.z + (dz / mag) * sp * dt
@@ -193,25 +208,27 @@ export function Bro() {
         // 地上の攻撃：A（左クリック）でカーソル（カメラ）の向きへ高速タックル。
         // 自分の背丈くらいの弧を描いて一定距離（敵がいてもいなくても）。敵で止まらず当たった敵は全部倒す。建物で止まる。連打で高速移動になる
         tackleCd.current = Math.max(0, tackleCd.current - dt)
-        // A：サイトが倒せる地上の敵に重なっていればタックル。空中の敵・敵の弾を捉えていれば電撃（entities/Lightning）なのでタックルしない。
-        // どちらも無ければ、建物に重なっていれば屋上へジャンプ、無ければサイトの向きへタックル（移動）
-        if (pressedA) {
-          const lightningAim = refs.groundTarget < 0 && (refs.aimTarget >= 0 || refs.aimProjectile >= 0)
-          if (!lightningAim) tk.queued = true
-        }
+        // A：サイトが敵に重なっていればその敵の上へ跳んで乗る（電撃は自動なのでボタンは不要）。
+        // 敵が無ければ、ビルに重なっていれば屋上へジャンプ、無ければサイトの向きへタックル（移動。乗っていた敵からは降りる）
+        if (pressedA) tk.queued = true
         if (tk.queued && !tk.active && tackleCd.current <= 0) {
           tk.queued = false
           tk.active = true
           tk.t = 0
           tk.hits = 0
           tk.roof = null
-          // 向き：サイトが倒せる敵に重なっていればその敵へ（全距離）。そうでなければサイトの向き（カメラの向き＋サイトの左右のずれ）へ半分の距離
-          const target = refs.groundTarget >= 0 ? enemies.find((e) => e.id === refs.groundTarget && e.alive) : undefined
+          tk.rideTo = null
+          ride.current = null
+          refs.riding = -1
+          const target = refs.rideTarget >= 0 ? enemies.find((e) => e.id === refs.rideTarget && e.alive) : undefined
           const roof = !target && refs.roofTarget >= 0 ? colliders.list[refs.roofTarget] : undefined
           let aimYaw: number
           if (target) {
+            // 敵に跳び乗る（動く相手なので毎フレーム行き先を取り直す）
             aimYaw = Math.atan2(target.pos.x - g.position.x, target.pos.z - g.position.z)
-            tk.dist = tc.distance
+            tk.dist = g.position.distanceTo(target.pos)
+            tk.rideTo = target
+            emit('bro.jump', undefined)
           } else if (roof && !roof.dead) {
             // 屋上ジャンプ：建物の中心の真上へ。距離によらず roofJump.sec で着地
             aimYaw = Math.atan2(roof.x - g.position.x, roof.z - g.position.z)
@@ -226,9 +243,39 @@ export function Bro() {
           tk.dir.set(Math.sin(aimYaw), 0, Math.cos(aimYaw))
           tk.from.copy(g.position)
           yawRef.current = aimYaw
-          if (!tk.roof) emit('bro.tackle', undefined)
+          if (!tk.roof && !tk.rideTo) emit('bro.tackle', undefined)
         }
-        if (tk.active && tk.roof) {
+        if (tk.active && tk.rideTo) {
+          // 敵へ跳び乗る：重力無視の山なり。途中で敵が死んだらそこで落ちる
+          const rd = BRO.ride
+          const e = tk.rideTo
+          tk.t += dt
+          const k = Math.min(1, tk.t / rd.sec)
+          const ez = easeInOut(k)
+          if (!e.alive) {
+            tk.active = false
+            tk.rideTo = null
+            tackleCd.current = tc.cooldownSec
+            vy.current = 0
+          } else {
+            target.set(e.pos.x, e.pos.y + rideTop(e), e.pos.z)
+            g.position.x = THREE.MathUtils.lerp(tk.from.x, target.x, ez)
+            g.position.z = THREE.MathUtils.lerp(tk.from.z, target.z, ez)
+            g.position.y = THREE.MathUtils.lerp(tk.from.y, target.y, ez) + Math.sin(k * Math.PI) * rd.arcUp
+            yawRef.current = Math.atan2(target.x - g.position.x, target.z - g.position.z) || yawRef.current
+            moving = 1
+            if (k >= 1) {
+              tk.active = false
+              tk.rideTo = null
+              tackleCd.current = tc.cooldownSec
+              vy.current = 0
+              ride.current = e
+              refs.riding = e.id
+              g.position.copy(target)
+              emit('bro.tackle', undefined)
+            }
+          }
+        } else if (tk.active && tk.roof) {
           // 屋上ジャンプ：重力無視の山なり。建物にはぶつからない
           const rj = BRO.roofJump
           tk.t += dt
@@ -285,18 +332,20 @@ export function Bro() {
         refs.broDash = tk.active
         wasA.current = input.keys.a && playing
         punchT.current = Math.max(0, punchT.current - dt)
-        if (!tk.active) {
-          // 床＝地面か、自分が立っている建物の屋上（建物が壊れたら落ちる）
+        if (!tk.active && !ride.current) {
+          // 床＝地面か、自分が立っている建物の屋上（建物が壊れたら落ちる）。住宅の上に落ちてもめり込まない
           const floor = floorAt(g.position.x, g.position.z)
           vy.current -= BRO.gravity * dt
           g.position.y = Math.max(floor, g.position.y + vy.current * dt)
           if (g.position.y <= floor) vy.current = Math.max(0, vy.current)
-          // 電撃を撃っている間はその方向を向く
-          if (refs.lightningOn) yawRef.current = Math.atan2(refs.lightningAim.x - g.position.x, refs.lightningAim.z - g.position.z)
         }
+        // 電撃を撃っている間はその方向を向く（敵の上でも）
+        if (!tk.active && refs.lightningOn) yawRef.current = Math.atan2(refs.lightningAim.x - g.position.x, refs.lightningAim.z - g.position.z)
         g.rotation.y = yawRef.current
 
         if (pressedB && refs.shoulder) {
+          ride.current = null
+          refs.riding = -1
           refs.mountStart.copy(g.position)
           const d = refs.mountStart.distanceTo(shoulderWorld(v))
           refs.mountDuration = THREE.MathUtils.clamp(d / 120, BRO.mountSecMin, BRO.mountSecMax)

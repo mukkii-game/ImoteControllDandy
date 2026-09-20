@@ -13,7 +13,7 @@ npm run build    # dist/ に出力（itch.io 用）
 |---|---|---|
 | WASD / 矢印 / 左スティック | カメラ基準で走る | W 妹を前進・A D 旋回（リモコン） |
 | マウス（クリックでロック）/ 画面右タッチ（仮想スティック：置いた所からずらした分が回る速さ） | カメラ回転 | 妹の頭を中心に回転（顔が見える） |
-| 左クリック / Space | 敵にサイトが重なっていればタックル、建物なら屋上へジャンプ、空中の敵・弾なら長押しで電撃、何も無ければサイトの向きへタックル（連打で高速移動） | 長押しでサイトをロック → 離して投擲 |
+| 左クリック / Space | サイトが敵に重なっていればその敵の上へ跳んで乗る、ビルなら屋上へジャンプ、何も無ければサイトの向きへタックル（連打で高速移動）。電撃はボタン不要でサイトの敵・弾へ自動 | 長押しでサイトをロック → 離して投擲 |
 | 右クリック / Shift / E | どこからでも妹の肩へ飛び乗る | 飛び降りる |
 | P | デバッグ俯瞰カメラ | 同左 |
 
@@ -59,7 +59,7 @@ npm run build    # dist/ に出力（itch.io 用）
 - 軽量化その 2：道路のセンターラインを 1 つの InstancedMesh に（以前は 5,000 個以上の別メッシュ）。520m より遠い区画は箱で描く LOD（STAGE.lodDist）。影のカメラ far を 420 に
 - 遊べる URL：https://mukkii-game.github.io/ImoteControllDandy/ （push で自動デプロイ）
 - 操作：右クリック/Shift=乗降、肩上は左クリック長押し=サイトで敵をロックオン→離して投擲、地上は左クリック=サイトの向きへ高速タックル、1/2/3（テンキー可）=技、ホイール=技選択・ホイールクリック=発動、Esc/Tab=ポーズ＋調整パネル
-- Esc/Tab はポーズ（フレームループ停止）＋調整パネル。スマホ（タッチ操作）はプレイ中の左上に「≡」ボタン（ui/VirtualPad.tsx の .menu-btn）が出て同じ働き。パネルの頭に「▶ 再開」ボタンもあり、パネル幅はスマホでは画面に収まる幅に縮む
+- Esc/Tab はポーズ（フレームループ停止）＋調整パネル。スマホ（タッチ操作）はプレイ中の左上に「≡」ボタン（ui/VirtualPad.tsx の .menu-btn）が出て同じ働き。パネルの頭に「▶ 再開」ボタンもあり、パネル幅はスマホでは画面に収まる幅に縮む。ポーズ中は AudioContext を suspend して音を全部止める（BGM・電撃のループ・鳴りかけの SE も）。解除で resume
 - 攻撃中の兄は光弾（芯 4.4m・ハロ 10m・粒 14m、レーザーのような光の軌跡 140 点、LOCKON.glow）。軌跡は戻ったあとフェードで消える（trailFadeSec）。肩に戻ると着地エフェクト（LOCKON.landFx）。最大ロック 16、ロック距離は無制限（画面に映っていれば）
 - 飛行は「1 体あたりほぼ一定時間」（LOCKON.hopSec、遠いほど加速。パンツァードラグーンのレーザーと同じで距離無視）。ロック数で少し時間が変わるだけで、すぐ倒しきって戻る（returnSec 0.25）
 - 地上サイト：倒せる敵（タックルの届く高さ・距離）に重なるとサイトが赤く太く光り（refs.groundTarget）、その時の左クリックはその敵へ全距離タックル。重なっていない時はサイトの向きへ半分の距離（BRO.tackle.missDistanceMul）
@@ -67,9 +67,10 @@ npm run build    # dist/ に出力（itch.io 用）
 - 右上の「地上／肩上」の下に fps 表示（ui/HUD.tsx の Fps）。カクつきの切り分け用：fps が低ければ描画の重さ、60 なのにカクつくなら動きの作り方
 - 毎フレームの new THREE.Vector3 / Quaternion を減らした（Fighters の right、BroGlow の粒）。GC による周期的なカクつき対策
 - 地上の上下の見回しは肩上より広め（CAMERA.ground.pitchMin/pitchMax。上 77° まで。頭上の敵を電撃で狙える）
-- 地上の電撃（entities/Lightning.tsx、BRO.lightning。旧バルカンの置き換え）：A を押している間、兄の右手（refs.broHand＝生ボーン rightHand）からサイトが捉えている敵（弾）1 体へ山なりの電撃が伸びる。当て続けた秒数で倒す（killSec 0.35、エネミービルのロック点 bossKillSec 1.2、敵の弾 projectileSec 0.12）。敵が動いても着弾点はついていき、倒れるまで続く。倒れたら次にサイトに入った敵へ。離すと消える。見た目は 2 次ベジェ（中点を上へ arcUp、横へ arcSide × sin で揺れる）を segments 本の箱でつなぎ、各点を jitter でギザギザにずらす（jitterEverySec ごとに取り直し）。手元 nearWidth → 遠く farWidth に太くなる（thickenFrom〜thickenTo m）ので画面が塞がれない。外側は半透明の水色、芯は白（coreRatio）。俯瞰で見ないので隙間は気にしない。音は se.lightning（雷魔法3）を出ている間ループ（audio.ts の startLoop / stopLoop、lightning.start / stop イベント）。兄はその方向を向いて右腕を伸ばす（procAnim.applyAimPose）。A を押した時にサイトが「タックルの届く地上の敵」に重なっていればタックルが優先、空中の敵・遠い敵・敵の弾ならタックルせず電撃
+- 地上の電撃（entities/Lightning.tsx、BRO.lightning。旧バルカンの置き換え）：ボタン不要。サイトが敵の弾か敵を捉えると自動で、兄の右手（refs.broHand＝生ボーン rightHand）からそこへ山なりの電撃が伸びる。サイト内に弾があれば敵より弾を優先（lockon.tsx の aimProjectile）。当て続けた秒数で倒す（敵 killSec 2.0＝弱め、エネミービルのロック点 bossKillSec 4、敵の弾 projectileSec 0.12＝すぐ落ちる）。敵が動いても着弾点はついていき、倒れるまで続く。倒れたら次にサイトに入った敵へ。サイトから外れても今の的が生きている間は続く。乗っている敵は狙わない（lockon が除外）。見た目は 2 次ベジェ（中点を上へ arcUp、横へ arcSide × sin で揺れる）を segments 本の箱でつなぎ、各点を jitter でギザギザにずらす（jitterEverySec ごとに取り直し）。手元 nearWidth → 遠く farWidth に太くなる（thickenFrom〜thickenTo m）ので画面が塞がれない。外側は半透明の水色、芯は白（coreRatio）。音は se.lightning（雷魔法3）を出ている間ループ（audio.ts の startLoop / stopLoop、lightning.start / stop イベント）。兄はその方向を向いて右腕を伸ばす（procAnim.applyAimPose）
+- 敵に乗る（BRO.ride、Bro.tsx の ride / tk.rideTo）：サイトが敵（エネミービル以外、空中も）に重なるとその敵の輪郭が赤く光り（systems/highlight.tsx：敵の Object3D＝systems/enemies.ts の enemyObjects に各エンティティが毎フレーム登録、そのメッシュの複製をリムライトで重ねる。外部モデル無しの箱の警察・戦車は同じ大きさの箱で代用）、A でその敵の上へ山なりに跳んで乗る（sec 0.9、arcUp、topOffset は種類ごと）。乗っている間は敵と一緒に動き（refs.riding）、敵が死ねばそのまま落ちる。電撃はサイトの他の敵へ自動で出る。A（タックル／屋上ジャンプ）で降りる、B で妹へ。カメラは視点入力が止まって lookReturnDelaySec 後に妹の頭の方へ戻る（camera.tsx）
 - タックルの速さは 120 m/s（BRO.tackle.speed）
-- 屋上ジャンプ（BRO.roofJump）：地上で A を押した時、サイトに倒せる敵も電撃の的も無く、建物が重なっていれば（サイトが黄色く光る、refs.roofTarget）その建物の中心の真上へ山なりに跳んで屋上に着地。重力無視で距離によらず sec 秒（1.5）。判定は lockon.tsx がサイト中心と周り（aimRadius）の rays 本のレイで建物の箱（colliders.rayBuildings）を探し、レイごとに一番手前の建物だけを候補にして高い方（pick='tallest'）を選ぶ。minHeight 未満の低い家は対象外。屋上の床は colliders.floorAt（その点を含む一番高い建物）で、歩いて縁から出れば落ちる、建物が壊れれば落ちる。壁は buildingAt(…, aboveY) で「自分より高い建物」だけ。飛び降り・地上発の攻撃からの着地も床の高さへ
+- 屋上ジャンプ（BRO.roofJump）：地上で A を押した時、サイトに乗れる敵が無く、ビルが重なっていれば（ビルの輪郭が黄色く光る、サイトも黄色、refs.roofTarget）その建物の中心の真上へ山なりに跳んで屋上に着地。重力無視で距離によらず sec 秒（1.5）。判定は lockon.tsx がサイト中心と周り（aimRadius）の rays 本のレイで建物の箱（colliders.rayBuildings）を探し、レイごとに一番手前の建物だけを候補にして高い方（pick='tallest'）を選ぶ。minHeight（13m）未満の住宅は対象外＝ビルだけ。屋上の床は colliders.floorAt（その点を含む一番高い建物、住宅も含む）で、住宅の上に落ちてもめり込まず上に立つ。歩いて縁から出れば落ちる、建物が壊れれば落ちる。壁は buildingAt(…, aboveY) で「自分より高い建物」だけ。飛び降り・地上発の攻撃からの着地も床の高さへ
 - 爆撃（FIGHTERS.bomb）：黒い爆弾が黄色い光をまとって、妹の胴体へゆっくり曲がりながら飛んでくる（speed / homing / gravity）。当たると被弾エフェクト＋減速。上空集合の旋回は半径 135m・高さ 210m（loiter.kinds.overhead）
 - 吹っ飛び：地上の敵は上へ 160m/s、空中の敵は上へ 75m/s で勢いよく散ってから半分の重力で落ちる（DEBRIS.knockback / DEBRIS.air）
 - 空の敵：戦闘機は 2 編隊（FIGHTERS.squadrons、各 7 機）が同時に別方向から。ヘリは 2 編隊 × 4 機（HELIS.groups / perGroup / formation）でまとまって妹の周りを回る。全体的に前より遠め（loiter.kinds の center、HELIS.keepDist 260）。戦闘機の速度は 220 m/s

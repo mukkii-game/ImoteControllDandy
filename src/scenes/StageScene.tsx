@@ -10,6 +10,7 @@ import { Lightning } from '../entities/Lightning'
 import { Tears } from '../entities/Tears'
 import { Projectiles } from '../entities/Projectiles'
 import { XrayLayer } from '../systems/xray'
+import { HighlightLayer } from '../systems/highlight'
 import { BroAfterimage } from '../entities/BroAfterimage'
 
 /**
@@ -168,6 +169,7 @@ export function StageScene() {
       <Tears />
       <Projectiles />
       <XrayLayer />
+      <HighlightLayer />
       <BroAfterimage />
       <Shoe />
       <Debris />

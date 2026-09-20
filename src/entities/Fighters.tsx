@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { FIGHTERS } from '../config/waves'
-import { addEnemy, enemies, isStunned, type Enemy } from '../systems/enemies'
+import { addEnemy, enemies, enemyObjects, isStunned, type Enemy } from '../systems/enemies'
 import { refs } from '../systems/refs'
 import { emit, on } from '../systems/events'
 import { SmokeRibbon } from '../systems/smoke'
@@ -213,6 +213,7 @@ export function Fighters({ squad = 0 }: { squad?: number }) {
     ents.current.forEach((e, i) => {
       const g = groups.current[i]
       if (!g) return
+      enemyObjects.set(e.id, g)
       // 編隊：機体ごとに [横, 高さ, 後ろ] のオフセット（前後・上下にばらして重ならないように）
       const [fx, fy, fb] = FIGHTERS.formation[i % FIGHTERS.formation.length]
       const uu = THREE.MathUtils.clamp(u.current + fb / len, 0, 1)

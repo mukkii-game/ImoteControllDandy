@@ -11,6 +11,8 @@ export interface Enemy {
 
 /** 敵のレジストリ。React state にしない（毎フレーム更新）。描画側は各エンティティが担当 */
 export const enemies: Enemy[] = []
+/** 敵 id → 見た目の Object3D（輪郭ハイライト用。各エンティティが毎フレーム登録。無い敵は箱で代用） */
+export const enemyObjects = new Map<number, THREE.Object3D>()
 let nextId = 1
 
 export function addEnemy(kind: Enemy['kind'], pos: THREE.Vector3): Enemy {
