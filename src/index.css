@@ -56,7 +56,9 @@ canvas { display: block; }
 .reticle-sight { position: absolute; inset: 0; will-change: transform; }
 /* サイトとロックマーカー：緑の線の円 */
 .reticle-ring { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); border: 2px solid rgba(80,255,140,.6); border-radius: 50%; transition: border-color .15s; }
-.reticle-layer.charging .reticle-ring { border-color: #4dff8a; box-shadow: 0 0 12px rgba(77,255,138,.6), inset 0 0 12px rgba(77,255,138,.3); }
+/* ロックオン中（A 長押し）：オレンジに変わる */
+.reticle-layer.charging .reticle-ring { border-color: #ff9a1f; border-width: 4px; box-shadow: 0 0 16px rgba(255,154,31,.8), inset 0 0 12px rgba(255,154,31,.4); }
+.reticle-layer.charging .reticle-dot { background: #ffc04d; }
 /* 地上で倒せる敵に重なった：赤く太く光る */
 .reticle-layer.target .reticle-ring { border-color: #ff3b3b; border-width: 5px; box-shadow: 0 0 18px rgba(255,59,59,.85), inset 0 0 14px rgba(255,59,59,.45); }
 .reticle-layer.target .reticle-dot { background: #ff6b6b; }

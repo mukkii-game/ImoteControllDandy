@@ -43,7 +43,8 @@ export function LockonSystem() {
     const groundAim = st.mode === 'ground' && st.phase === 'play' && rc.groundHorizontalOnly
     // 電撃の自動照準は地上と、肩上で溜めていない間（A を押して掴まれたら止まる）
     const aimOn = st.phase === 'play' && !charging && (st.mode === 'ground' || st.mode === 'shoulder')
-    if (charging || groundAim) {
+    const shoulderAim = st.mode === 'shoulder' && st.phase === 'play'
+    if (charging || groundAim || shoulderAim) {
       const hx = size.width / 2
       const hy = size.height / 2
       const nx = refs.reticleX / hx

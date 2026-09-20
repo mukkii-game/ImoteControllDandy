@@ -96,7 +96,8 @@ function FrameLimiter() {
   const advance = useThree((s) => s.advance)
   const clock = useThree((s) => s.clock)
   useEffect(() => {
-    // 'never' にすると R3F は時計を止め、advance(秒) で渡した時刻との差を dt にする
+    // 'never' にすると R3F は時計を止め、advance(秒) で渡した時刻との差を dt にする。
+    // Canvas の frameloop プロップも "never"（品質切替などで Canvas が再設定されると、プロップの値に戻されるため）
     setFrameloop('never')
     let raf = 0
     let last = -1
@@ -111,9 +112,10 @@ function FrameLimiter() {
       if (last >= 0 && t - last < minMs) return
       last = t
       const sec = t / 1000
-      if (resync) {
+      // ポーズ明け、または R3F が時計を 0 に戻した直後（Canvas の再設定）は、止まっていた分を dt に入れない
+      if (resync || clock.elapsedTime === 0) {
         resync = false
-        clock.elapsedTime = sec
+        clock.elapsedTime = sec - 1 / 60
       }
       advance(sec)
     }
@@ -147,6 +149,7 @@ export function StageScene() {
   return (
     <Canvas
       shadows
+      frameloop="never"
       camera={{ fov: CAMERA.ground.fov, near: CAMERA.near, far: CAMERA.far, position: [0, 2, 70] }}
       dpr={effectiveDpr()}
       gl={{ antialias: preset().antialias, powerPreference: 'high-performance' }}

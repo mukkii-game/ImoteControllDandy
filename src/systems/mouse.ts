@@ -17,7 +17,8 @@ import * as THREE from 'three'
 function applyLook(dx: number, dy: number, sens: number, rdx = dx * LOCKON.reticle.sensitivity, rdy = dy * LOCKON.reticle.sensitivity) {
   if (dx !== 0 || dy !== 0) refs.lastLookInput = performance.now()
   const g = useGame.getState()
-  if (g.charging) {
+  // 溜め中と肩上（最初から）：サイト自体が画面内を動く（画面端でカメラが押される処理は lockon 側）
+  if (g.charging || (g.mode === 'shoulder' && g.phase === 'play')) {
     refs.reticleX = THREE.MathUtils.clamp(refs.reticleX + rdx, -window.innerWidth / 2, window.innerWidth / 2)
     refs.reticleY = THREE.MathUtils.clamp(refs.reticleY + rdy, -window.innerHeight / 2, window.innerHeight / 2)
     return
