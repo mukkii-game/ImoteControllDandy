@@ -67,6 +67,8 @@ export function Reticle() {
       el.classList.toggle('target', refs.rideTarget >= 0 || refs.aimTarget >= 0 || refs.aimProjectile >= 0)
       // 建物に重なっている（A で屋上へ跳ぶ）と黄色
       el.classList.toggle('roof', refs.roofTarget >= 0)
+      // 妹に重なっている（A で肩へ跳び乗る）とピンク
+      el.classList.toggle('mount', refs.mountTarget)
       // サイトの位置（溜め中はマウスで動く）
       if (sight.current) sight.current.style.transform = `translate(${refs.reticleX}px, ${refs.reticleY}px)`
     }

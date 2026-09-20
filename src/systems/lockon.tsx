@@ -1,6 +1,6 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import { LOCKON, CAMERA, GAME, SOUND, BRO } from '../config/game'
+import { LOCKON, CAMERA, GAME, SOUND, BRO, SCALE } from '../config/game'
 import { enemies, lock } from './enemies'
 import { useGame } from './store'
 import { useInput } from './input'
@@ -140,6 +140,31 @@ export function LockonSystem() {
         })
       }
     }
+    // 妹：サイトが妹の体（足元〜頭の円柱）に重なっているか（A で肩へ高く跳び乗る）。妹が最優先なので、重なっていれば敵・ビルは対象にしない
+    let mountHit = false
+    if (groundAim && BRO.mountJump.enabled && refs.imouto && bro) {
+      const im = refs.imouto
+      const R = GAME.bodyRadius
+      // 画面上でのカメラ右方向（体の半径をこの向きに投影して太さを出す）
+      const rx = -Math.cos(refs.camYaw)
+      const rz = Math.sin(refs.camYaw)
+      const steps = 8
+      for (let i = 0; i <= steps && !mountHit; i++) {
+        const h = 2 + (SCALE.imoutoHeight - 4) * (i / steps)
+        proj.set(im.position.x, im.position.y + h, im.position.z).project(camera)
+        if (!(proj.z < 1 && proj.z > -1)) continue
+        const sx = (proj.x * 0.5 + 0.5) * size.width
+        const sy = (-proj.y * 0.5 + 0.5) * size.height
+        tmpV.set(im.position.x + rx * R, im.position.y + h, im.position.z + rz * R).project(camera)
+        const ex = (tmpV.x * 0.5 + 0.5) * size.width
+        const ey = (-tmpV.y * 0.5 + 0.5) * size.height
+        const halfW = Math.hypot(ex - sx, ey - sy)
+        const d = Math.hypot(sx - cx, sy - cy)
+        if (d < halfW + BRO.mountJump.aimRadius * size.height) mountHit = true
+      }
+    }
+    refs.mountTarget = mountHit
+    if (mountHit) gtId = -1
     refs.rideTarget = groundAim ? gtId : -1
     refs.aimTarget = aimOn ? aimId : -1
     // 敵の弾（爆弾・ミサイル）も電撃の自動照準の対象。サイトに入っていれば敵より弾を優先
@@ -164,7 +189,7 @@ export function LockonSystem() {
     // ビル：乗れる敵が無い時だけ、サイト中心と周りから何本かレイを放って当たったビルを探す（A で屋上へ跳ぶ）。minHeight 未満の住宅は対象外
     let roofIdx = -1
     const rj = BRO.roofJump
-    if (rj.enabled && groundAim && gtId < 0) {
+    if (rj.enabled && groundAim && gtId < 0 && !mountHit) {
       // レイごとに「一番手前の建物」（見えている建物）だけを候補にし、候補の中から高い方（pick）を選ぶ。奥に隠れた建物は候補にしない
       const nRays = Math.max(1, Math.floor(rj.rays))
       let best = rj.pick === 'tallest' ? -Infinity : Infinity
@@ -183,7 +208,8 @@ export function LockonSystem() {
           const c = colliders.list[near.i]
           const ddx = Math.max(Math.abs(bro.position.x - c.x) - c.w / 2, 0)
           const ddz = Math.max(Math.abs(bro.position.z - c.z) - c.d / 2, 0)
-          if (Math.hypot(ddx, ddz) < rj.minDist) continue
+          const edge = Math.hypot(ddx, ddz)
+          if (edge < rj.minDist || edge > rj.maxDist) continue
         }
         const v = rj.pick === 'tallest' ? colliders.list[near.i].h : -near.t
         if (v > best) {

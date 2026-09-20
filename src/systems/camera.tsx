@@ -262,6 +262,22 @@ export function CameraRig() {
         break
       }
       case 'dismounting': {
+        // 降下中にカメラを回して、着地では兄の背中越しに妹の正面を見上げる構図にする
+        if (refs.bro && refs.imouto) {
+          const dc = CAMERA.dismount
+          const im = refs.imouto
+          const yaw = im.rotation.y
+          // 兄の着地点（Bro の dismountAhead / dismountSide と同じ）から妹を見る向き
+          const lx = im.position.x + Math.sin(yaw) * BRO.dismountAhead + Math.cos(yaw) * BRO.dismountSide
+          const lz = im.position.z + Math.cos(yaw) * BRO.dismountAhead - Math.sin(yaw) * BRO.dismountSide
+          const wantYaw = Math.atan2(im.position.x - lx, im.position.z - lz)
+          let diff = wantYaw - refs.camYaw
+          diff = Math.atan2(Math.sin(diff), Math.cos(diff))
+          const k = Math.min(1, dc.turnLerp * dt)
+          refs.camYaw += diff * k
+          refs.camPitch += (dc.pitch - refs.camPitch) * k
+          computeGround(groundPos, groundLook)
+        }
         const e = easeInOut(st.transition)
         desiredPos.lerpVectors(shoulderPos, groundPos, e)
         desiredLook.lerpVectors(shoulderLook, groundLook, e)

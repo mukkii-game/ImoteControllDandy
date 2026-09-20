@@ -210,6 +210,18 @@ export function Bro() {
         tackleCd.current = Math.max(0, tackleCd.current - dt)
         // A：サイトが敵に重なっていればその敵の上へ跳んで乗る（電撃は自動なのでボタンは不要）。
         // 敵が無ければ、ビルに重なっていれば屋上へジャンプ、無ければサイトの向きへタックル（移動。乗っていた敵からは降りる）
+        // A でサイトが妹に重なっていれば、屋上ジャンプと同じ高い弧で肩へ跳び乗る（敵・ビルより優先）
+        if (pressedA && refs.mountTarget && refs.shoulder && !tk.active) {
+          ride.current = null
+          refs.riding = -1
+          refs.mountStart.copy(g.position)
+          refs.mountDuration = BRO.mountJump.sec
+          refs.mountJump = true
+          st.setTransition(0)
+          st.setMode('mounting')
+          emit('bro.mount', undefined)
+          break
+        }
         if (pressedA) tk.queued = true
         if (tk.queued && !tk.active && tackleCd.current <= 0) {
           tk.queued = false
@@ -353,6 +365,7 @@ export function Bro() {
           refs.mountStart.copy(g.position)
           const d = refs.mountStart.distanceTo(shoulderWorld(v))
           refs.mountDuration = THREE.MathUtils.clamp(d / 120, BRO.mountSecMin, BRO.mountSecMax)
+          refs.mountJump = false
           st.setTransition(0)
           st.setMode('mounting')
           emit('bro.mount', undefined)
@@ -363,9 +376,19 @@ export function Bro() {
         const t = Math.min(1, st.transition + dt / refs.mountDuration)
         st.setTransition(t)
         shoulderWorld(target)
-        const e = easeInOut(t)
-        g.position.lerpVectors(refs.mountStart, target, e)
-        g.position.y += Math.sin(t * Math.PI) * SCALE.imoutoHeight * BRO.mountArc
+        if (refs.mountJump) {
+          // A の飛び乗り：屋上ジャンプと同じ。上りは riseRatio の時間、下りは速く落ちて肩に着地
+          const mj = BRO.mountJump
+          const ph = t < mj.riseRatio ? (t / mj.riseRatio) * 0.5 : 0.5 + ((t - mj.riseRatio) / (1 - mj.riseRatio)) * 0.5
+          const e = easeInOut(ph)
+          g.position.lerpVectors(refs.mountStart, target, e)
+          const dist = Math.hypot(target.x - refs.mountStart.x, target.z - refs.mountStart.z)
+          g.position.y += Math.sin(ph * Math.PI) * (mj.arcUp + dist * mj.arcUpDistRatio)
+        } else {
+          const e = easeInOut(t)
+          g.position.lerpVectors(refs.mountStart, target, e)
+          g.position.y += Math.sin(t * Math.PI) * SCALE.imoutoHeight * BRO.mountArc
+        }
         const dx = target.x - refs.mountStart.x
         const dz = target.z - refs.mountStart.z
         if (Math.hypot(dx, dz) > 1) yawRef.current = Math.atan2(dx, dz)
@@ -375,6 +398,9 @@ export function Bro() {
         if (t >= 1) {
           g.rotation.x = 0
           st.setMode('shoulder')
+          // A の飛び乗りは肩に着地した音を鳴らす
+          if (refs.mountJump) emit('bro.land', { x: g.position.x, y: g.position.y, z: g.position.z })
+          refs.mountJump = false
         }
         break
       }
@@ -598,11 +624,14 @@ export function Bro() {
         g.position.z = THREE.MathUtils.lerp(refs.mountStart.z, target.z, e)
         const up = Math.sin(Math.min(1, t * 2) * Math.PI * 0.5) * 6
         g.position.y = refs.mountStart.y * (1 - easeInOut(t)) + up * (1 - t)
-        g.rotation.y = yaw
+        // 降りながら振り返って、着地では妹の方（正面）を向く
+        yawRef.current = CAMERA.dismount.faceImouto ? yaw + Math.PI * easeInOut(t) : yaw
+        g.rotation.y = yawRef.current
         moving = 1
         if (t >= 1) {
           g.position.y = floorAt(g.position.x, g.position.z)
           vy.current = 0
+          if (CAMERA.dismount.faceImouto && im) yawRef.current = Math.atan2(im.position.x - g.position.x, im.position.z - g.position.z)
           st.setMode('ground')
         }
         break

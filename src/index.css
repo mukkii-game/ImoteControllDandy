@@ -64,6 +64,8 @@ canvas { display: block; }
 .reticle-layer.target .reticle-dot { background: #ff6b6b; }
 .reticle-layer.roof .reticle-ring { border-color: #ffd23f; border-width: 4px; box-shadow: 0 0 14px rgba(255,210,63,.7), inset 0 0 10px rgba(255,210,63,.35); }
 .reticle-layer.roof .reticle-dot { background: #ffe680; }
+.reticle-layer.mount .reticle-ring { border-color: #ff5fb0; border-width: 4px; box-shadow: 0 0 14px rgba(255,95,176,.7), inset 0 0 10px rgba(255,95,176,.35); }
+.reticle-layer.mount .reticle-dot { background: #ffb3dc; }
 .reticle-dot { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: #9dffbe; }
 .lock-marker { position: absolute; left: 0; top: 0; width: 36px; height: 36px; border: 3px solid #4dff8a; border-radius: 50%; color: #eafff0; font-weight: 900; font-size: 13px; line-height: 30px; text-align: center; text-shadow: 0 1px 2px #000; box-shadow: 0 0 8px rgba(77,255,138,.8), inset 0 0 6px rgba(77,255,138,.35); animation: lock-in .15s ease-out; }
 @keyframes lock-in { from { transform: scale(2.2); opacity: 0 } }

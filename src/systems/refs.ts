@@ -37,6 +37,10 @@ export const refs = {
   rideTarget: -1,
   /** 乗っている敵の id（無ければ -1） */
   riding: -1,
+  /** 地上：サイトが妹の体に重なっているか（A で肩へ高く跳び乗る。lockon が毎フレーム更新） */
+  mountTarget: false,
+  /** 今の飛び乗りが A の「高く跳んで落ちる」方か（mounting 中。B の飛び乗りは false） */
+  mountJump: false,
   /** 地上：サイトが重なっている敵の id（高さ・距離を問わない。バルカンの自動照準用。無ければ -1） */
   aimTarget: -1,
   /** 地上：サイトが重なっている敵の弾（systems/projectiles の index。無ければ -1）。敵より近ければこちらを撃つ */

@@ -89,8 +89,8 @@ export const BRO = {
     /** 自動照準：サイトからこの半径（画面高さ比）に入った敵（弾）を狙う */
     aimRadius: 0.1,
     /** 倒すのに当て続ける秒数：通常の敵（前は 2 秒。倒せなさすぎたので 1/3 に）／エネミービルのロック点／敵の弾（すぐ落ちる） */
-    killSec: 0.67,
-    bossKillSec: 1.35,
+    killSec: 0.45,
+    bossKillSec: 0.9,
     projectileSec: 0.12,
     /** 当てている間のスコア（1 秒あたり）、倒した時、弾を撃ち落とした時 */
     hitScorePerSec: 40,
@@ -142,6 +142,8 @@ export const BRO = {
     riseRatio: 0.6,
     /** 自分が乗っている建物と、この距離（m）より近い建物は対象にしない（後で調整） */
     minDist: 10,
+    /** これより遠い建物（縁までの距離、m）には跳ばない。街の 1 ブロック＝STAGE.blockSize 140m＋道路 34m なので 2 ブロック分くらい */
+    maxDist: 350,
     /** 着地エフェクト（黄色い波しぶきの輪）：半径（m）、秒数、輪の太さ（半径比） */
     landFx: { radius: 9, sec: 0.45, ring: 0.35, color: '#ffe066' },
     /** 複数の建物がサイトに重なった時：'tallest'＝高い方、'nearest'＝手前（検討事項） */
@@ -176,6 +178,12 @@ export const BRO = {
     lookReturnDelaySec: 0.35,
     lookReturnLerp: 3,
   },
+  /**
+   * 地上：サイトが妹の体に重なっている時に A を押すと、屋上ジャンプと同じように高く上がって落ち、肩に着地する（着地音つき）。
+   * aimRadius=サイト中心から妹の体の縁までこの距離（画面高さ比）以内なら対象。sec=着地までの秒数、arcUp=肩より上にこの分（m）＋距離比、riseRatio=上りの時間割合。
+   * B（右クリック）の飛び乗りは今までどおり（低い弧）
+   */
+  mountJump: { enabled: true, aimRadius: 0.06, sec: 1.6, arcUp: 26, arcUpDistRatio: 0.2, riseRatio: 0.6 },
   /** 建物との当たり半径（m）。建物は貫通できない */
   bodyRadius: 1.2,
   /** 残像と尾（タックル中・飛び乗り中）：残像を出す間隔（秒）・寿命・色・濃さ、尾の半幅（m）・点数 */
@@ -445,6 +453,11 @@ export const CAMERA = {
   transitionSideBulge: 30,
   /** 肩に乗った時のカメラの向き（妹の向きからの角度、rad）。-π/2 = 妹の左側から見る */
   mountViewYaw: -Math.PI / 2,
+  /**
+   * 飛び降り：着地が終わる時に、兄が妹の正面で妹を見上げている構図になるようカメラを回す。
+   * pitch=見上げる角度（rad、マイナスが上）、turnLerp=降下中にカメラの向きを合わせていく速さ、faceImouto=兄も妹の方を向く
+   */
+  dismount: { pitch: -0.8, turnLerp: 5, faceImouto: true },
   /**
    * 射撃モード（肩上で溜め中）：妹も兄も一瞬で同じ色のシルエットになりながら消える。カメラはそのまま。
    * cameraEnabled=true にすると兄の近くへ寄る照準カメラも使う（今はオフ）

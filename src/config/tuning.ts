@@ -82,6 +82,12 @@ export const TUNE_GROUPS: { title: string; items: TuneItem[] }[] = [
       { path: 'BRO.mountArc', label: '飛び乗りの弧', min: 0, max: 0.6, step: 0.02 },
       { path: 'BRO.lightning.killSec', label: '電撃で敵を倒す秒数', min: 0.1, max: 4, step: 0.05 },
       { path: 'BRO.lightning.bossKillSec', label: '電撃でロック点を壊す秒数', min: 0.2, max: 8, step: 0.05 },
+      { path: 'BRO.roofJump.maxDist', label: '屋上ジャンプの最大距離 m', min: 50, max: 1500, step: 10 },
+      { path: 'BRO.mountJump.sec', label: 'A 飛び乗りの秒数', min: 0.5, max: 4, step: 0.1 },
+      { path: 'BRO.mountJump.arcUp', label: 'A 飛び乗りの高さ m', min: 0, max: 80, step: 1 },
+      { path: 'BRO.mountJump.aimRadius', label: 'A 飛び乗りのサイト判定', min: 0, max: 0.3, step: 0.01 },
+      { path: 'CAMERA.dismount.pitch', label: '飛び降り後の見上げ角（マイナスが上）', min: -1.3, max: 0.5, step: 0.05 },
+      { path: 'CAMERA.dismount.turnLerp', label: '飛び降り中のカメラの回る速さ', min: 0.5, max: 15, step: 0.5 },
     ],
   },
   {
