@@ -39,8 +39,9 @@ function computeGround(pos: THREE.Vector3, look: THREE.Vector3) {
   if (pos.y < 0.6) pos.y = 0.6
 }
 
-/** サイトの左右位置に応じた妹のずらし（m、カメラの右方向が正）。updateCursorShift でなめらかに追従 */
-let cursorShift = 0
+/** サイトの左右位置（-1..1、右が正。あそびを引いたもの）。updateCursorShift でなめらかに追従 */
+let cursorK = 0
+const yAxis = new THREE.Vector3(0, 1, 0)
 function updateCursorShift(dt: number, screenWidth: number) {
   const c = CAMERA.shoulder.cursorShift
   const st = useGame.getState()
@@ -48,9 +49,9 @@ function updateCursorShift(dt: number, screenWidth: number) {
   if (c.enabled && st.mode === 'shoulder' && st.phase === 'play') {
     const nx = refs.reticleX / (screenWidth / 2)
     const a = Math.abs(nx)
-    if (a > c.deadZone) want = Math.sign(nx) * Math.min(1, (a - c.deadZone) / (1 - c.deadZone)) * c.max
+    if (a > c.deadZone) want = Math.sign(nx) * Math.min(1, (a - c.deadZone) / (1 - c.deadZone))
   }
-  cursorShift += (want - cursorShift) * Math.min(1, dt / c.smoothSec)
+  cursorK += (want - cursorK) * Math.min(1, dt / c.smoothSec)
 }
 
 function computeShoulder(pos: THREE.Vector3, look: THREE.Vector3) {
@@ -59,15 +60,20 @@ function computeShoulder(pos: THREE.Vector3, look: THREE.Vector3) {
   else shoulderWorld(tmp)
   look.set(tmp.x, tmp.y + CAMERA.shoulder.targetHeight, tmp.z)
   orbit(look, CAMERA.shoulder.distance, pos)
-  // サイトが画面の右にある時はカメラと注視点を右へ平行移動（妹は画面の左へ寄る）。左なら逆
-  if (cursorShift !== 0) {
+  // サイトが画面の右にある時はカメラと注視点を右へ平行移動し、さらにカメラをその場で右へ回す（妹は画面の左へ寄る）。左なら逆
+  if (cursorK !== 0) {
+    const c = CAMERA.shoulder.cursorShift
     // カメラの右方向 = 前方向 (sin yaw, 0, cos yaw) × 上 = (-cos yaw, 0, sin yaw)
-    const rx = -Math.cos(refs.camYaw) * cursorShift
-    const rz = Math.sin(refs.camYaw) * cursorShift
+    const shift = cursorK * c.max
+    const rx = -Math.cos(refs.camYaw) * shift
+    const rz = Math.sin(refs.camYaw) * shift
     look.x += rx
     look.z += rz
     pos.x += rx
     pos.z += rz
+    // その場で回す：注視点をカメラの周りに回す（yaw が減る＝右を向く）
+    tmp.subVectors(look, pos).applyAxisAngle(yAxis, -cursorK * c.yawMax)
+    look.copy(pos).add(tmp)
   }
 }
 

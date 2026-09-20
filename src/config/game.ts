@@ -434,11 +434,12 @@ export const CAMERA = {
     targetHeight: -9,
     defaultPitch: 0.3,
     /**
-     * サイトと妹が被らないように、サイトが画面の右にある時は妹を画面の左へ、左にある時は右へずらす。
-     * カメラと注視点を同じだけ横（カメラの右方向）へ平行移動するので、回転の中心は妹のまま。
-     * max=サイトが画面端にある時のずらし（m）、deadZone=中央付近のあそび（画面半幅比）、smoothSec=追従のなめらかさ（秒）
+     * サイトと妹が被らないように、サイトが画面の右にある時は妹を画面の左へ、左にある時は右へずらす。2 つの成分の足し算：
+     * max=カメラと注視点を同じだけ横（カメラの右方向）へ平行移動する量（m、サイトが画面端の時）。回転の中心は妹のまま。
+     * yawMax=カメラをその場でサイト側へ回す角度（rad、サイトが画面端の時）。妹はさらに反対側へ寄る。
+     * deadZone=中央付近のあそび（画面半幅比）、smoothSec=追従のなめらかさ（秒）。Esc の調整パネル「カメラ」から動かせる
      */
-    cursorShift: { enabled: true, max: 9, deadZone: 0.06, smoothSec: 0.3 },
+    cursorShift: { enabled: true, max: 16, yawMax: 0.18, deadZone: 0.06, smoothSec: 0.3 },
   },
   /** 乗降中にカメラが体を突き抜けないよう外側に膨らませる距離(m) */
   transitionSideBulge: 30,
