@@ -780,3 +780,23 @@ export const QUALITY = {
     high: { label: '高', shadows: true, shadowMapSize: 2048, shadowDist: 200, dpr: 1, drawDist: 720, lodDist: 260, fogNear: 240, fogFar: 720, kit: true, fighterSquadrons: 2, heliGroups: 2, smoke: true, xray: true, antialias: true, outline: true, springEvery: 1, maxFps: 60 },
   } as Record<QualityLevel, { label: string; shadows: boolean; shadowMapSize: number; shadowDist: number; dpr: number; drawDist: number; lodDist: number; fogNear: number; fogFar: number; kit: boolean; fighterSquadrons: number; heliGroups: number; smoke: boolean; xray: boolean; antialias: boolean; outline: boolean; springEvery: number; maxFps: number }>,
 }
+
+/**
+ * 怪鳥トコロス：兄妹を助けに来るキャラクター（作者提供の GLB。骨無しの一枚メッシュなので動きは体全体の手続きアニメ）。
+ * 今は最初からいて、ロロの頭の高さでロロの周りをぐるぐる回る。うつぶせで平泳ぎのリズム（伸びる→蹴る）で空を飛ぶ
+ */
+export const TOKOROS = {
+  enabled: true,
+  url: 'models/tokoros/tokoros.glb',
+  /** 大きさ（m、全長） */
+  height: 7,
+  /** 回る中心：ロロの頭（頭の骨）からの上方向のずれ（m）と、頭からの距離（m）、回る速さ（rad/s、正で左回り） */
+  above: 2,
+  orbitRadius: 26,
+  orbitSpeed: 0.9,
+  /** 平泳ぎ：1 かきの秒数、蹴りの伸び（速さの揺れ 0..1）、体の上下（m）、うなずき（rad）、左右のロール（rad） */
+  stroke: { period: 1.3, surge: 0.5, bob: 1.4, pitch: 0.22, roll: 0.12 },
+  /** うつぶせ：モデルの頭を進行方向へ、顔を下へ（X 軸まわりの回転 rad）。noseUp は進行方向に対して少し頭を上げる分 */
+  prone: Math.PI / 2,
+  noseUp: 0.2,
+}

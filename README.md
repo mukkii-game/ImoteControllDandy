@@ -32,6 +32,7 @@ npm run build    # dist/ に出力（itch.io 用）
 - 妹（ロング）：VRM1_Constraint_Twist_Sample (c) pixiv Inc.（VRM Public License 1.0）
 - 兄：Seed-san by VirtualCast, Inc.（VRM Public License 1.0）
 - 音声：VOICEVOX:青山龍星（兄・熱血スタイル）、VOICEVOX:満別花丸（妹・元気スタイル）。Web 版 VOICEVOX API で生成（詳細は SOURCES.md）
+- 怪鳥トコロス：作者提供の GLB（Tripo で生成、public/models/tokoros/tokoros.glb）
 - 街（家・ビル）とパトカー：Kenney（www.kenney.nl）の City Kit Suburban / City Kit Commercial / Car Kit（CC0、表記任意）
 
 モデルは Esc の調整パネル「モデル」で切り替えられます。追加は `public/models/` に置いて `src/config/game.ts` の MODEL_CHOICES に1行足すだけです。
@@ -77,6 +78,7 @@ npm run build    # dist/ に出力（itch.io 用）
 - 空の敵：戦闘機は 2 編隊（FIGHTERS.squadrons、各 7 機）が同時に別方向から。ヘリは 2 編隊 × 4 機（HELIS.groups / perGroup / formation）でまとまって妹の周りを回る。全体的に前より遠め（loiter.kinds の center、HELIS.keepDist 260）。戦闘機の速度は 220 m/s
 - エリア（GAME.areas、仮の 4 分割・600m ずつ）：プロペ商店街 → 航空公園 → 米軍基地 → 小学校近辺。入ると画面中央（PAUSE と同じ位置）に巨大な地名を 3 秒（GAME.areaTitleSec、.area-title）。街の見た目の区間は別（GAME.terrain）。タイマーは右上に大きく（.timer）、その下にモード・スコア・fps・レーダー
 - スタートは z=-1000（ビル街 z=-500 の手前）。エネミービルは 2 組：スタート先に右＝満洲・左＝山田うどん、学校との中間（z≈160〜260）にも道から左右 230m 離れて 1 組（BOSSES）。900m 手前から 5 m/s でゆっくり近づき（BOSS.aggroDist / creepSpeed）、体を左右に揺らし上半分がしなりながらにじり寄る（BOSS.sway）
+- 怪鳥トコロス（entities/Tokoros.tsx、TOKOROS）：作者提供の GLB（骨・アニメ無しの一枚メッシュ、約 2000 三角形）。最初からいて、ロロの頭（頭の骨＋above）の高さで半径 orbitRadius・orbitSpeed でぐるぐる回る。うつぶせ（prone＝X 軸 90°、頭が進行方向・顔が下）で、平泳ぎのリズムは体全体の手続きアニメ（stroke：蹴った直後に速くなる surge、上下 bob、うなずき pitch、ロール roll）。敵ではない（電撃・ロックの対象外）。助けに来る動きはこれから
 - 敵の弾（ミサイル・砲弾）の速さは 14〜15 m/s（爆弾は 14）
 - 被弾：SPEC 通り 0.5 秒減速（HIT.slowSec / slowFactor）＋驚き顔＋「いたっ」の声（line_imouto_hit、SOUND.hitVoiceMinGapSec で連呼を抑える）。ダメージは無い
 - 敵の弾はミサイル型（灰色の胴体＋赤い先端、PROJECTILE.bodyRadius 0.9m）で黄色い光をまとい、速さは 28〜30 m/s。爆弾は黒い玉（FIGHTERS.bomb）。見た目は entities/Projectiles.tsx が登録簿（systems/projectiles.ts）からまとめて描く。妹の体への着弾は体の表面の点（imoutoImpact）で、爆発は兄と同じくらい（HIT.explosionRadius 5m）＋赤っぽい煙（HIT.puffs、オレンジ→赤→暗い赤）と、少し遅れて出る灰色の煙（HIT.grayPuffs / grayDelaySec）の 2 段。「痛っ」は効果音ラボの SE 5 種からランダム、鳴ったら 3 秒は鳴らさない（SOUND.hitVoiceMinGapSec）。タックル音は 2 種を順繰り（SOUND.tackleSounds）

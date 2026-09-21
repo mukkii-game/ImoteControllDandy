@@ -9,6 +9,7 @@ import { BossBuildings } from '../entities/BossBuildings'
 import { BroGlow } from '../entities/BroGlow'
 import { Lightning } from '../entities/Lightning'
 import { LandFx } from '../entities/LandFx'
+import { Tokoros } from '../entities/Tokoros'
 import { Tears } from '../entities/Tears'
 import { Projectiles } from '../entities/Projectiles'
 import { XrayLayer } from '../systems/xray'
@@ -200,6 +201,7 @@ export function StageScene() {
       <BroGlow />
       <Lightning />
       <LandFx />
+      <Tokoros />
       <Tears />
       <Projectiles />
       <XrayLayer />
