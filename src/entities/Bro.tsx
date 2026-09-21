@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { BRO, SCALE, LOCKON, IMOUTO, CAMERA, GAME, SPEECH } from '../config/game'
-import { enemies, killEnemy, lock, clearLocks, type Enemy } from '../systems/enemies'
+import { enemies, killEnemy, lock, clearLocks, findRideable, type Enemy } from '../systems/enemies'
 import { DUMMY_ENEMIES } from '../config/game'
 import { useModels, candidates } from '../systems/models'
 import { readMove, useInput } from '../systems/input'
@@ -233,7 +233,7 @@ export function Bro() {
           tk.rideTo = null
           ride.current = null
           refs.riding = -1
-          const target = refs.rideTarget >= 0 ? enemies.find((e) => e.id === refs.rideTarget && e.alive) : undefined
+          const target = refs.rideTarget >= 0 ? findRideable(refs.rideTarget) : undefined
           const roof = !target && refs.roofTarget >= 0 ? colliders.list[refs.roofTarget] : undefined
           let aimYaw: number
           if (target) {

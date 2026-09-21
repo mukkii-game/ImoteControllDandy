@@ -170,7 +170,7 @@ export const BRO = {
     sec: 0.9,
     arcUp: 8,
     /** 敵の中心から上に乗る位置（m、種類ごと） */
-    topOffset: { fighter: 2.2, heli: 2.8, police: 2.4, tank: 3.8, dummy: 5, boss: 0 } as Record<string, number>,
+    topOffset: { fighter: 2.2, heli: 2.8, police: 2.4, tank: 3.8, dummy: 5, boss: 0, ally: 1.6 } as Record<string, number>,
     /** 輪郭の色（サイトが重なった敵） */
     highlightColor: '#ff5a5a',
     highlightIntensity: 2.2,
@@ -415,11 +415,12 @@ export const CAMERA = {
     dashFollowLerp: 2.2,
     dashLookLerp: 6,
     /**
-     * ダッシュ（タックル・屋上ジャンプ・敵へ跳び乗り）中のカメラ：角度は変えず、着地地点（refs.dashTarget）を中心にした位置へ
-     * バネのように遅れて平行移動する（toLanding）。兄が弧を描いても上を向かない。
-     * 着地の瞬間は少し上から見せる：peekPitch（rad、プラスが上から見下ろす）を peekSec 保ち、peekRecoverSec で既定の横向きに戻す
+     * ダッシュ（タックル・屋上ジャンプ・敵へ跳び乗り）中のカメラ：兄の後ろを遅れて追いかける（toLanding=false。true なら角度を変えず着地地点へ平行移動＝兄が画面から消える）。
+     * 注視点が兄を追う速さ lookLerp（位置の dashFollowLerp より速いぶんだけカメラが兄の方へ角度を振る。以前は dashLookLerp=6 で振りすぎだったので控えめに）。
+     * 追っている間は少し上から見る：followPitch（rad、プラスが上から見下ろす。控えめに）。
+     * 着地の瞬間は peekPitch を peekSec 保ち、peekRecoverSec で既定の横向きに戻す
      */
-    dashCam: { toLanding: true, peekPitch: 0.3, peekSec: 0.15, peekRecoverSec: 0.35 },
+    dashCam: { toLanding: false, lookLerp: 4, followPitch: 0.1, peekPitch: 0.2, peekSec: 0.15, peekRecoverSec: 0.35 },
     /** ダッシュが終わったあと、カメラが追いつく速さ（followLerp の半分くらい）と、その状態から通常の速さへ戻すまでの秒数 */
     dashRecoverLerp: 8,
     dashRecoverSec: 1.0,

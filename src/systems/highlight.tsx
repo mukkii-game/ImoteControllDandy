@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { BRO } from '../config/game'
-import { enemies, enemyObjects } from './enemies'
+import { enemyObjects, findRideable } from './enemies'
 import { colliders } from './colliders'
 import { refs } from './refs'
 import { useGame } from './store'
@@ -92,7 +92,7 @@ export function HighlightLayer() {
     roofMat.uniforms.uPulse.value = pulse
     // ---- 敵
     const id = active ? refs.rideTarget : -1
-    const e = id >= 0 ? enemies.find((x) => x.id === id && x.alive) : undefined
+    const e = id >= 0 ? findRideable(id) : undefined
     const obj = e ? enemyObjects.get(e.id) : undefined
     if (!e || !obj) {
       if (cloneOf.current >= 0) clear()

@@ -1,7 +1,7 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { LOCKON, CAMERA, GAME, SOUND, BRO, SCALE } from '../config/game'
-import { enemies, lock } from './enemies'
+import { enemies, allies, lock } from './enemies'
 import { useGame } from './store'
 import { useInput } from './input'
 import { refs } from './refs'
@@ -13,7 +13,7 @@ import { touchLookTick } from './mouse'
 import { fireSchedule, fireScheduleTick } from './fireSchedule'
 
 // デバッグ用（Playwright から狙いを付ける）
-;(window as unknown as { __dbg: unknown }).__dbg = { refs, lock, enemies, input: useInput, emit, projectiles, colliders, cfg: { BRO, LOCKON, CAMERA, GAME }, fireSchedule }
+;(window as unknown as { __dbg: unknown }).__dbg = { refs, lock, enemies, allies, input: useInput, emit, projectiles, colliders, cfg: { BRO, LOCKON, CAMERA, GAME }, fireSchedule }
 
 const proj = new THREE.Vector3()
 const tmpV = new THREE.Vector3()
@@ -163,8 +163,29 @@ export function LockonSystem() {
         if (d < halfW + BRO.mountJump.aimRadius * size.height) mountHit = true
       }
     }
+    // 味方（トコロス）にも乗れる：敵と同じ判定（電撃・ロックの対象にはしない）。
+    // トコロスはロロの頭の周りを飛ぶのでサイトが妹の体にも重なりやすい。サイトに入っていればトコロスを妹より優先する
+    let allyId = -1
+    if (groundAim && BRO.ride.enabled && bro) {
+      let best = BRO.ride.aimRadius
+      for (const e of allies) {
+        if (!e.alive || e.id === refs.riding) continue
+        proj.copy(e.pos).project(camera)
+        if (!(proj.z < 1 && proj.z > -1)) continue
+        const sx = (proj.x * 0.5 + 0.5) * size.width
+        const sy = (-proj.y * 0.5 + 0.5) * size.height
+        const d = Math.hypot((sx - cx) / size.height, (sy - cy) / size.height)
+        if (d < best) {
+          best = d
+          allyId = e.id
+        }
+      }
+    }
+    if (allyId >= 0) {
+      gtId = allyId
+      mountHit = false
+    } else if (mountHit) gtId = -1
     refs.mountTarget = mountHit
-    if (mountHit) gtId = -1
     refs.rideTarget = groundAim ? gtId : -1
     refs.aimTarget = aimOn ? aimId : -1
     // 敵の弾（爆弾・ミサイル）も電撃の自動照準の対象。サイトに入っていれば敵より弾を優先

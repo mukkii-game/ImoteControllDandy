@@ -225,7 +225,8 @@ export function CameraRig() {
       if (wasDash.current && !refs.broDash && st.mode === 'ground') sinceDash.current = 0
       wasDash.current = refs.broDash
       const s = sinceDash.current
-      groundPitchPeek = refs.broDash ? 0 : s < dc.peekSec ? dc.peekPitch : s < dc.peekSec + dc.peekRecoverSec ? dc.peekPitch * (1 - (s - dc.peekSec) / dc.peekRecoverSec) : 0
+      // ダッシュ・ジャンプ中は少し上から（followPitch）兄の後ろを追い、着地の瞬間は peekPitch、その後 peekRecoverSec で既定へ
+      groundPitchPeek = refs.broDash ? dc.followPitch : s < dc.peekSec ? dc.peekPitch : s < dc.peekSec + dc.peekRecoverSec ? dc.peekPitch * (1 - (s - dc.peekSec) / dc.peekRecoverSec) : 0
     }
     computeGround(groundPos, groundLook)
     updateCursorShift(dt, size.width)
@@ -384,7 +385,8 @@ export function CameraRig() {
       const rec = Math.min(1, sinceDash.current / gc.dashRecoverSec)
       const posLerp = dash ? gc.dashFollowLerp : THREE.MathUtils.lerp(gc.dashRecoverLerp, gc.followLerp, rec)
       // ダッシュ中に着地地点へ寄る時は位置と注視点を同じ速さで動かす（平行移動＝角度が変わらない）
-      const lookLerp = dash ? (gc.dashCam.toLanding ? gc.dashFollowLerp : gc.dashLookLerp) : THREE.MathUtils.lerp(gc.dashLookLerp, 14, rec)
+      // 兄を追う時（toLanding=false）は注視点を dashCam.lookLerp で兄へ寄せる（位置より少し速い＝控えめに角度を振って兄を画面に収める）
+      const lookLerp = dash ? (gc.dashCam.toLanding ? gc.dashFollowLerp : gc.dashCam.lookLerp) : THREE.MathUtils.lerp(gc.dashLookLerp, 14, rec)
       camera.position.lerp(desiredPos, Math.min(1, posLerp * dt))
       smoothedLook.current.lerp(desiredLook, Math.min(1, lookLerp * dt))
     } else {

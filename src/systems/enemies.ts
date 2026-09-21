@@ -2,7 +2,7 @@ import * as THREE from 'three'
 
 export interface Enemy {
   id: number
-  kind: 'dummy' | 'fighter' | 'police' | 'tank' | 'boss' | 'heli'
+  kind: 'dummy' | 'fighter' | 'police' | 'tank' | 'boss' | 'heli' | 'ally'
   pos: THREE.Vector3
   alive: boolean
   /** 破壊後の再出現までの残り秒（テスト用） */
@@ -13,6 +13,17 @@ export interface Enemy {
 export const enemies: Enemy[] = []
 /** 敵 id → 見た目の Object3D（輪郭ハイライト用。各エンティティが毎フレーム登録。無い敵は箱で代用） */
 export const enemyObjects = new Map<number, THREE.Object3D>()
+/** 味方（トコロスなど）：敵ではないので電撃・ロック・タックルの対象にならないが、兄が乗れる。enemies とは別の登録簿 */
+export const allies: Enemy[] = []
+export function addAlly(pos: THREE.Vector3): Enemy {
+  const e: Enemy = { id: nextId++, kind: 'ally', pos: pos.clone(), alive: true, respawn: 0 }
+  allies.push(e)
+  return e
+}
+/** 乗れる相手を id で探す（敵と味方の両方から） */
+export function findRideable(id: number): Enemy | undefined {
+  return enemies.find((e) => e.id === id && e.alive) ?? allies.find((e) => e.id === id && e.alive)
+}
 let nextId = 1
 
 export function addEnemy(kind: Enemy['kind'], pos: THREE.Vector3): Enemy {

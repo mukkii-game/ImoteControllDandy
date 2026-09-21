@@ -6,6 +6,7 @@ import { loadGLTF } from '../systems/loaders'
 import { refs } from '../systems/refs'
 import { useGame } from '../systems/store'
 import { TokorosRig } from '../systems/tokorosRig'
+import { addAlly, allies, enemyObjects, type Enemy } from '../systems/enemies'
 
 const center = new THREE.Vector3()
 const look = new THREE.Vector3()
@@ -21,6 +22,19 @@ export function Tokoros() {
   const angle = useRef(Math.random() * Math.PI * 2)
   const t = useRef(0)
   const rig = useRef<TokorosRig | null>(null)
+  /** 乗れる相手としての登録（味方。敵ではない） */
+  const ally = useRef<Enemy | null>(null)
+
+  useEffect(() => {
+    if (!TOKOROS.enabled) return
+    const a = addAlly(new THREE.Vector3(0, -1000, 0))
+    ally.current = a
+    return () => {
+      const i = allies.indexOf(a)
+      if (i >= 0) allies.splice(i, 1)
+      enemyObjects.delete(a.id)
+    }
+  }, [])
 
   useEffect(() => {
     if (!TOKOROS.enabled) return
@@ -75,6 +89,11 @@ export function Tokoros() {
     // うつぶせ＋うなずき＋ロール
     const inn = inner.current
     inn.rotation.set(c.prone - c.noseUp - c.stroke.pitch * Math.sin(ph + Math.PI / 2), 0, c.stroke.roll * Math.sin(ph * 0.5))
+    // 乗れる相手として位置を登録（兄は背中＝中心＋BRO.ride.topOffset.ally に乗る）
+    if (ally.current) {
+      ally.current.pos.copy(g.position)
+      enemyObjects.set(ally.current.id, g)
+    }
     // 骨の平泳ぎ（位相 0..1）
     if (rig.current?.ok) {
       g.updateWorldMatrix(true, false)
