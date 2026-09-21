@@ -795,7 +795,59 @@ export const TOKOROS = {
   orbitRadius: 26,
   orbitSpeed: 0.9,
   /** 平泳ぎ：1 かきの秒数、蹴りの伸び（速さの揺れ 0..1）、体の上下（m）、うなずき（rad）、左右のロール（rad） */
-  stroke: { period: 1.3, surge: 0.5, bob: 1.4, pitch: 0.22, roll: 0.12 },
+  stroke: { period: 1.6, surge: 0.5, bob: 1.4, pitch: 0.15, roll: 0.08 },
+  /**
+   * 骨のポーズのキーフレーム [位相 0..1, 角度 rad]（systems/tokorosRig.ts）。位相 0〜0.35 が伸び、0.35〜0.7 がかき、0.7〜1 が戻し＋蹴り。
+   * armElev：腕を頭の方へ上げる（π/2 で真上＝前へ伸ばす）、armSweep：腕を胸の前へ集める、elbow：肘、hip：膝を引き寄せる、knee：かかとをお尻へ、legOut：脚を開く、spine：背中の反り
+   */
+  pose: {
+    armElev: [
+      [0, 1.5],
+      [0.35, 1.5],
+      [0.55, 0.1],
+      [0.7, -0.5],
+      [0.95, 1.5],
+    ] as [number, number][],
+    armSweep: [
+      [0, 0.2],
+      [0.35, 0.2],
+      [0.55, -0.3],
+      [0.7, 1.1],
+      [0.95, 0.2],
+    ] as [number, number][],
+    elbow: [
+      [0, 0.1],
+      [0.4, 0.1],
+      [0.7, 1.6],
+      [0.95, 0.1],
+    ] as [number, number][],
+    hip: [
+      [0, 0],
+      [0.45, 0],
+      [0.7, 0.9],
+      [0.85, 0.2],
+      [1, 0],
+    ] as [number, number][],
+    knee: [
+      [0, 0],
+      [0.45, 0],
+      [0.7, 1.9],
+      [0.85, 0.3],
+      [1, 0],
+    ] as [number, number][],
+    legOut: [
+      [0, 0],
+      [0.6, 0],
+      [0.75, 0.6],
+      [0.9, 0],
+    ] as [number, number][],
+    spine: [
+      [0, 0],
+      [0.5, -0.25],
+      [0.8, 0.1],
+      [1, 0],
+    ] as [number, number][],
+  },
   /** うつぶせ：モデルの頭を進行方向へ、顔を下へ（X 軸まわりの回転 rad）。noseUp は進行方向に対して少し頭を上げる分 */
   prone: Math.PI / 2,
   noseUp: 0.2,

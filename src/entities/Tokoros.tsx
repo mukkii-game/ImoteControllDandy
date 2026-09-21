@@ -5,6 +5,7 @@ import { TOKOROS, SCALE } from '../config/game'
 import { loadGLTF } from '../systems/loaders'
 import { refs } from '../systems/refs'
 import { useGame } from '../systems/store'
+import { TokorosRig } from '../systems/tokorosRig'
 
 const center = new THREE.Vector3()
 const look = new THREE.Vector3()
@@ -19,6 +20,7 @@ export function Tokoros() {
   const [scene, setScene] = useState<THREE.Object3D | null>(null)
   const angle = useRef(Math.random() * Math.PI * 2)
   const t = useRef(0)
+  const rig = useRef<TokorosRig | null>(null)
 
   useEffect(() => {
     if (!TOKOROS.enabled) return
@@ -39,6 +41,7 @@ export function Tokoros() {
             m.frustumCulled = false
           }
         })
+        rig.current = new TokorosRig(s)
         if (alive) setScene(s)
       })
       .catch(() => {})
@@ -56,8 +59,8 @@ export function Tokoros() {
     if (st.phase === 'clear' || st.phase === 'late') return
     t.current += dt
     const ph = (t.current / c.stroke.period) * Math.PI * 2
-    // 平泳ぎ：蹴った直後は速く、伸びている間はゆっくり
-    const surge = 1 + c.stroke.surge * Math.sin(ph)
+    // 平泳ぎ：蹴った直後（位相 0.8 前後）は速く、伸びている間はゆっくり
+    const surge = 1 + c.stroke.surge * Math.sin(ph - Math.PI * 0.6)
     angle.current += c.orbitSpeed * dt * surge
     // 回る中心：ロロの頭
     if (refs.head) refs.head.getWorldPosition(center)
@@ -72,6 +75,11 @@ export function Tokoros() {
     // うつぶせ＋うなずき＋ロール
     const inn = inner.current
     inn.rotation.set(c.prone - c.noseUp - c.stroke.pitch * Math.sin(ph + Math.PI / 2), 0, c.stroke.roll * Math.sin(ph * 0.5))
+    // 骨の平泳ぎ（位相 0..1）
+    if (rig.current?.ok) {
+      g.updateWorldMatrix(true, false)
+      rig.current.pose(t.current / c.stroke.period)
+    }
   })
 
   if (!TOKOROS.enabled) return null
