@@ -67,6 +67,11 @@ export function HUD() {
       {credits && <div className="credits">モデル: {credits}</div>}
       <VirtualPad />
       <TunePanel />
+      {/* スマホを縦に持っている時：横にしてねの案内（CSS で縦向きの時だけ表示） */}
+      <div className="rotate-hint">
+        <div className="phone">📱</div>
+        <div>スマホを横にしてあそんでね</div>
+      </div>
     </div>
   )
 }

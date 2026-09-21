@@ -59,6 +59,7 @@ npm run build    # dist/ に出力（itch.io 用）
 - 軽量化その 2：道路のセンターラインを 1 つの InstancedMesh に（以前は 5,000 個以上の別メッシュ）。520m より遠い区画は箱で描く LOD（STAGE.lodDist）。影のカメラ far を 420 に
 - 遊べる URL：https://mukkii-game.github.io/ImoteControllDandy/ （push で自動デプロイ）
 - 操作：右クリック/Shift=乗降、肩上は左クリック長押し=サイトで敵をロックオン→離して投擲、地上は左クリック=サイトの向きへ高速タックル、1/2/3（テンキー可）=技、ホイール=技選択・ホイールクリック=発動、Esc/Tab=ポーズ＋調整パネル
+- スマホは横画面で遊ぶ前提（systems/orientation.ts）：スタートを押した時に全画面＋screen.orientation.lock('landscape')（Android Chrome。ユーザー操作の中でしか許可されない）。iPhone の Safari は向きを固定できないので、縦持ちの間は「スマホを横にしてあそんでね」の案内（.rotate-hint、CSS の pointer: coarse ＋ orientation: portrait で表示。ゲームは止めない）。ホーム画面に追加（PWA）した時は public/manifest.webmanifest の orientation: landscape / display: fullscreen が効く
 - Esc/Tab はポーズ（フレームループ停止）＋調整パネル。スマホ（タッチ操作）はプレイ中の左上に「≡」ボタン（ui/VirtualPad.tsx の .menu-btn）が出て同じ働き。パネルの頭に「▶ 再開」ボタンもあり、パネル幅はスマホでは画面に収まる幅に縮む。ポーズ中は AudioContext を suspend して音を全部止める（BGM・電撃のループ・鳴りかけの SE も）。解除で resume
 - 攻撃中の兄は光弾（芯 4.4m・ハロ 10m・粒 14m、レーザーのような光の軌跡 140 点、LOCKON.glow）。軌跡は戻ったあとフェードで消える（trailFadeSec）。肩に戻ると着地エフェクト（LOCKON.landFx）。最大ロック 16、ロック距離は無制限（画面に映っていれば）
 - 飛行は「1 体あたりほぼ一定時間」（LOCKON.hopSec、遠いほど加速。パンツァードラグーンのレーザーと同じで距離無視）。ロック数で少し時間が変わるだけで、すぐ倒しきって戻る（returnSec 0.25）

@@ -1,0 +1,10 @@
+{
+  "name": "いもーとコントロールダンディ",
+  "short_name": "いもコン",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#7fc4ff",
+  "theme_color": "#7fc4ff",
+  "start_url": "./",
+  "icons": []
+}

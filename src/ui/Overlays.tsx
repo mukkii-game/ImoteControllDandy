@@ -3,6 +3,7 @@ import { GAME, IMOUTO, QUALITY } from '../config/game'
 import { useQuality } from '../systems/quality'
 import { refs } from '../systems/refs'
 import { useEffect, useRef, useState } from 'react'
+import { requestLandscape } from '../systems/orientation'
 
 function fmt(sec: number) {
   const m = Math.floor(sec / 60)
@@ -99,7 +100,15 @@ export function Overlays() {
           </div>
           {/* 診断：ブラウザが使っている GPU。内蔵 GPU や SwiftShader（ソフト描画）だと重い */}
           {quality.gpu && <div className="gpu-note">GPU: {quality.gpu}</div>}
-          <button className="start" disabled={!ready} onClick={() => setPhase('play')}>
+          <button
+            className="start"
+            disabled={!ready}
+            onClick={() => {
+              // スマホ：全画面＋横画面固定（ユーザー操作の中でしか許可されない）
+              void requestLandscape()
+              setPhase('play')
+            }}
+          >
             {ready ? 'いってきまーす' : 'モデル読み込み中…'}
           </button>
         </div>
