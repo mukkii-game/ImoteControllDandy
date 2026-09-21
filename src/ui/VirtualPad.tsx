@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import { useInput } from '../systems/input'
 import { useGame } from '../systems/store'
+import { screenToApp } from '../systems/orientation'
 
 const R = 50
 
@@ -14,8 +15,8 @@ export function VirtualPad() {
   const move = (e: React.PointerEvent) => {
     if (activeId.current !== e.pointerId || !base.current || !knob.current) return
     const r = base.current.getBoundingClientRect()
-    let dx = e.clientX - (r.left + r.width / 2)
-    let dy = e.clientY - (r.top + r.height / 2)
+    // 画面を回している時は指の向きも回す
+    let [dx, dy] = screenToApp(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2))
     const len = Math.hypot(dx, dy)
     if (len > R) {
       dx = (dx / len) * R

@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react'
 import { CAMERA, SCALE, STAGE, QUALITY } from '../config/game'
 import { useQuality, preset, effectiveDpr } from '../systems/quality'
 import { useGame } from '../systems/store'
+import { appSize } from '../systems/orientation'
 import { Helis } from '../entities/Helis'
 import { BossBuildings } from '../entities/BossBuildings'
 import { BroGlow } from '../entities/BroGlow'
@@ -88,6 +89,33 @@ function Precompile() {
 }
 
 /**
+ * 画面の大きさをアプリの向きに合わせる：スマホを CSS で 90° 回している時（systems/orientation.ts）は
+ * R3F の自動計測（要素の見た目の大きさ）が回転後の縦横になってしまう時があるので、向きが変わった後に自分で入れ直す
+ */
+function ViewSizer() {
+  const setSize = useThree((s) => s.setSize)
+  useEffect(() => {
+    let t = 0
+    const apply = () => {
+      clearTimeout(t)
+      t = window.setTimeout(() => {
+        const v = appSize()
+        setSize(v.w, v.h)
+      }, 80)
+    }
+    apply()
+    window.addEventListener('resize', apply)
+    window.addEventListener('orientationchange', apply)
+    return () => {
+      clearTimeout(t)
+      window.removeEventListener('resize', apply)
+      window.removeEventListener('orientationchange', apply)
+    }
+  }, [setSize])
+  return null
+}
+
+/**
  * フレームループを自前で回す：品質プリセットの maxFps で上限を付け（120Hz のスマホで無駄に回さない、発熱を抑える）、
  * Esc（調整パネル）中は止めてポーズ
  */
@@ -150,6 +178,7 @@ export function StageScene() {
     <Canvas
       shadows
       frameloop="never"
+      resize={{ offsetSize: true, scroll: false, debounce: { scroll: 50, resize: 0 } }}
       camera={{ fov: CAMERA.ground.fov, near: CAMERA.near, far: CAMERA.far, position: [0, 2, 70] }}
       dpr={effectiveDpr()}
       gl={{ antialias: preset().antialias, powerPreference: 'high-performance' }}
@@ -183,6 +212,7 @@ export function StageScene() {
       <CameraRig />
       <GameFlow />
       <FrameLimiter />
+      <ViewSizer />
       <AutoQuality />
       <Precompile />
     </Canvas>

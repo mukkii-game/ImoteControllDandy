@@ -5,6 +5,7 @@ import { bindKeyboard } from './systems/input'
 import { bindMouse } from './systems/mouse'
 import { bindAudio } from './systems/audio'
 import { bindSpeech } from './systems/speech'
+import { bindOrientation } from './systems/orientation'
 import { ModelViewer } from './dev/ModelViewer'
 
 export default function App() {
@@ -12,6 +13,7 @@ export default function App() {
   useEffect(() => bindKeyboard(), [])
   useEffect(() => bindAudio(), [])
   useEffect(() => bindSpeech(), [])
+  useEffect(() => bindOrientation(), [])
   useEffect(() => (root.current ? bindMouse(root.current) : undefined), [])
   if (location.search.includes('viewer')) return <ModelViewer />
   return (

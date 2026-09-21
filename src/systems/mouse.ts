@@ -2,6 +2,7 @@ import { CAMERA, LOCKON } from '../config/game'
 import { refs } from './refs'
 import { useGame } from './store'
 import { useInput } from './input'
+import { appSize, screenToApp } from './orientation'
 import * as THREE from 'three'
 
 /**
@@ -19,13 +20,13 @@ function applyLook(dx: number, dy: number, sens: number, rdx = dx * LOCKON.retic
   const g = useGame.getState()
   // 溜め中と肩上（最初から）：サイト自体が画面内を動く（画面端でカメラが押される処理は lockon 側）
   if (g.charging || (g.mode === 'shoulder' && g.phase === 'play')) {
-    refs.reticleX = THREE.MathUtils.clamp(refs.reticleX + rdx, -window.innerWidth / 2, window.innerWidth / 2)
-    refs.reticleY = THREE.MathUtils.clamp(refs.reticleY + rdy, -window.innerHeight / 2, window.innerHeight / 2)
+    refs.reticleX = THREE.MathUtils.clamp(refs.reticleX + rdx, -appSize().w / 2, appSize().w / 2)
+    refs.reticleY = THREE.MathUtils.clamp(refs.reticleY + rdy, -appSize().h / 2, appSize().h / 2)
     return
   }
   if (g.mode === 'ground' && g.phase === 'play' && LOCKON.reticle.groundHorizontalOnly) {
     // 地上：サイトは左右にだけ動く（タックルの向き）。上下はカメラ
-    refs.reticleX = THREE.MathUtils.clamp(refs.reticleX + rdx, -window.innerWidth / 2, window.innerWidth / 2)
+    refs.reticleX = THREE.MathUtils.clamp(refs.reticleX + rdx, -appSize().w / 2, appSize().w / 2)
     refs.camPitch = THREE.MathUtils.clamp(refs.camPitch + dy * sens, CAMERA.ground.pitchMin, CAMERA.ground.pitchMax)
     return
   }
@@ -115,8 +116,9 @@ export function bindMouse(el: HTMLElement): () => void {
       if (CAMERA.touchStick.enabled) {
         // 仮想スティック：置いた点からのずれを -1..1 に（円の外は 1）
         const r = CAMERA.touchStick.radius
-        let nx = (t.clientX - touchX0) / r
-        let ny = (t.clientY - touchY0) / r
+        const [ax, ay] = screenToApp(t.clientX - touchX0, t.clientY - touchY0)
+        let nx = ax / r
+        let ny = ay / r
         const len = Math.hypot(nx, ny)
         if (len > 1) {
           nx /= len
@@ -125,7 +127,8 @@ export function bindMouse(el: HTMLElement): () => void {
         touchStick.nx = nx
         touchStick.ny = ny
       } else {
-        apply(t.clientX - lastX, t.clientY - lastY, CAMERA.touchSensitivity)
+        const [ax, ay] = screenToApp(t.clientX - lastX, t.clientY - lastY)
+        apply(ax, ay, CAMERA.touchSensitivity)
       }
       lastX = t.clientX
       lastY = t.clientY

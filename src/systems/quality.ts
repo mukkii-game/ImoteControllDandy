@@ -91,6 +91,6 @@ export function preset() {
 /** 描画解像度の倍率：プリセットの倍率を、最大フルHD（QUALITY.maxWidth × maxHeight）で頭打ちにする */
 export function effectiveDpr(): number {
   const p = preset()
-  const dprCap = Math.min(QUALITY.maxWidth / window.innerWidth, QUALITY.maxHeight / window.innerHeight)
+  const dprCap = Math.min(QUALITY.maxWidth / Math.max(window.innerWidth, window.innerHeight), QUALITY.maxHeight / Math.min(window.innerWidth, window.innerHeight))
   return Math.max(0.5, Math.min(p.dpr, dprCap))
 }

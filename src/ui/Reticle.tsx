@@ -3,6 +3,7 @@ import { useGame } from '../systems/store'
 import { lock } from '../systems/enemies'
 import { LOCKON, GAME, BRO } from '../config/game'
 import { refs } from '../systems/refs'
+import { appSize } from '../systems/orientation'
 
 /**
  * サイト（画面中央）とロックマーカー。毎フレーム DOM を直接更新（React 再描画なし）。
@@ -47,8 +48,8 @@ export function Reticle() {
       // ▼ マーカーを画面座標に置く。画面外なら端に寄せる
       const place = (el: HTMLDivElement, sc: [number, number, boolean]) => {
         const [dx, dy, inFront] = sc
-        const W = window.innerWidth
-        const H = window.innerHeight
+        const W = appSize().w
+        const H = appSize().h
         let x = dx
         let y = dy
         if (!inFront) {
@@ -76,7 +77,7 @@ export function Reticle() {
         im.style.display = far ? 'flex' : 'none'
         if (far) place(im, refs.imoutoScreen)
       }
-      if (ring.current) ring.current.style.height = ring.current.style.width = `${LOCKON.reticleRadius * 2 * window.innerHeight}px`
+      if (ring.current) ring.current.style.height = ring.current.style.width = `${LOCKON.reticleRadius * 2 * appSize().h}px`
       // 地上：倒せる敵にサイトが重なっていると赤く太く光る
       el.classList.toggle('target', refs.rideTarget >= 0 || refs.aimTarget >= 0 || refs.aimProjectile >= 0)
       // 建物に重なっている（A で屋上へ跳ぶ）と黄色

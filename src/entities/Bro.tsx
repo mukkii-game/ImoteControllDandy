@@ -8,6 +8,7 @@ import { useModels, candidates } from '../systems/models'
 import { readMove, useInput } from '../systems/input'
 import { refs, shoulderWorld, handWorld } from '../systems/refs'
 import { vrmUpdate } from '../systems/vrmUpdate'
+import { appSize } from '../systems/orientation'
 import { buildingAt, floorAt, colliders, type Collider } from '../systems/colliders'
 import { makeSilhouette, type Silhouette } from '../systems/silhouette'
 import { useGame } from '../systems/store'
@@ -248,8 +249,8 @@ export function Bro() {
             tk.roof = roof
             emit('bro.jump', undefined)
           } else {
-            const hfov = THREE.MathUtils.degToRad(CAMERA.ground.fov) * (window.innerWidth / window.innerHeight) * 0.5
-            aimYaw = refs.camYaw - (refs.reticleX / (window.innerWidth / 2)) * hfov * 0.6
+            const hfov = THREE.MathUtils.degToRad(CAMERA.ground.fov) * (appSize().w / appSize().h) * 0.5
+            aimYaw = refs.camYaw - (refs.reticleX / (appSize().w / 2)) * hfov * 0.6
             tk.dist = tc.distance * tc.missDistanceMul
           }
           tk.dir.set(Math.sin(aimYaw), 0, Math.cos(aimYaw))

@@ -134,11 +134,8 @@ canvas { display: block; }
 /* スマホ・低い画面：タイトルを詰めて、スクロールもできるように */
 .overlay.title-screen { overflow-y: auto; -webkit-overflow-scrolling: touch; }
 @media (pointer: coarse) { .overlay.title-screen .howto { display: none; } .overlay.title-screen .howto-touch { display: block; } }
-/* スマホを縦に持っている時だけ出す「横にしてね」（タッチ操作＋縦向き）。ゲームは止めない */
-.rotate-hint { display: none; position: absolute; inset: 0; z-index: 30; background: rgba(10,12,20,.85); color: #fff; font-weight: 800; font-size: 20px; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; pointer-events: none; }
-.rotate-hint .phone { font-size: 64px; animation: rotate-phone 1.6s ease-in-out infinite; }
-@keyframes rotate-phone { 0%, 20% { transform: rotate(0) } 60%, 100% { transform: rotate(90deg) } }
-@media (pointer: coarse) and (orientation: portrait) { .rotate-hint { display: flex; } }
+/* スマホが縦のまま（自動回転オフ・iPhone など）の時：アプリ全体を 90° 回して横画面にする（systems/orientation.ts が html.rotated を付ける） */
+html.rotated .app { inset: auto; top: 0; left: 0; width: 100vh; height: 100vw; width: 100dvh; height: 100dvw; transform-origin: 0 0; transform: rotate(90deg) translate(0, -100%); }
 .howto-touch { display: none; font-size: 13px; line-height: 1.5; background: rgba(0,0,0,.45); padding: 8px 12px; border-radius: 8px; margin: 6px 0 4px; }
 @media (max-height: 520px) {
   .overlay.title-screen { padding-top: 2vh; gap: 6px; }
