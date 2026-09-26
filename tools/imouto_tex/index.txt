@@ -1,0 +1,25 @@
+00__01.png	512x512	N00_000_00_FaceMouth_00_FACE (Instance)
+01_Shader_NoneNormal.png	8x8	N00_000_00_EyeHighlight_00_EYE (Instance), N00_000_00_EyeIris_00_EYE (Instance), N00_000_00_EyeWhite_00_EYE (Instance), N00_000_00_FaceBrow_00_FACE (Instance), N00_000_00_FaceEyeline_00_FACE (Instance), N00_000_00_FaceMouth_00_FACE (Instance), N00_001_02_Bottoms_01_CLOTH, N00_002_01_Shoes_01_CLOTH, N00_004_01_Tops_01_CLOTH
+02_Shader_NoneBlack.png	8x8	N00_000_00_Body_00_SKIN, N00_000_00_EyeHighlight_00_EYE (Instance), N00_000_00_EyeIris_00_EYE (Instance), N00_000_00_EyeWhite_00_EYE (Instance), N00_000_00_FaceBrow_00_FACE (Instance), N00_000_00_FaceEyeline_00_FACE (Instance), N00_000_00_FaceMouth_00_FACE (Instance), N00_000_00_Face_00_SKIN (Instance), N00_000_00_HairBack_00_HAIR, N00_001_02_Bottoms_01_CLOTH, N00_002_01_Shoes_01_CLOTH, N00_004_01_Tops_01_CLOTH
+03_Shader_NoneBlack.png	8x8	(未使用)
+04__02.png	1024x512	N00_000_00_EyeIris_00_EYE (Instance)
+05__03.png	1024x512	N00_000_00_EyeHighlight_00_EYE (Instance)
+06__04.png	1024x1024	N00_000_00_Face_00_SKIN (Instance)
+07__05.png	1024x1024	N00_000_00_Face_00_SKIN (Instance)
+08_MatcapWarp_01.png	512x512	N00_000_00_Body_00_SKIN, N00_000_00_FaceBrow_00_FACE (Instance), N00_000_00_FaceEyeline_00_FACE (Instance), N00_000_00_Face_00_SKIN (Instance), N00_001_02_Bottoms_01_CLOTH, N00_002_01_Shoes_01_CLOTH, N00_004_01_Tops_01_CLOTH
+09_N00_000_00_Face_00_out.png	256x256	N00_000_00_Face_00_SKIN (Instance)
+10__06.png	1024x512	N00_000_00_EyeWhite_00_EYE (Instance)
+11__07.png	1024x256	N00_000_00_FaceBrow_00_FACE (Instance)
+12__09.png	1024x256	N00_000_00_FaceEyeline_00_FACE (Instance)
+13__10.png	2048x2048	N00_000_00_Body_00_SKIN
+14__11.png	2048x2048	N00_000_00_Body_00_SKIN
+15__12.png	1024x1024	N00_000_00_HairBack_00_HAIR
+16_N00_000_00_HairBack_00_nml.png	512x512	N00_000_00_HairBack_00_HAIR
+17__13.png	1024x2048	N00_004_01_Tops_01_CLOTH
+18__14.png	1024x1024	N00_001_02_Bottoms_01_CLOTH
+19__15.png	512x512	N00_002_01_Shoes_01_CLOTH
+20__16.png	512x1024	N00_000_Hair_00_HAIR
+21_N00_000_Hair_00_nml.png	512x1024	N00_000_Hair_00_HAIR
+22_MatcapWarp_02.png	512x512	N00_000_Hair_00_HAIR
+23__17.png	512x1024	N00_000_Hair_00_HAIR
+24_Thumbnail.png	2048x2048	(未使用)

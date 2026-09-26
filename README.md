@@ -37,6 +37,13 @@ npm run build    # dist/ に出力（itch.io 用）
 
 モデルは Esc の調整パネル「モデル」で切り替えられます。追加は `public/models/` に置いて `src/config/game.ts` の MODEL_CHOICES に1行足すだけです。
 
+### 妹モデルの改造（テクスチャの描き直し）
+- `tools/imouto_tex/` に今の妹（public/models/custom/imouto.vrm）の模様・色の画像を取り出してある。どの画像がどこか（髪・目・服…）は `index.txt`
+- 描き直すときは同じファイル名・同じ縦横サイズ・透明部分はそのままで上書き。影用の対になった画像（顔 06/07、体 13/14）は両方同じ方向に変える
+- 戻す：`python3 tools/vrm_textures.py replace public/models/custom/imouto.vrm tools/imouto_tex public/models/custom/imouto.vrm`（標準ライブラリだけで動く。取り出しは `extract`）
+- 元モデルの利用条件（VRM 内の meta）：改変可・再配布可・クレジット必要・個人の商用利用は非営利のみ。作者名が空なので VRoid Hub の元ページを探して記入が必要
+- .vrm は VRoid Studio では開けない（開けるのは .vroid）。髪型や顔の形そのものを変えるなら Blender＋VRM Add-on for Blender、または VRoid Studio で作り直し
+
 ## 検討事項メモ
 - ロックオン攻撃（サイト→投擲）を肩上（上空）専用にするかどうか。今は肩上のみ。地上は高速タックル
 - 打撃（タックル）と遠隔（投擲）の効果の差をどう付けるか（案は会話ログ参照：戦車は打撃のみ、遠隔はまとめ倍率、打撃で技ゲージ、など）
