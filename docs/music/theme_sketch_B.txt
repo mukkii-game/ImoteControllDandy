@@ -1,0 +1,5 @@
+# 主題歌サビ 案B（昭和のマーチ調、付点のはずみ）。歌詞の仮：「ズシン ズシン すすめ ロロ」
+tempo 132
+chords Bb | Gm | Eb | F | Bb | Dm Gm | Cm F | Bb
+melody F4:.5 F4:.5 Bb4:1 D5:1 F5:1 | G5:1.5 F5:.5 D5:2 | Eb5:1 D5:.5 C5:.5 Bb4:1 G4:1 | F4:2 r:1 F4:1
+melody Bb4:1 C5:1 D5:1 F5:1 | A5:1.5 G5:.5 F5:1 D5:1 | Eb5:1 G5:1 F5:1 A4:1 | Bb4:4

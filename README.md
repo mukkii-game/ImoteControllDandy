@@ -77,6 +77,7 @@ npm run build    # dist/ に出力（itch.io 用）
 - 地上サイト：倒せる敵（タックルの届く高さ・距離）に重なるとサイトが赤く太く光り（refs.groundTarget）、その時の左クリックはその敵へ全距離タックル。重なっていない時はサイトの向きへ半分の距離（BRO.tackle.missDistanceMul）
 - 昭和アニメ風の画面（systems/retro.tsx、config の RETRO）：シーンを一度テクスチャ（色＋奥行き）に描き、1 枚のシェーダーで墨の輪郭線（奥行きの段差）・網点（暗い所）・色の段付け・フィルムの粒・周辺減光・インパクトフレーム（命中・技の瞬間に白黒反転）をかける。useFrame の優先度 1 で R3F の自動描画を止めて自分で描く。背景（空の色）はトーンマッピングされない決まりなので、透明で描いてシェーダーで空の色を合成している（そうしないと空が白っぽく転ぶ）。品質「低」では使わない（RETRO.byQuality）。Esc パネルの先頭で調整、amount=0 でオフ
 - 描き文字（systems/onoma.tsx、config の ONOMA、index.css の .onoma）：妹の一歩「ズシーン」、命中「ドカーン」、爆弾「ドーン」、着地「ズダン」、弾の撃墜「パパッ」、家を踏む「グシャッ」。3D の位置を画面へ投影して DOM の文字を出す。フォントは Google Fonts の Dela Gothic One（OFL）
+- 音楽の道具（tools/music、手順は docs/PIPELINE_MUSIC.md）：analyze.py（参考曲の音声 → キー・テンポ・コード進行・区切り・耳コピ MIDI）、similarity.py（メロディの似すぎチェック。音程の動き＋リズムで比べ、8 音以上の一致は書き直し）、sketch.py（文字で書いたメロディ案 → MIDI と試聴 wav）。主題歌のサビ案 A / B は docs/music
 - 三面図のポーズ下敷き（src/dev/PoseSheet.tsx、?posesheet&who=imouto|bro&mode=openpose|depth|shade|sil、config の POSE_SHEET）と、ComfyUI の手順・ワークフローは docs/PIPELINE_ART.md
 - 地上の移動速度は 21 m/s（BRO.runSpeed）。ダッシュ後のカメラは dashRecoverLerp（8）でゆっくり追いつき、dashRecoverSec（1 秒）かけて通常の速さ（followLerp 18）に戻る
 - ダッシュ・ジャンプ中のカメラ（CAMERA.ground.dashCam、camera.tsx）：兄の後ろを遅れて追う（toLanding=false）。注視点は lookLerp（4）で兄へ、位置は dashFollowLerp（2.2）で追うので、その差のぶんだけ兄の方へ控えめに角度を振る（以前の 6 は振りすぎ）。追う間は followPitch（0.1rad）だけ上から。toLanding=true にすると角度を変えず着地地点へ平行移動する作りだったが、屋上ジャンプで兄が画面の上に消えるので使っていない

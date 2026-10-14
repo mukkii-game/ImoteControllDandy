@@ -1,0 +1,6 @@
+# 音楽の道具（tools/music）。python3 -m venv .venv && . .venv/bin/activate && pip install -r tools/music/requirements.txt
+librosa
+pretty_midi
+soundfile
+numpy
+basic-pitch[onnx]
