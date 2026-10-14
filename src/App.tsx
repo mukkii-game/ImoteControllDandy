@@ -8,6 +8,7 @@ import { bindSpeech } from './systems/speech'
 import { bindOrientation } from './systems/orientation'
 import { ModelViewer } from './dev/ModelViewer'
 import { TokorosViewer } from './dev/TokorosViewer'
+import { PoseSheet } from './dev/PoseSheet'
 
 export default function App() {
   const root = useRef<HTMLDivElement>(null)
@@ -16,6 +17,7 @@ export default function App() {
   useEffect(() => bindSpeech(), [])
   useEffect(() => bindOrientation(), [])
   useEffect(() => (root.current ? bindMouse(root.current) : undefined), [])
+  if (location.search.includes('posesheet')) return <PoseSheet />
   if (location.search.includes('tokoros')) return <TokorosViewer />
   if (location.search.includes('viewer')) return <ModelViewer />
   return (

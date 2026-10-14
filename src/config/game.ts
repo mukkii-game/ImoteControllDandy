@@ -853,3 +853,23 @@ export const TOKOROS = {
   prone: Math.PI / 2,
   noseUp: 0.2,
 }
+
+/**
+ * 開発用：三面図のポーズ下敷き（?posesheet&who=imouto|bro&mode=openpose|depth|shade|sil）。
+ * ComfyUI の ControlNet に渡す「正面・横・後ろ」を 1 枚に並べた画像を作る（docs/PIPELINE_ART.md）。
+ * width × height は SDXL が得意な 3:2。armDown は腕を水平から下ろす角度（rad、A ポーズ）、legOut は脚の開き。
+ * headScale：頭の骨の拡大（妹はななこ風の 5〜6 頭身に寄せるため大きめ）。margin は上下の余白（画像の高さに対する割合）
+ */
+export const POSE_SHEET = {
+  width: 1536,
+  height: 1024,
+  armDown: 0.85,
+  legOut: 0.07,
+  headScale: { imouto: 1.18, bro: 1.0 } as Record<string, number>,
+  margin: 0.06,
+  /** 横向きの絵で見せる側：1 = 右を向いた横顔、-1 = 左を向いた横顔 */
+  sideFacing: 1,
+  openpose: { stick: 8, dot: 5, alpha: 0.6 },
+  /** 鼻・耳の位置（頭の骨からの相対、m、モデルの元の大きさ基準） */
+  face: { noseForward: 0.09, noseUp: 0.05, earSide: 0.07, eyeSide: 0.032, eyeUp: 0.07, eyeForward: 0.08 },
+}
