@@ -193,4 +193,4 @@ docs/SPEC.md       # この文書
 7. ~~SE・音声/BGM 差し込み口~~ ✔（VOICEVOX 音声ファイルは public/audio/voice に置く）
 8. 所沢化、音声命令、スマホ仕上げ、itch.io / Pages 公開
 
-各ステップで必ず遊べる状態を保つ。
+各ステップで必ず遊べる状態を保つ。製品化までの道筋は docs/ROADMAP.md。

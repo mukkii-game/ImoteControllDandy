@@ -19,6 +19,9 @@ npm run build    # dist/ に出力（itch.io 用）
 
 `?viewer` を URL に付けるとモデル比較ビューアになる。
 
+## 製品化の計画
+`docs/ROADMAP.md`（フェーズ、エンジン判断、絵・3D モデル・舞台（所沢 PLATEAU）・声・音楽・PV・宣伝・予算・権利チェック・役割分担）。
+
 ## モデル
 `public/models/` 参照（ライセンスは `public/models/LICENSES.md`）。妹は pixiv の VRM サンプル、兄は VirtualCast の Seed-san を学生服風に色替え。差し替えは `src/config/game.ts` の `MODELS` を書き換える。
 
