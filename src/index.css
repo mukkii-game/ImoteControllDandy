@@ -159,3 +159,18 @@ html.rotated .app { inset: auto; top: 0; left: 0; width: 100vh; height: 100vw; w
 /* スマホ：技ボタンは右下の「乗降・投げ」の上に並べる（左のスティックと重ならない） */
 @media (pointer: coarse) { .skill-hint { display: none; } .skillbar { right: 24px; bottom: 126px; gap: 8px; } .skill { width: 62px; height: 62px; } .skill .key { font-size: 15px; } .skill .label { font-size: 10px; } }
 @media (pointer: fine) { .skillbar { right: 24px; } }
+
+/* 描き文字（systems/onoma.tsx）：太い文字・黒の縁取り・ポンと出て少し傾いて消える */
+.onoma-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 2; }
+.onoma {
+  position: absolute; transform: translate(-50%, -50%) rotate(var(--rot, 0deg)); white-space: nowrap; font-weight: 400;
+  letter-spacing: -0.02em; line-height: 1; paint-order: stroke fill; -webkit-text-stroke: 0.14em #1a1008;
+  text-shadow: 0.06em 0.08em 0 #1a1008; animation: onoma-pop 0.9s ease-out forwards;
+}
+@keyframes onoma-pop {
+  0% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--rot, 0deg)) scale(0.3); }
+  12% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--rot, 0deg)) scale(1.25); }
+  22% { transform: translate(-50%, -50%) rotate(var(--rot, 0deg)) scale(1); }
+  75% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -62%) rotate(var(--rot, 0deg)) scale(1.05); }
+}

@@ -15,6 +15,9 @@ import { Projectiles } from '../entities/Projectiles'
 import { XrayLayer } from '../systems/xray'
 import { HighlightLayer } from '../systems/highlight'
 import { BroAfterimage } from '../entities/BroAfterimage'
+import { RetroPost } from '../systems/retro'
+import { Onomatopoeia } from '../systems/onoma'
+import { RETRO } from '../config/game'
 
 /**
  * 品質プリセットの適用：影の有無・描画解像度（最大フルHD）を反映し、auto なら開始後しばらく fps を測って低／中／高を決める
@@ -217,6 +220,8 @@ export function StageScene() {
       <ViewSizer />
       <AutoQuality />
       <Precompile />
+      <Onomatopoeia />
+      {RETRO.byQuality[useQuality.getState().level] && <RetroPost key={`rp${version}`} samples={p.antialias ? 4 : 0} />}
     </Canvas>
   )
 }

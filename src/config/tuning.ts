@@ -1,5 +1,5 @@
 // Esc で開く調整パネルの項目。path は game.ts のオブジェクトのドット区切り。
-import { SCALE, BRO, IMOUTO, CAMERA, LOCKON } from './game'
+import { SCALE, BRO, IMOUTO, CAMERA, LOCKON, RETRO } from './game'
 
 export interface TuneItem {
   path: string
@@ -10,6 +10,23 @@ export interface TuneItem {
 }
 
 export const TUNE_GROUPS: { title: string; items: TuneItem[] }[] = [
+  {
+    title: '昭和アニメ風の画面（品質「低」では無し）',
+    items: [
+      { path: 'RETRO.amount', label: '全体のかかり具合（0 で無し）', min: 0, max: 1, step: 0.05 },
+      { path: 'RETRO.ink.strength', label: '輪郭線の濃さ', min: 0, max: 1, step: 0.05 },
+      { path: 'RETRO.ink.width', label: '輪郭線の太さ px', min: 0.5, max: 4, step: 0.1 },
+      { path: 'RETRO.ink.threshold', label: '輪郭線の出やすさ（小さいほど多い）', min: 0.005, max: 0.2, step: 0.005 },
+      { path: 'RETRO.tone.strength', label: '網点の濃さ', min: 0, max: 1, step: 0.02 },
+      { path: 'RETRO.tone.dot', label: '網点の間隔 px', min: 2, max: 14, step: 0.5 },
+      { path: 'RETRO.tone.from', label: '網点が出始める明るさ', min: 0.1, max: 0.9, step: 0.02 },
+      { path: 'RETRO.posterize.amount', label: '色の段付け', min: 0, max: 1, step: 0.05 },
+      { path: 'RETRO.posterize.steps', label: '色の段数', min: 2, max: 12, step: 1 },
+      { path: 'RETRO.grain', label: 'フィルムの粒', min: 0, max: 0.15, step: 0.005 },
+      { path: 'RETRO.vignette', label: '周辺減光', min: 0, max: 1, step: 0.02 },
+      { path: 'RETRO.impact.onHit', label: '命中でインパクトフレーム（1/0）', min: 0, max: 1, step: 1 },
+    ],
+  },
   {
     title: 'サイズ',
     items: [
@@ -132,7 +149,7 @@ export const TUNE_GROUPS: { title: string; items: TuneItem[] }[] = [
   },
 ]
 
-const ROOTS: Record<string, Record<string, unknown>> = { SCALE, BRO, IMOUTO, CAMERA, LOCKON }
+const ROOTS: Record<string, Record<string, unknown>> = { SCALE, BRO, IMOUTO, CAMERA, LOCKON, RETRO }
 const STORAGE_KEY = 'imouto-tuning-v1'
 
 function resolve(path: string): { obj: Record<string, unknown>; key: string } {

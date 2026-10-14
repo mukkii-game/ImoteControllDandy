@@ -873,3 +873,42 @@ export const POSE_SHEET = {
   /** 鼻・耳の位置（頭の骨からの相対、m、モデルの元の大きさ基準） */
   face: { noseForward: 0.09, noseUp: 0.05, earSide: 0.07, eyeSide: 0.032, eyeUp: 0.07, eyeForward: 0.08 },
 }
+
+/**
+ * 昭和アニメ風の画面の仕上げ（systems/retro.tsx）。画面全体に 1 回だけかける後処理：
+ * 墨の輪郭線（奥行きの段差を線にする）・暗い所の網点（スクリーントーン）・色の段付け（セル塗りっぽく）・フィルムの粒・周辺減光、
+ * 命中の瞬間の白黒反転（インパクトフレーム）。amount=0 で全部オフ。品質「低」では使わない（byQuality）
+ */
+export const RETRO = {
+  amount: 1,
+  byQuality: { low: false, mid: true, high: true } as Record<string, boolean>,
+  /** 墨の輪郭線：width=線の太さ（画面の px）、threshold=奥行きの段差の割合（小さいほど線が増える）、fadeFar=この距離（m）より遠い線は消す */
+  ink: { strength: 0.9, width: 1.5, threshold: 0.035, fadeNear: 150, fadeFar: 450, color: '#20160f' },
+  /** 網点：dot=点の間隔（px）、from→to=この明るさの範囲で点が育つ（暗いほど大きい）、strength=濃さ、angle=網の角度（rad） */
+  tone: { strength: 0.32, dot: 5, from: 0.5, to: 0.12, angle: 0.785 },
+  /** 色の段付け：steps=段数、amount=どれだけ寄せるか（0..1） */
+  posterize: { steps: 5, amount: 0.3 },
+  /** フィルムの粒と周辺減光 */
+  grain: 0.035,
+  vignette: 0.28,
+  /** インパクトフレーム：sec=見せる時間、cooldownSec=次に出せるまで、onHit=敵に当てた時に出すか（1/0） */
+  impact: { sec: 0.08, cooldownSec: 0.6, onHit: 1, onSkill: 1 },
+}
+
+/**
+ * 描き文字（ui の .onoma、systems/onoma.tsx）：ズシーン・ドカーン等を画面に出す（漫画・昭和アニメの擬音）。
+ * words から順番に選ぶ。cooldownSec 以内の同じ種類は出さない。size は画面の高さに対する文字の大きさ（割合）
+ */
+export const ONOMA = {
+  enabled: true,
+  lifeSec: 0.9,
+  font: '"Dela Gothic One", "M PLUS Rounded 1c", "Hiragino Sans", sans-serif',
+  kinds: {
+    step: { words: ['ズシーン', 'ズウン', 'ドシーン'], cooldownSec: 1.1, size: 0.11, color: '#ffffff', minStrength: 0.5 },
+    hit: { words: ['ドカーン', 'バキッ', 'ボカーン', 'ガシャーン'], cooldownSec: 0.4, size: 0.085, color: '#ffd93d', minStrength: 0 },
+    bomb: { words: ['ドーン', 'ズドン'], cooldownSec: 0.6, size: 0.08, color: '#ff8a3d', minStrength: 0 },
+    land: { words: ['ズダン', 'ダンッ'], cooldownSec: 0.5, size: 0.07, color: '#ffe066', minStrength: 0 },
+    shot: { words: ['パパッ', 'バチッ'], cooldownSec: 0.5, size: 0.055, color: '#fff3a0', minStrength: 0 },
+    crush: { words: ['グシャッ', 'メキメキ'], cooldownSec: 0.9, size: 0.075, color: '#ffffff', minStrength: 0 },
+  } as Record<string, { words: string[]; cooldownSec: number; size: number; color: string; minStrength: number }>,
+}
